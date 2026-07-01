@@ -1,0 +1,30 @@
+# ===== 敏感設定（勿提交）=====
+.env
+.env.*
+!.env.example
+config/env.path.php
+
+# ===== 使用者上傳與執行期資料 =====
+Upload/
+
+# ===== 作業系統 / IDE =====
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# ===== 日誌與快取 =====
+*.log
+.phpunit.cache/
+
+# ===== 本機備份檔（勿納版控）=====
+* copy.php
+* copy.*
+*_bak*
+*.php-20*
+*.php_bak*
+*.aspx.cs-20*

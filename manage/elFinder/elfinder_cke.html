@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+  <title>elFinder for CKEditor (自動偵測 RequireJS)</title>
+
+  <!-- 必要 CSS -->
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/css/elfinder.min.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/css/theme.css">
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #elfinder { position: absolute; inset: 0; }
+    #status { position:fixed; right:.5rem; bottom:.5rem; background:#fff; border:1px solid #ddd; padding:.5rem .75rem; font:12px/1.4 system-ui; z-index:9999 }
+    #status.ok{border-color:#8bc34a}
+    #status.err{border-color:#f44336}
+  </style>
+</head>
+<body>
+  <div id="elfinder"></div>
+  <div id="status">載入中…</div>
+
+  <!-- 必要 JS：jQuery → jQuery UI -->
+  <script src="//code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="//code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+  <script>
+    // 基本參數
+    function getUrlParam(name){
+      var m = location.search.match(new RegExp('[?&]'+name+'=([^&]+)'));
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    var funcNum = getUrlParam('CKEditorFuncNum');
+
+    function setStatus(ok, msg){
+      var el = document.getElementById('status');
+      el.className = ok ? 'ok' : 'err';
+      el.textContent = msg;
+    }
+
+    function initElfinder(){
+      if (!window.jQuery || !jQuery.ui || !jQuery.fn.elfinder){
+        setStatus(false, 'elFinder plugin not loaded');
+        console.error('elFinder plugin not loaded');
+        return;
+      }
+      setStatus(true, 'jQuery: '+!!window.jQuery+' | jQuery UI: '+!!(jQuery&&jQuery.ui)+' | elFinder: '+!!(jQuery&&jQuery.fn&&jQuery.fn.elfinder));
+
+      $('#elfinder').elfinder({
+        url: 'elfinder.php', // ← 改成你的實際連接器路徑
+        lang: 'zh_TW',
+        useBrowserHistory: false,
+        resizable: false,
+        commandsOptions: { getfile: { multiple:false, folders:false } },
+        getFileCallback: function(file){
+		  try {
+			var url = file && (file.url || file.href || file.path) || '';
+			if (!url) { alert('未取得檔案 URL，請檢查後端回傳'); return; }
+
+			var w = window.opener || window.parent;
+
+			// A) 標準：CKEditor 4 以 CKEditorFuncNum 回呼
+			if (w && w.CKEDITOR && funcNum && typeof w.CKEDITOR.tools.callFunction === 'function') {
+			  w.CKEDITOR.tools.callFunction(funcNum, url);
+			  window.close();
+			  return;
+			}
+
+			// B) 備援：若 URL 沒帶 CKEditorFuncNum，但有指定 instance 名稱，直接插入
+			var editorKey = (function(){
+			  var m = location.search.match(/[?&]CKEditor=([^&]+)/i);
+			  return m ? decodeURIComponent(m[1]) : '';
+			})();
+			if (w && w.CKEDITOR && editorKey && w.CKEDITOR.instances && w.CKEDITOR.instances[editorKey]) {
+			  var ed = w.CKEDITOR.instances[editorKey];
+			  if (ed.mode === 'wysiwyg') {
+				ed.insertHtml('<img src="' + url.replace(/"/g,'&quot;') + '" alt="">');
+			  } else {
+				ed.setData(ed.getData() + '\n' + url);
+			  }
+			  window.close();
+			  return;
+			}
+
+			// C) 再備援：非 CKEditor 4（例如你是自訂彈窗或 CKEditor 5），就用自定事件/回呼
+			if (w && typeof w.onElfinderFileSelected === 'function') {
+			  w.onElfinderFileSelected(url, file);
+			  window.close();
+			  return;
+			}
+			// 也可用 postMessage 給父視窗（CKEditor 5 或自製整合）
+			if (w && w.postMessage) {
+			  w.postMessage({ type: 'elfinder:selected', url: url, file: file }, '*');
+			  window.close();
+			  return;
+			}
+
+			alert('找不到 CKEditor 回呼（CKEditorFuncNum）。請確認是由 CKEditor 開啟。');
+		  } catch (e) {
+			console.error(e);
+			alert('傳回編輯器時發生錯誤：' + (e.message || e));
+		  }
+		},
+
+        uiOptions: {
+          toolbar: [
+            ['back','forward'], ['home','up'], ['reload'],
+            ['mkdir','mkfile','upload'],
+            ['open','download'],
+            ['copy','cut','paste'],
+            ['rename','duplicate'],
+            ['rm'],
+            ['search'], ['info'], ['quicklook'], ['view'], ['sort']
+          ]
+        },
+        contextmenu: {
+          navbar: ['open','|','mkdir','mkfile','upload','|','paste'],
+          cwd:    ['reload','back','|','mkdir','mkfile','upload','|','paste','|','sort'],
+          files:  ['getfile','|','open','quicklook','|','download','|','copy','cut','paste','duplicate','|','rename','rm','|','info']
+        },
+        handlers: {
+          error: function(e){
+            console.error('elFinder error:', e && e.data && e.data.error);
+            setStatus(false, 'elFinder error: ' + (e && e.data && e.data.error));
+          },
+          request: function(e){ console.log('→', e && e.data && e.data.data); },
+          response: function(e){ console.log('←', e && e.data); }
+        }
+      });
+    }
+
+    // 若頁面存在 RequireJS（AMD），用 AMD 載入 elFinder；否則用 <script> 動態載入
+    (function loadElfinder(){
+      var hasAMD = !!(window.define && window.define.amd);
+      if (hasAMD) {
+        console.warn('Detected RequireJS. Loading elFinder via AMD...');
+        window.requirejs && requirejs.config({
+          waitSeconds: 30,
+          paths: {
+            'elfinder': '//cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/js/elfinder.min',
+            'elfinder.i18n.zh_TW': '//cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/js/i18n/elfinder.zh_TW'
+          },
+          shim: {
+            'elfinder': { deps: ['jquery','jquery-ui'] },
+            'elfinder.i18n.zh_TW': { deps: ['elfinder'] }
+          }
+        });
+        require(['elfinder','elfinder.i18n.zh_TW'], function(){
+          $(initElfinder);
+        }, function(err){
+          console.error('RequireJS load error:', err);
+          setStatus(false, 'RequireJS load error: see console');
+        });
+      } else {
+        console.warn('No RequireJS. Loading elFinder via script tags...');
+        var s1 = document.createElement('script');
+        s1.src = '//cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/js/elfinder.min.js';
+        s1.onload = function(){
+          var s2 = document.createElement('script');
+          s2.src = '//cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/js/i18n/elfinder.zh_TW.js';
+          s2.onload = function(){ $(initElfinder); };
+          s2.onerror = function(){ setStatus(false,'Failed to load i18n file'); };
+          document.body.appendChild(s2);
+        };
+        s1.onerror = function(){ setStatus(false,'Failed to load elfinder.min.js'); };
+        document.body.appendChild(s1);
+      }
+    })();
+  </script>
+</body>
+</html>

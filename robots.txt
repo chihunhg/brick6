@@ -1,0 +1,10 @@
+User-agent:*
+Allow: /
+Disallow: /_bak/
+Disallow: /include/
+Disallow: /manage/
+Disallow: /Upload/
+Disallow: /weblog/
+Disallow: /sql_error/
+
+Sitemap: https://www.example.com/sitemap.xml

@@ -1,0 +1,88 @@
+<?php
+declare(strict_types=1);
+
+$pageName = '';
+$subPageName = '';
+require('_inc.php');
+
+$Module_PKey = frontend_module_pkey('faq');
+frontend_module_set_config(array_merge(
+    require __DIR__ . '/manage/faq/_config.php',
+    [
+        'view'           => 'view_faq',
+        'class_link'     => 'faq',
+        'detail_link'    => 'faq',
+        'publish_window' => false,
+        'order_by'       => 'Sort ASC',
+    ]
+));
+
+$Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
+$Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
+
+frontend_init_breadcrumb($Module_Name, $Module_Link);
+
+$faqItems = frontend_fetch_faq_items($Module_PKey);
+$ldjson = frontend_breadcrumb_ldjson();
+?>
+
+<!DOCTYPE html>
+<html <?php echo $lang_text['lang'][$this_lang]; ?>>
+<head>
+<?php require('_in_code_head.php'); ?>
+<?php require('_in_javascript.php'); ?>
+</head>
+
+<body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
+<?php require('_header.php'); ?>
+<?php require('_banner.php'); ?>
+
+<main class="pgContent">
+    <section class="blockHeight blockHeight--faq">
+        <div class="container">
+            <h2 class="mainTitle">
+                <span class="mainTitle__mj wow fadeInUp"><?php echo e($Module_Name); ?></span>
+            </h2>
+            <?php if ($faqItems === []) { ?>
+            <p class="faqEmpty"><?php echo e($lang_text['no_data_str'][$this_lang] ?? '資料建置中'); ?></p>
+            <?php } else { ?>
+            <div class="faqList" data-faq-accordion>
+                <?php foreach ($faqItems as $item) { ?>
+                <div class="faqItem">
+                    <button type="button" class="faqItem__q" aria-expanded="false"
+                        aria-controls="faq-panel-<?php echo (int)$item['pkey']; ?>">
+                        <span class="faqItem__mark faqItem__mark--q" aria-hidden="true">Q</span>
+                        <span class="faqItem__title"><?php echo e($item['question']); ?></span>
+                        <span class="faqItem__icon" aria-hidden="true"></span>
+                    </button>
+                    <div class="faqItem__a" id="faq-panel-<?php echo (int)$item['pkey']; ?>" hidden>
+                        <div class="faqItem__aInner">
+                            <span class="faqItem__mark faqItem__mark--a" aria-hidden="true">A</span>
+                            <div class="faqItem__body">
+                                <?php if (!empty($item['image'])) { ?>
+                                <figure class="faqItem__pic">
+                                    <img src="<?php echo e_attr((string)$item['image']); ?>" class="img-fluid" loading="lazy"
+                                        alt="<?php echo e_attr($item['question']); ?>">
+                                </figure>
+                                <?php } ?>
+                                <?php if ($item['answer'] !== '') { ?>
+                                <div class="faqItem__text text">
+                                    <?php echo frontend_render_html($item['answer']); ?>
+                                </div>
+                                <?php } ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php } ?>
+            </div>
+            <?php } ?>
+        </div>
+    </section>
+</main>
+
+<?php require('_footer.php'); ?>
+<?php require('_in_code_bottom.php'); ?>
+<?php echo script_src_tag($web_url . 'js/faq-page.js?ver=' . filemtime(__DIR__ . '/js/faq-page.js')); ?>
+</body>
+</html>

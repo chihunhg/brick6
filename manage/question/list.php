@@ -1,0 +1,141 @@
+<?php
+
+declare(strict_types=1);
+
+require_once '../_inc.php';
+require_once '../_module.php';
+
+$detailConfig = require __DIR__ . '/_config.php';
+require_once __DIR__ . '/_helpers.php';
+
+$listCsrfKey = (string)($detailConfig['list_csrf'] ?? 'question_list');
+$table_name  = (string)($detailConfig['master'] ?? 'question');
+$PKName      = 'PKey';
+$FKName      = (string)($detailConfig['fk'] ?? 'Question_PKey');
+
+$uploadBase = crud_upload_base();
+$crud_cfg = crud_cfg($table_name, $FKName, ['upload_base' => $uploadBase]);
+
+crud_process_list_actions($crud_cfg, static function (array $ids): void {
+    foreach ($ids as $id) {
+        question_delete_related_rows((int)$id);
+    }
+});
+
+crud_csrf_guard_list($listCsrfKey);
+$csrf_token = crud_csrf_ensure($listCsrfKey);
+
+[$PDO_Cond, $Cond_Array] = crud_module_where();
+
+$kwPlaceholder = '請輸入問卷標題搜尋';
+$Keywords = crud_list_apply_keyword_search(
+    $PDO_Cond,
+    $Cond_Array,
+    $filter_array ?? [],
+    'strName',
+    $kwPlaceholder
+);
+if ($Keywords === '') {
+    $Keywords = $kwPlaceholder;
+}
+
+$Total = crud_fetch_scalar(
+    "SELECT COUNT({$PKName}) AS Total FROM {$table_name} {$PDO_Cond}",
+    $Cond_Array,
+    'Total'
+);
+$tPageSize = crud_list_page_size($filter_array ?? [], 15);
+['tPage' => $tPage, 'tPageTotal' => $tPageTotal, 'offset' => $offset] = crud_paginate(
+    $Total,
+    $tPageSize,
+    $filter_array['Page'] ?? null
+);
+
+$sql = "SELECT * FROM {$table_name} {$PDO_Cond} ORDER BY Sort ASC, dtUDate DESC LIMIT "
+    . (int)$tPageSize . ' OFFSET ' . (int)$offset;
+$listRows = crud_fetch_all($sql, $Cond_Array);
+$reportCountMap = question_report_counts_by_ids(
+    array_map(static fn(array $row): int => (int)($row['PKey'] ?? 0), $listRows)
+);
+
+$i = 0;
+
+$clearUrl = ($WorkFile ?? 'list.php')
+    . '?manNo=' . urlencode((string)($manNo ?? ''))
+    . '&subNo=' . urlencode((string)($subNo ?? ''));
+
+$layout_container_class = 'container container--full';
+?>
+<?php require_once '../_layout_head.php'; ?>
+</head>
+
+<?php require_once '../_layout_body_open.php'; ?>
+                    <?php require_once '../_breadcrumbs.php'; ?>
+
+                    <form action="" method="post" name="form1" id="form1" data-upload-url="_upload.php">
+                    <div id="view-list">
+                        <div class="card filterWrap">
+                            <div class="filterWrap__content">
+                                <div class="filterWrap__grid">
+                                    <?php $searchAutoSubmit = true; require_once '../_search.php'; ?>
+                                    <div class="inputGroup">
+                                        <label class="inputLabel" for="Keywords">關鍵字搜尋</label>
+                                        <div class="inputWrapper">
+                                            <input type="text" name="Keywords" id="Keywords"
+                                                value="<?php echo e($Keywords); ?>"
+                                                placeholder="<?php echo e($kwPlaceholder); ?>"
+                                                class="formInput"
+                                                data-manage-action="list-search"
+                                                data-form-id="form1"
+                                                data-work-file="<?php echo e($WorkFile ?? ''); ?>"
+                                                data-default-keywords="<?php echo e($kwPlaceholder); ?>">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="filterWrap__actions">
+                                    <a href="<?php echo e($clearUrl); ?>" class="btnStyle btnStyle--outline">
+                                        <i class="bi bi-arrow-counterclockwise"></i> 清除
+                                    </a>
+                                    <button type="submit" class="btnStyle --isAnim" name="Submit" value="搜尋">
+                                        <i class="bi bi-search"></i> 搜尋
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <?php require_once '../_select.php'; ?>
+                            <?php require_once '_list.php'; ?>
+
+                            <?php
+                            echo hiddenText('csrf_token', e($csrf_token)) . PHP_EOL;
+                            echo hiddenNumeric('manNo', $manNo ?? '') . PHP_EOL;
+                            echo hiddenNumeric('subNo', $subNo ?? '') . PHP_EOL;
+                            echo hiddenNumeric('Total', $i) . PHP_EOL;
+                            echo hiddenNumeric('PKey', $PKey ?? '') . PHP_EOL;
+                            echo hiddenNumeric('Page', $tPage) . PHP_EOL;
+                            echo hiddenNumeric('PageSize', $tPageSize) . PHP_EOL;
+                            ?>
+
+                            <?php if (file_exists(__DIR__ . '/../_page.php')) {
+                                require_once __DIR__ . '/../_page.php';
+                            } ?>
+                        </div>
+                    </div>
+
+                    <div class="notes notes--lg">
+                        <div class="notes__header">
+                            <i class="bi bi-info-circle notes__icon"></i> 系統備註
+                        </div>
+                        <ul class="notes__list">
+                            <li>網站前台顯示順序，依照「順序」由小至大排序；順序相同，依照「修改日期」由新至舊排序。</li>
+                            <li>「問卷分類」→ 設定，可管理該問卷的類別與題目。</li>
+                        </ul>
+                    </div>
+                    <div class="notes__spacer"></div>
+                    </form>
+
+<?php require_once '../_layout_body_close.php'; ?>
+<?php require_once '../_in_code_bottom.php'; ?>
+</body>
+</html>

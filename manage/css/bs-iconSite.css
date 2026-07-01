@@ -1,0 +1,39 @@
+@charset "UTF-8";
+
+/*!
+ * Bootstrap Icons v1.11.3 (https://icons.getbootstrap.com/)
+ * Copyright 2019-2024 The Bootstrap Authors
+ * Licensed under MIT (https://github.com/twbs/icons/blob/main/LICENSE)
+ */
+
+@font-face{font-display:swap;font-family:"bootstrap-icons";src:url(./fonts/bootstrap-icons.woff2?dd67030699838ea613ee6dbda90effa6) format("woff2"),url(./fonts/bootstrap-icons.woff?dd67030699838ea613ee6dbda90effa6) format("woff")}
+
+.bi::before,[class^="bi-"]::before,[class*=" bi-"]::before{display:inline-block;font-family:bootstrap-icons!important;font-style:normal;font-weight:400!important;font-variant:normal;text-transform:none;line-height:1;vertical-align:-.125em;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* !======自行加入有用到的icon====== */
+.bi-search::before { content: "\f52a"; }
+.bi-chevron-double-left::before { content: "\f27f"; }
+.bi-chevron-left::before { content: "\f284"; }
+.bi-chevron-right::before { content: "\f285"; }
+.bi-chevron-double-right::before { content: "\f280"; }
+
+/* New Icons Mapped from Lucide */
+.bi-house::before { content: "\f425"; }
+.bi-chevron-down::before { content: "\f282"; }
+.bi-box-arrow-up-right::before { content: "\f1cb"; }
+.bi-box-arrow-right::before { content: "\f1c8"; }
+.bi-calendar::before { content: "\f1e3"; }
+.bi-arrow-counterclockwise::before { content: "\f118"; }
+.bi-trash::before { content: "\f5de"; }
+.bi-check-circle::before { content: "\f26b"; }
+.bi-archive::before { content: "\f10c"; }
+.bi-arrow-down-up::before { content: "\f10f"; }
+.bi-plus-lg::before { content: "\f4fe"; }
+.bi-clock::before { content: "\f293"; }
+.bi-copy::before { content: "\F759"; }
+.bi-pencil-square::before { content: "\f4cb"; }
+.bi-save::before { content: "\f519"; }
+.bi-info-circle::before { content: "\f431"; }
+.bi-question-circle-fill::before { content: "\f504"; }
+.bi-eye::before { content: "\f341"; }
+.bi-eye-slash-fill::before { content: "\f33f"; }

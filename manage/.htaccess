@@ -1,0 +1,81 @@
+# =========== Header ===========
+<IfModule mod_headers.c>
+    # 基本安全標頭
+    Header always unset X-Powered-By
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always edit Set-Cookie (.*) "$1; HttpOnly; Secure; SameSite=Lax"
+    # HSTS 由 Plesk/nginx 或 Conn.php（APP_ENABLE_HSTS=1）擇一送出，勿重複
+    # Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains" env=HTTPS
+ 
+    # Report-To: 指定 CSP 報告的上傳位置
+    Header set Report-To "{\"group\":\"csp-endpoint\",\"max_age\":10886400,\"endpoints\":[{\"url\":\"/csp-report-endpoint.php\"}]}"
+ 
+    # CSP 改由 PHP 依請求動態注入 nonce（見 manage/_inc.php → send_manage_security_headers）
+ 
+    # 額外建議標頭（視情況啟用）
+    Header set X-XSS-Protection "1; mode=block"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), fullscreen=(self)"
+</IfModule>
+# ==============================
+
+Options -Indexes
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+#RewriteCond %{SERVER_PORT} !^443$
+#RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+#***_inc.php 有設定，若未傳 $this_lang ，則 $this_lang 預設=1***
+#this_lang 1=繁中 2=英文
+
+#切換語系
+#RewriteRule ^$ index.php?this_lang=1 [L]
+RewriteRule ^en/$ index.php?this_lang=2 [L]
+RewriteRule ^en$ index.php?this_lang=2 [L]
+
+#關於我們(美工頁)
+RewriteRule ^about.htm$ about-tc.php?this_lang=1 [L]
+RewriteRule ^en/about.htm$ about-en.php?this_lang=2 [L]
+
+#聯絡我們
+#RewriteRule ^contact.htm$ contact.php?this_lang=1 [L]
+#RewriteRule ^en/contact.htm$ contact.php?this_lang=2 [L]
+
+
+RewriteRule ^(.*_bak.*)$ / [R=301,NC]
+RewriteRule ^(.*-bak.*)$ / [R=301,NC]
+RewriteRule ^(.*.php_.*)$ / [R=301,NC]
+RewriteRule ^(.*.php-.*)$ / [R=301,NC]
+
+RewriteCond %{REQUEST_URI} !^[\/manage\/]+$
+RewriteRule ^en/(.*)\.htm$ $1.php?this_lang=2 [L]
+RewriteRule ^(.*)\.htm$ $1.php?this_lang=1 [L]
+
+</IfModule>
+
+<IfModule mod_headers.c>
+  # CSS / JS
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "max-age=2592000, public"
+  </FilesMatch>
+
+  # 圖片 / 字型
+  <FilesMatch "\.(jpg|jpeg|png|gif|svg|webp|woff2|ttf)$">
+    Header set Cache-Control "max-age=31536000, public, immutable"
+  </FilesMatch>
+</IfModule>
+
+#ErrorDocument 404 https://www.xxxxxx.com/
+# ==============================
+
+# 設定 MIME 類型
+AddType application/javascript .js
+AddType text/css .css
+AddType text/html .html
+AddType text/plain .txt
+AddType text/xml .xml
+
+# 設定副檔名對應到 UTF-8 編碼
+AddCharset UTF-8 .js .css .html .txt .xml .php
+

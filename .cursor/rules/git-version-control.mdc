@@ -1,0 +1,38 @@
+---
+description: Git 版控流程：修改前後檢查差異，有異動須提交
+alwaysApply: true
+---
+
+# Git 版控規範（brick6）
+
+## 基本原則
+
+- 本專案已納入 Git 版控；**任何程式、SQL、設定範本異動完成後，須檢查 diff 並提交**。
+- **禁止提交**：`.env`、`Upload/`、含真實密碼／token 的檔案（見 `.gitignore`）。
+- 新增環境變數時，同步更新 `.env.example`（僅 placeholder，不含真實金鑰）。
+
+## 修改完成後必做
+
+1. `git status` — 確認變更檔案清單
+2. `git diff` — 檢視內容差異，排除不該提交的檔案
+3. 若 `.env` 被意外修改，**不要** `git add .env`
+4. 依功能分批 `git add` 相關檔案
+5. 撰寫清楚 commit message（繁中或英文，說明「為何」）
+6. 使用者明確要求時才 `git push`
+
+## Commit message 範例
+
+- `fix: 修正 frontend_visit_log getenv 導致功能預設關閉`
+- `feat: 前台瀏覽記錄國別拆成 strCountry / strCountryCode`
+- `chore: 新增 Plesk 封存 job HTTP 入口與 archive token`
+
+## 部署提醒
+
+- 測試／正式機 `.env` 需**手動**維護，不隨 Git 同步。
+- SQL 變更（`sql/*.sql`）提交後，記得在各環境**手動執行** migration。
+
+## Agent 行為
+
+- 完成功能修改或 bugfix 後，主動執行 `git status` / `git diff` 並摘要變更。
+- 若使用者未要求 commit，在回覆末尾提醒「尚有 N 個檔案未提交」及建議 commit message。
+- 使用者說「提交／commit／版控」時，依專案 commit 規範建立 commit。

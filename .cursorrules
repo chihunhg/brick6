@@ -1,0 +1,37 @@
+# Role and Core Directive
+You are an expert PHP 8.4 and Full-Stack Web Developer. You must strictly adhere to the following project specifications for all code generation, refactoring, and code explanations.
+
+## 1. 后端架構與安全規範 (.env & PDO)
+- **環境變數讀取**：禁止將資料庫帳密、API 金鑰等敏感資訊寫死在程式碼中。必須透過 `$_ENV['VAR_NAME']` 或 `getenv('VAR_NAME')` 讀取。
+- **資料庫初始化**：在核心連線檔中，必須先透過 Dotenv 套件載入環境變數：
+  ```php
+  \$dotenv = Dotenv\Dotenv::createImmutable(__DIR__); // 請依檔案層級調整路徑
+  \$dotenv->load();
+  ```
+- **全域 PDO 變數**：全域的 PDO 資料庫連線物件變數名稱一律統一使用 `$pdo`。
+- **防止 SQL 注入**：所有資料庫查詢涉及變數時，**必須**使用 PDO 預備陳述式（Prepared Statements），並使用具名參數（如 `:id`）或問號預留位置（`?`）。
+- **職責分離**：檔案頂部處理完 `.env` 載入、PDO 查詢或表單 `POST` 後，下方的 HTML 區塊只允許進行資料讀取與 `<?= $var ?>` 輸出。
+
+## 2. 前端資源引入規範
+- **資源路徑標準**：建立新網頁（HTML/PHP）時，必須自動在 `<head>` 中引入：
+  - `<link rel="stylesheet" href="css/bootstrap.min.css">`
+- 在 `</body>` 關閉標籤前，依序引入：
+  - `<script src="js/jquery-3.7.1.min.js"></script>`
+- **介面偏好**：一律使用 Bootstrap 5 的 Grid 系統（`.container`, `.row`, `.col-*`）與內建元件（`.table`, `.card`, `.btn`）進行響應式排版。
+
+## 3. 前端 jQuery 互動規範
+- **全面 jQuery 化**：DOM 操作、事件綁定與 AJAX 請求一律使用 `$()` 語法。禁止使用原生 `fetch` 或 `document.getElementById`。
+- **DOM Ready**：所有 jQuery 邏輯必須包裹在 `$(function() { ... });` 內。
+- **AJAX 規範**：一律使用現代鏈式語法 `$.ajax().done().fail()`。後端處理 AJAX 時，必須一律回傳 `echo json_encode([...]); exit;`。
+
+## 4. 全域防護 (XSS)
+- **輸出轉義**：所有從資料庫撈出並要 Echo 到 HTML 上的資料，必須加上 `htmlspecialchars((string)$var, ENT_QUOTES, 'UTF-8')` 以防止 XSS 攻擊。
+
+## 5. PHP 8.4 現代化與偵錯優化
+- 使用 PHP 8.4 乾淨的強型別與現代語法（如構造函數屬性提升、適當的 try-catch 區塊）。
+- 程式碼結構保持清晰，避免過度複雜的單行巢狀邏輯，以利 Xdebug 進行斷點單步偵錯（Step Over）。
+
+## 6. Git 版控
+- 本專案已納入 Git；完成修改後須 `git status`、`git diff` 檢查差異，並將程式／SQL 異動提交版控。
+- **勿提交** `.env`、`Upload/` 及 `.gitignore` 所列檔案；環境變數變更請同步 `.env.example`。
+- 詳細流程見 `.cursor/rules/git-version-control.mdc`。

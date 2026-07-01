@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+  <title>elFinder for CKEditor</title>
+
+  <!-- 優先載入本機樣式；若失敗再退回 CDN（見下方 JS） -->
+  <link id="css-elfinder" rel="stylesheet" href="./css/elfinder.min.css">
+  <link id="css-theme" rel="stylesheet" href="./css/theme.css">
+  <style>
+    html, body { height:100%; margin:0; }
+    #elfinder { position:absolute; inset:0; }
+    #status { position:fixed; right:.5rem; bottom:.5rem; background:#fff; border:1px solid #ddd; padding:.5rem .75rem; font:12px/1.4 system-ui; z-index:9999 }
+    #status.ok{border-color:#8bc34a}
+    #status.err{border-color:#f44336}
+  </style>
+</head>
+<body>
+  <div id="elfinder"></div>
+  <div id="status">載入中…</div>
+
+  <script>
+    // 讓 <link> 在 404 時自動改用 CDN
+    function ensureCssLoaded(id, cdnUrl){
+      var link = document.getElementById(id);
+      if (!link) return;
+      var done = false;
+      link.onerror = function(){ if (done) return; done = true; link.href = cdnUrl; };
+      // 某些瀏覽器不觸發 onerror；保險：延時檢測是否有樣式表
+      setTimeout(function(){
+        if (!link.sheet || (link.sheet && link.sheet.cssRules && link.sheet.cssRules.length === 0)) {
+          link.href = cdnUrl;
+        }
+      }, 800);
+    }
+  </script>
+
+  <!-- 先嘗試本機 jQuery / jQuery UI / elFinder；若失敗將改用 CDN -->
+  <script id="js-jq" src="./js/jquery-3.6.4.min.js"></script>
+  <script id="js-jqui" src="./js/jquery-ui.min.js"></script>
+  <script id="js-elf" src="./js/elfinder.min.js"></script>
+  <script id="js-i18n" src="./js/i18n/elfinder.zh_TW.js"></script>
+
+  <script>
+    (function(){
+      // CSS fallback 到 CDN
+      ensureCssLoaded('css-elfinder', 'https://cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/css/elfinder.min.css');
+      ensureCssLoaded('css-theme',    'https://cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/css/theme.css');
+
+      // JS 404 fallback：若本機載不到，改載 CDN
+      function fallbackScript(id, cdnSrc){
+        var s = document.getElementById(id);
+        if (!s) return;
+        var tried = false;
+        s.onerror = function(){ if (tried) return; tried = true; var t = document.createElement('script'); t.src = cdnSrc; document.body.appendChild(t); };
+      }
+      fallbackScript('js-jq',   'https://code.jquery.com/jquery-3.6.4.min.js');
+      fallbackScript('js-jqui', 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js');
+      fallbackScript('js-elf',  'https://cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/js/elfinder.min.js');
+      fallbackScript('js-i18n', 'https://cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.65/js/i18n/elfinder.zh_TW.js');
+
+      function qp(k){ var p=new URLSearchParams(location.search); return p.get(k)||''; }
+      var ckFunc = qp('CKEditorFuncNum');
+      var reqType = qp('type'); // Images / Files
+      var langCode = qp('langCode') || 'zh_TW';
+
+      function setStatus(ok,msg){ var el=document.getElementById('status'); el.className=ok?'ok':'err'; el.textContent=msg; }
+
+      function boot(){
+        if (!window.jQuery || !jQuery.ui || !jQuery.fn || !jQuery.fn.elfinder) {
+          setStatus(false, 'jQuery / jQuery UI / elFinder 載入失敗，請檢查路徑');
+          return;
+        }
+        setStatus(true, '載入完成');
+
+        jQuery('#elfinder').elfinder({
+          // ★ 你的 PHP connector：
+          url: './elfinder.php',
+          lang: langCode,
+          resizable: false,
+          useBrowserHistory: false,
+          onlyMimes: (reqType && reqType.toLowerCase()==='images')
+            ? ['image/jpeg','image/png','image/gif','image/webp','image/svg+xml','image/bmp']
+            : undefined,
+          commandsOptions: { getfile: { multiple:false, folders:false } },
+          getFileCallback: function(file){
+            try{
+              var url = file && (file.url || file.path || file.href) || '';
+              if (!url) { alert('未取得檔案 URL，請檢查後端回傳'); return; }
+              var w = window.opener || window.parent;
+              if (w && w.CKEDITOR && ckFunc && typeof w.CKEDITOR.tools.callFunction === 'function') {
+                w.CKEDITOR.tools.callFunction(ckFunc, url);
+                window.close();
+                return;
+              }
+              // 備援（沒傳 CKEditorFuncNum）：找 CKEditor instance 直接插入
+              var m = location.search.match(/[?&]CKEditor=([^&]+)/i);
+              var key = m ? decodeURIComponent(m[1]) : '';
+              if (w && w.CKEDITOR && key && w.CKEDITOR.instances && w.CKEDITOR.instances[key]) {
+                var ed = w.CKEDITOR.instances[key];
+                if (ed.mode === 'wysiwyg') ed.insertHtml('<img src="'+url.replace(/"/g,'&quot;')+'" alt="">');
+                else ed.setData(ed.getData() + '\n' + url);
+                window.close();
+                return;
+              }
+              // 其他前端（例如自製或 CKEditor 5）
+              if (w && typeof w.onElfinderFileSelected === 'function') { w.onElfinderFileSelected(url, file); window.close(); return; }
+              if (w && w.postMessage) { w.postMessage({ type:'elfinder:selected', url:url, file:file }, '*'); window.close(); return; }
+              alert('找不到 CKEditor 回呼（CKEditorFuncNum）。請確認是由 CKEditor 開啟。');
+            } catch(e){ console.error(e); alert('回填編輯器時發生錯誤：'+(e.message||e)); }
+          },
+          handlers: {
+            error: function(e){ console.error('elFinder error:', e && e.data && e.data.error); setStatus(false, 'elFinder error: '+(e && e.data && e.data.error)); },
+            request: function(e){ console.log('→', e && e.data && e.data.data); },
+            response:function(e){ console.log('←', e && e.data); }
+          }
+        });
+      }
+
+      // 等待腳本載入再啟動（簡單的重試機制）
+      (function wait(){
+        if (window.jQuery && jQuery.ui && jQuery.fn && jQuery.fn.elfinder) return boot();
+        setTimeout(wait, 120);
+      })();
+    })();
+  </script>
+</body>
+</html>

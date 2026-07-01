@@ -1,0 +1,28 @@
+
+
+/* Noto Serif TC */
+@font-face {
+  font-family: 'Noto Serif TC';
+  src: url('fonts/NotoSerifTC-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* STIX Two Text */
+@font-face {
+  font-family: 'Noto Serif TC';
+  src: url('fonts/STIXTwoText-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* STIX Two Text - Italic*/
+@font-face {
+  font-family: 'Noto Serif TC';
+  src: url('fonts/STIXTwoText-Italic-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
