@@ -42,6 +42,7 @@ require_once dirname(__DIR__) . '/include/gemini_client.php';
 use Gemini\Data\Content;
 use Gemini\Data\GenerationConfig;
 use Gemini\Data\Schema;
+use Gemini\Data\ThinkingConfig;
 use Gemini\Enums\DataType;
 use Gemini\Enums\ResponseMimeType;
 
@@ -57,7 +58,12 @@ try {
 TEXT;
 
     $generationConfig = new GenerationConfig(
+        maxOutputTokens: 512,
         responseMimeType: ResponseMimeType::APPLICATION_JSON,
+        thinkingConfig: new ThinkingConfig(
+            includeThoughts: false,
+            thinkingBudget: 0,
+        ),
         responseSchema: new Schema(
             type: DataType::OBJECT,
             properties: [

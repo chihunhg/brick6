@@ -16,6 +16,8 @@
     ];
     var loadingStatusTimer = null;
     var loadingStatusIndex = 0;
+    var TDK_PROMPT_MAX_CHARS = 6000;
+    var TDK_SECTION_MAX_CHARS = 1200;
 
     function resolveApiUrl() {
         var form = document.getElementById('form1');
@@ -117,7 +119,7 @@
         for (n = 1; n <= 6; n += 1) {
             var content = readFieldText('Contents' + n + '_' + langSlot);
             if (content) {
-                parts.push('內容' + n + '：' + content);
+                parts.push('內容' + n + '：' + truncatePromptText(content, TDK_SECTION_MAX_CHARS));
             }
         }
 
@@ -125,7 +127,18 @@
             return '';
         }
 
-        return '請根據以下網頁資料，產出 SEO 的 title、description、keywords：\n\n' + parts.join('\n');
+        return truncatePromptText(
+            '請根據以下網頁資料，產出 SEO 的 title、description、keywords：\n\n' + parts.join('\n'),
+            TDK_PROMPT_MAX_CHARS
+        );
+    }
+
+    function truncatePromptText(text, maxChars) {
+        var clean = $.trim(String(text || '').replace(/\s+/g, ' '));
+        if (clean.length <= maxChars) {
+            return clean;
+        }
+        return $.trim(clean.substring(0, maxChars)) + '…';
     }
 
     function fillKeywords(langSlot, keywordsStr) {
