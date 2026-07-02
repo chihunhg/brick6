@@ -65,14 +65,14 @@ if (!function_exists('gemini_industry_options')) {
 if (!function_exists('gemini_editor_allowed_html_tags')) {
     /** CKEditor 產文允許的 HTML 標籤（供 strip_tags 與 System Instruction 共用） */
     function gemini_editor_allowed_html_tags(): string {
-        return '<h1><h2><h3><h4><h5><h6><p><br><strong><em><ul><ol><li><blockquote><small><div>'
+        return '<h2><h3><h4><h5><h6><p><br><strong><em><ul><ol><li><blockquote><small><div>'
             . '<table><caption><thead><tbody><tr><th><td>';
     }
 }
 
 if (!function_exists('gemini_editor_allowed_html_tag_names')) {
     function gemini_editor_allowed_html_tag_names(): string {
-        return 'h1, h2, h3, h4, h5, h6, p, br, strong, em, ul, ol, li, blockquote, small, div, '
+        return 'h2, h3, h4, h5, h6, p, br, strong, em, ul, ol, li, blockquote, small, div, '
             . 'table, caption, thead, tbody, tr, th, td';
     }
 }

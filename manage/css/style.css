@@ -169,6 +169,45 @@ ul.fieldHint li{margin-top:0.15rem;}
 @-webkit-keyframes bubble{0%,100%{transform:scale(0)}50%{transform:scale(1)}}
 @keyframes bubble{0%,100%{transform:scale(0)}50%{transform:scale(1)}}
 /* submit-loading END*/
+
+/* !====editor-ai-loading */
+@keyframes editorAiBtnSpin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+.editor-ai-btn-spin {
+	display: inline-block;
+	animation: editorAiBtnSpin 0.85s linear infinite;
+}
+.editor-ai-toolbar.is-busy,
+.seo-tdk-busy-block.is-busy {
+	opacity: 0.85;
+	pointer-events: none;
+}
+.editor-ai-editor-busy {
+	position: relative;
+}
+.editor-ai-editor-busy::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: rgba(255, 255, 255, 0.55);
+	z-index: 5;
+	pointer-events: none;
+	border-radius: var(--radius-xs, 4px);
+}
+.editor-ai-load-wrapp .loading span,
+.seo-tdk-load-wrapp .loading span {
+	max-width: 20em;
+	text-align: center;
+	line-height: 1.5;
+}
+body.editor-ai-page-busy,
+body.seo-tdk-page-busy {
+	cursor: wait;
+}
+/* editor-ai-loading END*/
+
 /*---------------------- 頁面開始 ----------------------*/
 
 /*框架設定*/

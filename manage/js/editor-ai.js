@@ -6,6 +6,15 @@
 
     var DEFAULT_API_URL = '../generate_editor.php';
     var DIALOG_BUSY = 'data-editor-ai-dialog';
+    var LOADING_OVERLAY_ID = 'EditorAi_Loading';
+    var LOADING_STATUS_MESSAGES = [
+        'AI 正在產生內容，請稍候…',
+        '正在分析提示詞與排版格式…',
+        '正在撰寫 HTML 內文…',
+        '即將完成，請勿關閉頁面…'
+    ];
+    var loadingStatusTimer = null;
+    var loadingStatusIndex = 0;
 
     function resolveApiUrl() {
         var form = document.getElementById('form1');
@@ -168,13 +177,82 @@
         }
     }
 
+    function ensureLoadingOverlay() {
+        var $overlay = $('#' + LOADING_OVERLAY_ID);
+        if (!$overlay.length) {
+            $('body').append(
+                '<div class="load-wrapp editor-ai-load-wrapp" id="' + LOADING_OVERLAY_ID + '" style="display:none;"' +
+                ' role="alertdialog" aria-modal="true" aria-labelledby="EditorAi_LoadingMsg" aria-busy="true">' +
+                '<div class="loading">' +
+                '<div class="spinner"><div class="bubble-1"></div><div class="bubble-2"></div></div>' +
+                '<span id="EditorAi_LoadingMsg" class="editor-ai-load-msg">' + LOADING_STATUS_MESSAGES[0] + '</span>' +
+                '</div></div>'
+            );
+            $overlay = $('#' + LOADING_OVERLAY_ID);
+        }
+        return $overlay;
+    }
+
+    function clearLoadingStatusTimer() {
+        if (loadingStatusTimer) {
+            window.clearInterval(loadingStatusTimer);
+            loadingStatusTimer = null;
+        }
+        loadingStatusIndex = 0;
+    }
+
+    function setLoadingOverlay(busy, message) {
+        var $overlay = ensureLoadingOverlay();
+        var $msg = $overlay.find('.editor-ai-load-msg');
+        clearLoadingStatusTimer();
+
+        if (!busy) {
+            $overlay.hide();
+            $('body').removeClass('editor-ai-page-busy');
+            return;
+        }
+
+        if (message) {
+            $msg.text(message);
+        } else {
+            $msg.text(LOADING_STATUS_MESSAGES[0]);
+            loadingStatusTimer = window.setInterval(function () {
+                loadingStatusIndex = (loadingStatusIndex + 1) % LOADING_STATUS_MESSAGES.length;
+                $msg.text(LOADING_STATUS_MESSAGES[loadingStatusIndex]);
+            }, 3200);
+        }
+
+        $overlay.show();
+        $('body').addClass('editor-ai-page-busy');
+    }
+
+    function setToolbarBusy($btn, busy) {
+        var $toolbar = $btn.closest('.editor-ai-toolbar');
+        if (!$toolbar.length) {
+            return;
+        }
+        $toolbar.find('select').prop('disabled', busy);
+        $toolbar.toggleClass('is-busy', busy);
+    }
+
+    function setEditorAreaBusy(editorId, busy) {
+        var $target = $('#cke_' + editorId);
+        if (!$target.length) {
+            $target = $('#' + editorId);
+        }
+        if (!$target.length) {
+            return;
+        }
+        $target.toggleClass('editor-ai-editor-busy', busy);
+    }
+
     function setButtonBusy($btn, busy) {
         if (busy) {
             $btn.prop('disabled', true).attr('aria-busy', 'true');
             if (!$btn.data('editor-ai-label')) {
                 $btn.data('editor-ai-label', $btn.html());
             }
-            $btn.html('<i class="bi bi-hourglass-split" aria-hidden="true"></i> 產生中…');
+            $btn.html('<i class="bi bi-arrow-repeat editor-ai-btn-spin" aria-hidden="true"></i> 產生中…');
             return;
         }
         $btn.prop('disabled', false).removeAttr('aria-busy');
@@ -182,6 +260,13 @@
         if (label) {
             $btn.html(label);
         }
+    }
+
+    function setAiBusyState($btn, editorId, busy) {
+        setButtonBusy($btn, busy);
+        setToolbarBusy($btn, busy);
+        setEditorAreaBusy(editorId, busy);
+        setLoadingOverlay(busy);
     }
 
     function endDialog(el) {
@@ -241,7 +326,7 @@
 
         endDialog(el);
         var $btn = $(el);
-        setButtonBusy($btn, true);
+        setAiBusyState($btn, editorId, true);
 
         var payload = {
             prompt: userPrompt,
@@ -284,7 +369,7 @@
                 window.alert(resolveAjaxErrorMessage(xhr, textStatus, xhr.responseText));
             })
             .always(function () {
-                setButtonBusy($btn, false);
+                setAiBusyState($btn, editorId, false);
             });
     }
 

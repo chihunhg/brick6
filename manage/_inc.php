@@ -369,9 +369,9 @@ if(!empty($SQL_Error)){
 	exit;
 }
 if(!$rs->eof){
-	$Show_List = explode(',',$rs->field('isShow'));
-	$Edit_List = explode(',',$rs->field('isEdit'));
-	$Del_List = explode(',',$rs->field('isDel'));
+	$Show_List = explode(',', (string)($rs->field('isShow') ?? ''));
+	$Edit_List = explode(',', (string)($rs->field('isEdit') ?? ''));
+	$Del_List = explode(',', (string)($rs->field('isDel') ?? ''));
 }
 $rs->close();
 unset($Cond_Array);
