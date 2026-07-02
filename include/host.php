@@ -7,6 +7,155 @@
 // - 路徑與 URL 處理 (safe_request_path, RootURL, RootForder)
 // - 密碼 Pepper
 // ------------------------------------------------------------
+/* ========== 共用路徑／環境 helper ========== */
+if (!function_exists('host_normalize_slash')) {
+    function host_normalize_slash(string $path): string
+    {
+        return str_replace('\\', '/', $path);
+    }
+}
+
+if (!function_exists('host_normalize_dir')) {
+    function host_normalize_dir(string $dir): string
+    {
+        return rtrim(host_normalize_slash($dir), '/');
+    }
+}
+
+if (!function_exists('host_walk_up')) {
+    /**
+     * 自 $startDir 往上走訪；$visitor 回傳非 null 時停止並回傳該值
+     */
+    function host_walk_up(string $startDir, callable $visitor, int $maxDepth = 10): mixed
+    {
+        $dir = host_normalize_dir(realpath($startDir) ?: $startDir);
+
+        for ($i = 0; $i <= $maxDepth; $i++) {
+            $result = $visitor($dir);
+            if ($result !== null) {
+                return $result;
+            }
+            $parent = host_normalize_dir(dirname($dir));
+            if ($parent === '' || $parent === $dir) {
+                break;
+            }
+            $dir = $parent;
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('host_env_raw')) {
+    /** 讀取已設定的環境變數（getenv 未設定回 false，不可直接用 ?? 接預設） */
+    function host_env_raw(string $name): ?string
+    {
+        if (array_key_exists($name, $_ENV)) {
+            $raw = trim((string)$_ENV[$name]);
+            if ($raw !== '') {
+                return $raw;
+            }
+        }
+        $fromGetenv = getenv($name);
+        if ($fromGetenv !== false) {
+            $raw = trim((string)$fromGetenv);
+            if ($raw !== '') {
+                return $raw;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('host_env_assign')) {
+    function host_env_assign(string $name, string $value, bool $onlyIfMissing = false): void
+    {
+        if ($onlyIfMissing) {
+            if (host_env_raw($name) !== null) {
+                return;
+            }
+        } elseif (getenv($name) !== false || array_key_exists($name, $_ENV)) {
+            return;
+        }
+
+        $_ENV[$name] = $value;
+        putenv("$name=$value");
+    }
+}
+
+if (!function_exists('host_env_string')) {
+    function host_env_string(string $name, string $default = ''): string
+    {
+        return host_env_raw($name) ?? $default;
+    }
+}
+
+if (!function_exists('host_env_bool')) {
+    function host_env_bool(string $name, string $default = '1'): bool
+    {
+        $raw = host_env_raw($name);
+        if ($raw === null) {
+            $raw = $default;
+        }
+
+        return in_array(strtolower($raw), ['1', 'true', 'yes', 'on'], true);
+    }
+}
+
+if (!function_exists('host_root_stop_words')) {
+    /** URL 根路徑計算時略過的語系／後台等段（RootURL 用） */
+    function host_root_stop_words(): array
+    {
+        return ['manage', 'en', 'toyota', 'lexus', 'tc', 'tw', 'sc', 'cn', 'jp'];
+    }
+}
+
+if (!function_exists('host_root_folder_stop_words')) {
+    /** RootForder 用（不含舊專案殘留段 toyota/lexus） */
+    function host_root_folder_stop_words(): array
+    {
+        return ['manage', 'en', 'tc', 'tw', 'sc', 'cn', 'jp'];
+    }
+}
+
+if (!function_exists('host_root_path_segments')) {
+    /**
+     * 自 path／URL 取出網站根前綴用的路徑段（略過 manage、語系、檔名）
+     *
+     * @return list<string>
+     */
+    function host_root_path_segments(string $input, ?array $stopWords = null): array
+    {
+        $path = parse_url($input, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            $path = $input;
+        }
+
+        $path = preg_replace('#/+#', '/', host_normalize_slash($path));
+        $segments = array_values(array_filter(
+            explode('/', trim($path, '/')),
+            static fn(string $s): bool => $s !== ''
+        ));
+        $stopWords ??= host_root_stop_words();
+
+        $out = [];
+        $n = count($segments);
+        for ($i = 0; $i < $n; $i++) {
+            $seg = $segments[$i];
+            if (in_array($seg, $stopWords, true)) {
+                break;
+            }
+            if ($i === $n - 1 && str_contains($seg, '.')) {
+                break;
+            }
+            $out[] = $seg;
+        }
+
+        return $out;
+    }
+}
+
 /* ========== Project root auto-detect ========== */
 if (!function_exists('find_project_root')) {
     /**
@@ -16,24 +165,22 @@ if (!function_exists('find_project_root')) {
      * @param int $maxDepth   最多往上幾層（避免無限迴圈）
      */
     function find_project_root(string $startDir, array $markers, int $maxDepth = 10): string {
-        $dir = realpath($startDir) ?: $startDir;
-        $dir = rtrim(str_replace('\\', '/', $dir), '/');
-
-        for ($i = 0; $i <= $maxDepth; $i++) {
+        $found = host_walk_up($startDir, static function (string $dir) use ($markers): ?string {
             foreach ($markers as $m) {
                 $p = $dir . '/' . ltrim($m, '/');
                 if (is_file($p) || is_dir($p)) {
                     return $dir;
                 }
             }
-            $parent = rtrim(str_replace('\\', '/', dirname($dir)), '/');
-            if ($parent === '' || $parent === $dir) break;
-            $dir = $parent;
+            return null;
+        }, $maxDepth);
+
+        if (is_string($found) && $found !== '') {
+            return $found;
         }
 
-        // 找不到就退回到 startDir 的上一層（相對保守）
-        $fallback = rtrim(str_replace('\\', '/', dirname($startDir)), '/');
-        return $fallback !== '' ? $fallback : rtrim(str_replace('\\', '/', $startDir), '/');
+        $fallback = host_normalize_dir(dirname($startDir));
+        return $fallback !== '' ? $fallback : host_normalize_dir($startDir);
     }
 }
 
@@ -78,18 +225,11 @@ if (!function_exists('load_env_text')) {
             }
 
             if ($onlyIfMissing) {
-                $existing = $_ENV[$name] ?? getenv($name);
-                if ($existing !== false && trim((string)$existing) !== '') {
-                    continue;
-                }
-            } else {
-                // 尊重已存在的環境變數與 $_ENV
-                if (getenv($name) !== false) continue;
-                if (array_key_exists($name, $_ENV)) continue;
+                host_env_assign($name, $value, true);
+                continue;
             }
 
-            $_ENV[$name] = $value;
-            putenv("$name=$value");
+            host_env_assign($name, $value, false);
         }
         return true;
     }
@@ -103,10 +243,7 @@ if (!function_exists('load_env_php')) {
         if (!is_array($vars)) return false;
         foreach ($vars as $k => $v) {
             if ($k === '' || $v === '') continue;
-            if (getenv($k) !== false) continue;
-            if (array_key_exists($k, $_ENV)) continue;
-            $_ENV[$k] = (string)$v;
-            putenv($k . '=' . $v);
+            host_env_assign((string)$k, (string)$v, false);
         }
         return true;
     }
@@ -125,17 +262,14 @@ if (!function_exists('find_env_config_dir')) {
      * 自 include/ 往上找 .env（可放在 brick6 上層、網站目錄外，弱掃較不易掃到）
      */
     function find_env_config_dir(string $startDir, int $maxDepth = 12): ?string {
-        $dir = realpath($startDir) ?: $startDir;
-        $dir = rtrim(str_replace('\\', '/', $dir), '/');
         $candidates = ['.env', 'config/env.local.php', 'config/env.local'];
 
-        for ($i = 0; $i <= $maxDepth; $i++) {
+        $found = host_walk_up($startDir, static function (string $dir) use ($candidates): ?string {
             foreach ($candidates as $rel) {
                 if (is_file($dir . '/' . $rel)) {
                     return $dir;
                 }
             }
-            // Plesk：private/.env 不在 httpdocs 內，URL 無法直接存取
             if (is_file($dir . '/private/.env')) {
                 $resolved = realpath($dir . '/private');
                 return $resolved !== false ? $resolved : $dir . '/private';
@@ -143,24 +277,18 @@ if (!function_exists('find_env_config_dir')) {
             $pleskPrivate = $dir . '/../private/.env';
             if (is_file($pleskPrivate)) {
                 $resolved = realpath(dirname($pleskPrivate));
-                if ($resolved !== false) {
-                    return $resolved;
-                }
+                return $resolved !== false ? $resolved : null;
             }
-            $parent = rtrim(str_replace('\\', '/', dirname($dir)), '/');
-            if ($parent === '' || $parent === $dir) {
-                break;
-            }
-            $dir = $parent;
-        }
+            return null;
+        }, $maxDepth);
 
-        return null;
+        return is_string($found) ? $found : null;
     }
 }
 
 if (!function_exists('load_env_from_dir')) {
     function load_env_from_dir(string $dir): bool {
-        $dir = rtrim(str_replace('\\', '/', $dir), '/');
+        $dir = host_normalize_dir($dir);
         return load_env_any($dir . '/.env')
             || load_env_any($dir . '/config/env.local.php')
             || load_env_any($dir . '/config/env.local');
@@ -168,12 +296,12 @@ if (!function_exists('load_env_from_dir')) {
 }
 
 // brick6 專案根（本機 WAMP：.env 可與專案同目錄，例 www/brick6/.env）
-$__brick6Root = rtrim(str_replace('\\', '/', dirname(__DIR__)), '/');
+$__brick6Root = host_normalize_dir(dirname(__DIR__));
 
 if (!function_exists('load_env_from_path_file')) {
     /** 正式機可設 config/env.path.php，指向 private 等非 httpdocs 目錄 */
     function load_env_from_path_file(string $brick6Root): ?string {
-        $pathFile = rtrim(str_replace('\\', '/', $brick6Root), '/') . '/config/env.path.php';
+        $pathFile = host_normalize_dir($brick6Root) . '/config/env.path.php';
         if (!is_file($pathFile)) {
             return null;
         }
@@ -181,7 +309,7 @@ if (!function_exists('load_env_from_path_file')) {
         if (!is_string($envRoot) || trim($envRoot) === '') {
             return null;
         }
-        $envRoot = rtrim(str_replace('\\', '/', trim($envRoot)), '/');
+        $envRoot = host_normalize_dir(trim($envRoot));
         return load_env_from_dir($envRoot) ? $envRoot : null;
     }
 }
@@ -189,7 +317,7 @@ if (!function_exists('load_env_from_path_file')) {
 if (!function_exists('load_env_supplement_dir')) {
     /** 合併補齊上層目錄 .env 中尚未設定的變數（正式機 private/.env 常用） */
     function load_env_supplement_dir(string $dir): bool {
-        $dir = rtrim(str_replace('\\', '/', $dir), '/');
+        $dir = host_normalize_dir($dir);
         $file = $dir . '/.env';
         if (!is_file($file)) {
             return false;
@@ -215,15 +343,15 @@ if (!$__loaded) {
     }
 }
 
-// 3) 再往上找（含 Plesk private/.env；勿把 httpdocs/.env 當對外測試路徑）
+// 3) 再往上找（含 Plesk private/.env）
 if (!$__loaded) {
     $__envDir = find_env_config_dir(__DIR__, 12);
     $__loaded = $__envDir !== null && load_env_from_dir($__envDir);
 }
 
-// 3) 程式根目錄仍以 brick6 為準（composer.json）
+// 4) 程式根目錄仍以 brick6 為準（composer.json）
 $__base = find_project_root(__DIR__, ['composer.json', '.git'], 12);
-$__base = rtrim(str_replace('\\', '/', $__base), '/');
+$__base = host_normalize_dir($__base);
 if (!is_file($__base . '/composer.json') && !is_dir($__base . '/.git')) {
     $__base = $__brick6Root;
 }
@@ -236,7 +364,7 @@ if (!$__loaded) {
     }
 }
 
-// 4) 合併補齊：brick6/.env 已載入但 GEMINI 等金鑰在上層 private/.env（tsg5 常見佈局）
+// 5) 合併補齊：brick6/.env 已載入但 GEMINI 等金鑰在上層 private/.env（tsg5 常見佈局）
 $__brick6Parent = dirname($__brick6Root);
 if ($__brick6Parent !== $__brick6Root) {
     load_env_supplement_dir($__brick6Parent);
@@ -264,7 +392,7 @@ if (!function_exists('app_env_bootstrap_ok')) {
 /* ========== 依 APP_ENV 設定 PHP 錯誤顯示 ========== */
 if (!function_exists('app_env')) {
     function app_env(): string {
-        return strtolower(trim((string)($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?? 'production')));
+        return strtolower(host_env_string('APP_ENV', 'production'));
     }
 }
 if (!function_exists('app_is_production')) {
@@ -308,7 +436,7 @@ if (!function_exists('app_show_bootstrap_error')) {
 /* ========== Host utilities ========== */
 if (!function_exists('env_list')) {
     function env_list(string $key): array {
-        $raw = $_ENV[$key] ?? '';
+        $raw = host_env_string($key);
         if ($raw === '') return [];
         $parts = preg_split('/[,\s;]+/u', $raw, -1, PREG_SPLIT_NO_EMPTY);
         return $parts ?: [];
@@ -385,7 +513,7 @@ if (!function_exists('is_trusted_proxy')) {
 
 /* ========== Domain / scheme ========== */
 $trustedFromEnv = normalize_hostlist(env_list('TRUSTED_DOMAINS'));
-$appDomainEnv   = normalize_hostlist([$_ENV['APP_DOMAIN'] ?? '']);
+$appDomainEnv   = normalize_hostlist([host_env_string('APP_DOMAIN')]);
 if (empty($trustedFromEnv)) {
     $currentHost = strtolower(parse_url('//' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST) ?? '');
     $trustedFromEnv = normalize_hostlist([$currentHost ?: 'localhost']);
@@ -395,8 +523,7 @@ if (!in_array($APP_DOMAIN, $trustedFromEnv, true)) {
     array_unshift($trustedFromEnv, $APP_DOMAIN);
     $trustedFromEnv = array_values(array_unique($trustedFromEnv));
 }
-$FORCE_HTTPS = $_ENV['FORCE_HTTPS'] ?? '1';
-$FORCE_HTTPS = in_array(strtolower((string)$FORCE_HTTPS), ['1','true','yes','on'], true);
+$FORCE_HTTPS = host_env_bool('FORCE_HTTPS', '1');
 
 if (!defined('TRUSTED_DOMAINS')) define('TRUSTED_DOMAINS', $trustedFromEnv);
 if (!defined('APP_DOMAIN'))      define('APP_DOMAIN',      $APP_DOMAIN);
@@ -516,75 +643,23 @@ if (!function_exists('WorkForder')) {
 
 if (!function_exists('RootForder')) {
     function RootForder(string $str): string {
-        // 1) 只取 URL 的 path（如果不是 URL，就當作原字串）
-        $path = parse_url($str, PHP_URL_PATH);
-        if ($path === null || $path === false || $path === '') {
-            $path = $str;
-        }
-
-        // 2) 標準化分隔符與重複斜線
-        $path = str_replace('\\', '/', $path);
-        $path = preg_replace('#/+#', '/', $path);
-
-        // 3) 拆段
-        $segments = array_values(array_filter(explode('/', trim($path, '/')), static fn($s) => $s !== ''));
-
-        // 4) 依規則累積保留的段
-        $stop_words = ['manage', 'en', 'tc', 'tw', 'sc', 'cn', 'jp'];
-        $out = [];
-        $n = count($segments);
-        for ($i = 0; $i < $n; $i++) {
-            $seg = $segments[$i];
-
-            // 檔名：最後一段且含 '.' 視為檔名，停止（不納入）
-            $isLast = ($i === $n - 1);
-            if ($isLast && strpos($seg, '.') !== false) {
-                break;
-            }
-
-            // 遇到停用詞就停止（不納入）
-            if (in_array($seg, $stop_words, true)) {
-                break;
-            }
-
-            $out[] = $seg;
-        }
-
-        // 5) 重建路徑（至少為 "/"）
+        $out = host_root_path_segments($str, host_root_folder_stop_words());
         $res = '/' . implode('/', $out);
-        if ($res !== '/') $res .= '/';
 
-        return $res;
+        return $res === '/' ? '/' : $res . '/';
     }
 }
 
 if (!function_exists('RootURL')) {
     function RootURL(string $relativePath = '/'): string {
-        $host = current_host();
-        $scheme = current_scheme();
-
-        // 若傳入的是完整 URL，就只取 PATH；否則用相對/絕對路徑
         $pathIn = parse_url($relativePath, PHP_URL_SCHEME)
             ? (parse_url($relativePath, PHP_URL_PATH) ?? '/')
             : $relativePath;
 
-        $pathIn = preg_replace('#/+#', '/', parse_url($pathIn, PHP_URL_PATH) ?? '/');
-
-        $segments = array_values(array_filter(explode('/', trim($pathIn, '/'))));
-        $stopWords = ['manage','en','toyota','lexus','tc','tw','sc','cn','jp'];
-        $keep = [];
-        $n = count($segments);
-        for ($i = 0; $i < $n; $i++) {
-            $seg = $segments[$i];
-            if (in_array($seg, $stopWords, true)) break;
-            if ($i === $n - 1 && strpos($seg, '.') !== false) break;
-            $keep[] = $seg;
-        }
-
+        $keep = host_root_path_segments((string)$pathIn);
         $path = '/' . implode('/', $keep) . '/';
-        $path = preg_replace('#/+#', '/', $path);
 
-        return $scheme . '://' . $host . $path;
+        return current_scheme() . '://' . current_host() . preg_replace('#/+#', '/', $path);
     }
 }
 
@@ -705,7 +780,7 @@ if (!defined('UPLOAD_BASE')) {
 /* ========== 密碼 Pepper ========== */
 if (!function_exists('get_password_pepper')) {
     function get_password_pepper(): string {
-        $pepper = $_ENV['PASSWORD_PEPPER'] ?? getenv('PASSWORD_PEPPER') ?? '';
+        $pepper = host_env_string('PASSWORD_PEPPER');
         if ($pepper === '') throw new RuntimeException('PASSWORD_PEPPER is not set');
         return $pepper;
     }
