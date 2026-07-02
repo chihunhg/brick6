@@ -63,7 +63,7 @@ $uploadDirInfo = crud_upload_dir();
 $upload_foder  = $uploadDirInfo['dir'];
 $MSG          .= $uploadDirInfo['error'];
 
-$photoSlots = crud_resolve_photo_upload_slots($filter_array, $file_array, 1);
+$photoSlots = crud_resolve_photo_upload_slots($filter_array, $file_array, (int)($detailConfig['img_slot_max'] ?? 1));
 $ForderName    = $ForderName ?? 'dbclass2_';
 $config_total  = $photoSlots['config_total'];
 $size_bytes    = (int)($size_bytes ?? 2000 * 1024);

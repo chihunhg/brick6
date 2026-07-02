@@ -49,7 +49,7 @@ $csrf_token = $formCtx['csrf_token'];
 $breadcrumbs = $formCtx['breadcrumbs'];
 $layout_page_title = $formCtx['layout_page_title'];
 
-$addPhotoSlots = max(1, (int)($detailConfig['add_photo_slots'] ?? 10));
+$addPhotoSlots = max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['add_photo_slots'] ?? 10));
 
 require_once '_detail.php';
 

@@ -7,7 +7,13 @@ $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $showSortField = (bool)($detailConfig['has_sort'] ?? true);
 $showInterviewField = manage_module_show_detail_field('interview');
 $showListField = manage_module_show_detail_field('list');
-$managePhotoSlotMax = $showListField ? 1 : 0;
+$__imgSlotFallback = 1;
+$__imgSlotImageOnly = true;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
+if (!$showListField) {
+    $managePhotoSlotMax = 0;
+    $managePhotoSlotStart = 0;
+}
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
 $Contents = is_array($Contents ?? null) ? $Contents : [];
 

@@ -5,10 +5,14 @@ $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $showHomeField = manage_module_show_detail_field('home');
 $showInterviewField = manage_module_show_detail_field('interview');
 $showListField = manage_module_show_detail_field('list');
-/** FAQ：僅列表圖（Photo1）；未啟用列表圖時隱藏整個內容區塊 */
-$managePhotoContentSlotEnd = 1;
-$managePhotoSlotMax = $showListField ? 1 : 0;
-$managePhotoSlotStart = $showListField ? 1 : 0;
+$detailConfig = is_array($detailConfig ?? null) ? $detailConfig : (is_file(__DIR__ . '/_config.php') ? require __DIR__ . '/_config.php' : []);
+$__imgSlotFallback = 1;
+$__imgSlotImageOnly = true;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
+if (!$showListField) {
+    $managePhotoSlotMax = 0;
+    $managePhotoSlotStart = 0;
+}
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
 
 ?>

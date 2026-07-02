@@ -1,20 +1,21 @@
 <?php
 declare(strict_types=1);
-
 /**
  * Youtube 影音（video / video_img / video_lang）
  */
 return [
-    'master'         => 'video',
-    'img'            => 'video_img',
-    'lang'           => 'video_lang',
-    'msg'            => '',
-    'link'           => '',
-    'fk'             => 'Video_PKey',
-    'module_pk_col'  => 'Module_PKey',
-    'csrf'           => 'video_addin',
-    'list_csrf'      => 'video_list',
-    'list_file'      => 'list.php',
-    'forder_prefix'  => 'video_',
-    'photo_slots'    => 1,
+    'master'        => 'video',          // 主檔資料表
+    'img'           => 'video_img',      // 圖片/檔案子表（無則留空）
+    'lang'          => 'video_lang',     // 語系子表（無則留空）
+    'msg'           => '',               // 內文子表（CKEditor，無則留空）
+    'link'          => '',               // 連結/關聯子表（無則留空）
+    'fk'            => 'Video_PKey',     // 子表外鍵欄位（指向主檔 PKey）
+    'module_pk_col' => 'Module_PKey',    // 主檔所屬模組欄位
+    'csrf'          => 'video_addin',    // addin 表單 CSRF key
+    'has_sort'      => true,             // 是否顯示/儲存順序欄位
+    'img_slot_max'  => 1,                // 圖片/檔案欄位總數（Photo1～N）
+    'img_file_from' => 2,                // 檔案欄起始序號（此欄起為檔案上傳）
+    'forder_prefix' => 'video_',         // 上傳檔案目錄前綴
+    'list_csrf'     => 'video_list',     // 列表頁 CSRF key
+    'list_file'     => 'list.php',       // 列表頁檔名
 ];

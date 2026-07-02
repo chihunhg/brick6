@@ -5,11 +5,11 @@ $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $showHomeField = manage_module_show_detail_field('home');
 $showInterviewField = manage_module_show_detail_field('interview');
 $showListField = manage_module_show_detail_field('list');
-/** 內容區 Photo2–PhotoN 最大編號；與下方 type="file" 槽位一致 */
-$managePhotoContentSlotEnd = 7;
-$managePhotoSlotMax = $managePhotoContentSlotEnd;
-$managePhotoSlotStart = $showListField ? 1 : 2;
+$detailConfig = is_array($detailConfig ?? null) ? $detailConfig : (is_file(__DIR__ . '/_config.php') ? require __DIR__ . '/_config.php' : []);
+$__imgSlotFallback = 7;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
+$Ext = is_array($Ext ?? null) ? $Ext : [];
 
 ?>
 <!DOCTYPE html>
@@ -20,9 +20,15 @@ $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
     <?php require_once '../_in_javascript.php'; ?>
 <?php echo script_open(); ?>
 $(function() {
-	<?php manage_echo_photo_delete_init_script(
-		manage_photo_delete_slots_for_range($PhotoS, (int)$managePhotoSlotStart, (int)$managePhotoSlotMax)
-	); ?>
+	<?php
+    manage_echo_detail_img_slot_delete_scripts(
+        $PhotoS,
+        (int)$managePhotoSlotStart,
+        (int)$manageImageSlotEnd,
+        (int)$manageFileSlotFrom,
+        (int)$managePhotoSlotMax
+    );
+	?>
 	// jquery.maxlength 外掛在部分站台未部署，缺少時直接略過避免報錯
 	if ($.fn && typeof $.fn.maxlength === 'function') {
 	<?php if ($showInterviewField) { ?>
@@ -334,6 +340,7 @@ function fieldCheck0(theForm) {
                                     </div>
                                 </div>
                                 <?php } ?>
+                                <?php require dirname(__DIR__) . '/_detail_file_slots_section.php'; ?>
                                 <div class="notes">
                                     <ul class="notes__list">
                                         <li>上圖下文：寬1140px，高不限。</li>

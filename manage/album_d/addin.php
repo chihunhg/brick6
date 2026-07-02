@@ -16,7 +16,7 @@ require_once '_form_data.php';
 
 
 
-$addSlots = max(1, (int)($detailConfig['add_photo_slots'] ?? 10));
+$addSlots = max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['add_photo_slots'] ?? 10));
 
 
 

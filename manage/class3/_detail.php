@@ -5,7 +5,14 @@ $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $showHomeField = manage_module_show_detail_field('home');
 $showInterviewField = manage_module_show_detail_field('interview');
 $showListField = manage_module_show_detail_field('list_class');
-$managePhotoSlotMax = $showListField ? 1 : 0;
+$detailConfig = is_array($detailConfig ?? null) ? $detailConfig : (is_file(__DIR__ . '/_config.php') ? require __DIR__ . '/_config.php' : []);
+$__imgSlotFallback = 1;
+$__imgSlotImageOnly = true;
+$__imgSlotShowListField = $showListField;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
+if (!$showListField) {
+    $managePhotoSlotMax = 0;
+}
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
 
 ?>

@@ -1610,7 +1610,7 @@ if (!function_exists('frontend_content_layout_value')) {
     /**
      * 內容區塊呈現方式（1上圖下文 2左圖右文 3右圖左文 4下圖上文）
      *
-     * @param array<int,int> $layouts 內容槽位 1–6 => 1–4
+     * @param array<int,int> $layouts 內容欄位 1–6 => 1–4
      */
     function frontend_content_layout_value(int $contentSlot, array $layouts = []): int
     {
@@ -1636,8 +1636,8 @@ if (!function_exists('frontend_content_layout_css')) {
 
 if (!function_exists('frontend_fetch_content_layouts')) {
     /**
-     * 內容區塊呈現方式（內容槽位 1–6）
-     * 優先 news_msg.imgShow；其次 news_img.intType（img Sort = 內容槽位 + 1）
+     * 內容區塊呈現方式（內容欄位 1–6）
+     * 優先 news_msg.imgShow；其次 news_img.intType（img Sort = 內容欄位 + 1）
      *
      * @return array<int,int>
      */
@@ -1791,7 +1791,7 @@ if (!function_exists('frontend_fetch_detail_links')) {
 
 if (!function_exists('frontend_fetch_product_gallery_images')) {
     /**
-     * 產品明細圖（product_img Sort 2–6，排除 intType=2 檔案槽）
+     * 產品明細圖（product_img Sort 2–6，排除 intType=2 檔案欄）
      *
      * @return list<array{sort:int,url:string,thumb:string,alt:string}>
      */

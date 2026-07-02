@@ -41,7 +41,9 @@ if ($modulePKey <= 0) {
 
 $returnUrl = crud_addin_return_url($formPKey);
 $showListField = manage_module_show_detail_field('list');
-$photoFallback = $showListField ? max(1, (int)($detailConfig['photo_slots'] ?? 1)) : 0;
+$photoFallback = $showListField
+    ? max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['photo_slots'] ?? 1))
+    : 0;
 
 $MSG = '';
 if (safe_int($filter_array['Sort'] ?? 0) < 0) {

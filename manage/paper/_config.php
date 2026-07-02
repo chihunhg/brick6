@@ -1,24 +1,20 @@
 <?php
 declare(strict_types=1);
 /**
- * class1 模組資料表設定（複製到其他模組時改這裡即可）
- *
- * master  : 主檔
- * img     : 圖片子表（無則留空字串，載入時會略過）
- * lang    : 語系子表
- * msg     : 內文子表
- * link    : 連結子表
- * fk      : 子表外鍵欄位名稱（對應主檔 PKey）
- * csrf    : addin.php 使用的 CSRF key
+ * paper 模組資料表設定（class1 範本，複製到其他模組時改這裡即可）
  */
 return [
-    'master' => 'paper',
-    'img'    => 'paper_img',
-    'lang'   => 'paper_lang',
-    'msg'    => 'paper_msg',
-    'link'   => 'paper_link',
-    'fk'            => 'Paper_PKey',
-    'module_pk_col' => 'Module_PKey',
-    'csrf'          => 'paper_addin',
-    'tag_relation_parent_col' => 'Paper_PKey',
+    'master'                  => 'paper',        // 主檔資料表
+    'img'                     => 'paper_img',    // 圖片/檔案子表（無則留空）
+    'lang'                    => 'paper_lang',   // 語系子表（無則留空）
+    'msg'                     => 'paper_msg',    // 內文子表（CKEditor，無則留空）
+    'link'                    => 'paper_link',   // 連結/關聯子表（無則留空）
+    'fk'                      => 'Paper_PKey',   // 子表外鍵欄位（指向主檔 PKey）
+    'module_pk_col'           => 'Module_PKey',  // 主檔所屬模組欄位
+    'csrf'                    => 'paper_addin',  // addin 表單 CSRF key
+    'has_sort'                => true,             // 是否顯示/儲存順序欄位
+    'img_slot_max'            => 7,             // 圖片欄位總數（Photo1 列表圖 + Photo2～N 內容圖）
+    'img_file_from'           => 8,             // 檔案欄位起始（paper 無檔案欄位，設 max+1 即可）
+    'forder_prefix'           => 'paper_',       // 上傳檔案目錄前綴
+    'tag_relation_parent_col' => 'Paper_PKey',   // 標籤關聯父欄位名
 ];

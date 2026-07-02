@@ -53,55 +53,22 @@ $MSG .= crud_validate_lang_show_strname($filter_array);
 $MSG .= crud_addin_validate_strdate($filter_array);
 $MSG .= crud_addin_validate_layer_classes($filter_array, $Layer);
 
-$photoSlots = crud_resolve_photo_upload_slots($filter_array, $file_array, 7);
+$photoSlots = crud_resolve_photo_upload_slots($filter_array, $file_array, (int)($detailConfig['img_slot_max'] ?? 7));
 $MAX_CONTENT_BYTES = $photoSlots['slot_max'] * 1024 * 1024;
 $b64 = crud_decode_b64_content_multilang($filter_array, $MAX_CONTENT_BYTES, 6);
 $MSG .= $b64['error'];
 $DecodedContents = $b64['contents'];
 
 /* ── 上傳 ───────────────────────────────────────────── */
-$uploadDirInfo = crud_upload_dir();
-$upload_foder  = $uploadDirInfo['dir'];
-$MSG          .= $uploadDirInfo['error'];
-
-$ForderName    = (string)($detailConfig['forder_prefix'] ?? 'company_');
-$config_total  = $photoSlots['config_total'];
-$size_bytes    = (int)($size_bytes ?? 2000 * 1024);
-$indices       = $photoSlots['indices'];
-$maxSlots      = $photoSlots['max_slots'];
-
-$Photo  = [];
-$PhotoW = [];
-$PhotoH = [];
-$PhotoM = [];
-
-for ($i = 1; $i <= $maxSlots; $i++) {
-    if (isset($filter_array['PhotoM' . $i])) {
-        $PhotoM[$i] = (string)$filter_array['PhotoM' . $i];
-    }
-}
-
-$uploadResult = crud_upload_file_slots($file_array, $upload_foder, $indices, [
-    'forder_prefix' => $ForderName,
-    'size_bytes'    => $size_bytes,
-    'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
-    'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
-    'field_prefix'  => 'Photo',
-    'resize_thumb'  => true,
-]);
-
-foreach ((array)($uploadResult['photos'] ?? []) as $idx => $filename) {
-    $Photo[(int)$idx] = (string)$filename;
-}
-foreach ((array)($uploadResult['photoW'] ?? []) as $idx => $w) {
-    $PhotoW[(int)$idx] = (int)$w;
-}
-foreach ((array)($uploadResult['photoH'] ?? []) as $idx => $h) {
-    $PhotoH[(int)$idx] = (int)$h;
-}
-
-$MSG      .= (string)($uploadResult['messages'] ?? '');
-$forderVal = rtrim((string)($uploadResult['monthdir'] ?? date('Ym')), "\\/");
+$uploadPack = crud_addin_process_img_file_uploads($detailConfig, $filter_array, $file_array, 7);
+$MSG         .= $uploadPack['messages'];
+$upload_foder = $uploadPack['upload_folder'];
+$maxSlots     = $uploadPack['maxSlots'];
+$Photo        = $uploadPack['Photo'];
+$PhotoW       = $uploadPack['PhotoW'];
+$PhotoH       = $uploadPack['PhotoH'];
+$PhotoM       = $uploadPack['PhotoM'];
+$forderVal    = $uploadPack['forderVal'];
 
 if ($MSG !== '') {
     crud_form_error_redirect($MSG, $returnUrl);

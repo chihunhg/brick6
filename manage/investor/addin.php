@@ -74,7 +74,7 @@ for ($i = 1; $i <= 10; $i++) {
     }
 }
 
-// 內容圖（槽 2–7）
+// 內容圖（欄 2–7）
 if ($showType === 2) {
     $imgIndices = range(2, 7);
     $imgResult = crud_upload_file_slots($file_array, $upload_foder, $imgIndices, [
@@ -98,7 +98,7 @@ if ($showType === 2) {
     $forderVal = rtrim((string)($imgResult['monthdir'] ?? $forderVal), "\\/");
 }
 
-// 檔案模式（槽 8–10）
+// 檔案模式（欄 8–10）
 if ($showType === 3) {
     $fileIndices = [];
     for ($i = 1; $i <= min(3, $langCount); $i++) {

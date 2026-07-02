@@ -21,6 +21,13 @@ $FKName     = $tables['fk'];
 $moduleCol  = (string)($tables['module_pk_col'] ?? 'Module_PKey');
 $hasSort    = (bool)($detailConfig['has_sort'] ?? true);
 $maxSlots   = (int)($detailConfig['img_slot_max'] ?? 8);
+$fileFrom   = (int)($detailConfig['img_file_from'] ?? 7);
+if ($fileFrom < 1) {
+    $fileFrom = 1;
+}
+if ($fileFrom > ($maxSlots + 1)) {
+    $fileFrom = $maxSlots + 1;
+}
 
 $csrfKey = (string)($detailConfig['csrf'] ?? 'product_addin');
 crud_csrf_verify_form($csrfKey);
@@ -59,60 +66,14 @@ $b64 = crud_decode_b64_content_multilang($filter_array, $MAX_CONTENT_BYTES, 6);
 $MSG .= $b64['error'];
 $DecodedContents = $b64['contents'];
 
-$uploadDirInfo = crud_upload_dir();
-$upload_foder  = $uploadDirInfo['dir'];
-$MSG          .= $uploadDirInfo['error'];
-
-$ForderName   = (string)($detailConfig['forder_prefix'] ?? 'product_');
-$size_bytes   = (int)($size_bytes ?? 2000 * 1024);
-$file_size    = (int)($file_size ?? 6000 * 1024);
-
-$Photo  = [];
-$PhotoW = [];
-$PhotoH = [];
-$PhotoM = [];
-
-for ($i = 1; $i <= $maxSlots; $i++) {
-    if (isset($filter_array['PhotoM' . $i])) {
-        $PhotoM[$i] = (string)$filter_array['PhotoM' . $i];
-    }
-}
-
-$imageIndices = range(1, min(6, $maxSlots));
-$fileIndices  = range(7, $maxSlots);
-
-$uploadResultImg = crud_upload_file_slots($file_array, $upload_foder, $imageIndices, [
-    'forder_prefix' => $ForderName,
-    'size_bytes'    => $size_bytes,
-    'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
-    'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
-    'field_prefix'  => 'Photo',
-    'resize_thumb'  => true,
-]);
-
-$uploadResultFile = crud_upload_file_slots($file_array, $upload_foder, $fileIndices, [
-    'forder_prefix' => $ForderName,
-    'size_bytes'    => $file_size,
-    'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'],
-    'allowed_mimes' => [],
-    'field_prefix'  => 'Photo',
-    'resize_thumb'  => false,
-]);
-
-foreach ([$uploadResultImg, $uploadResultFile] as $uploadResult) {
-    foreach ((array)($uploadResult['photos'] ?? []) as $idx => $filename) {
-        $Photo[(int)$idx] = (string)$filename;
-    }
-    foreach ((array)($uploadResult['photoW'] ?? []) as $idx => $w) {
-        $PhotoW[(int)$idx] = (int)$w;
-    }
-    foreach ((array)($uploadResult['photoH'] ?? []) as $idx => $h) {
-        $PhotoH[(int)$idx] = (int)$h;
-    }
-    $MSG .= (string)($uploadResult['messages'] ?? '');
-}
-
-$forderVal = rtrim((string)($uploadResultFile['monthdir'] ?? $uploadResultImg['monthdir'] ?? date('Ym')), "\\/");
+$uploadPack = crud_addin_process_img_file_uploads($detailConfig, $filter_array, $file_array, 8);
+$MSG         .= $uploadPack['messages'];
+$upload_foder = $uploadPack['upload_folder'];
+$Photo        = $uploadPack['Photo'];
+$PhotoW       = $uploadPack['PhotoW'];
+$PhotoH       = $uploadPack['PhotoH'];
+$PhotoM       = $uploadPack['PhotoM'];
+$forderVal    = $uploadPack['forderVal'];
 
 if ($MSG !== '') {
     crud_form_error_redirect($MSG, $returnUrl);

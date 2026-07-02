@@ -11,7 +11,11 @@ $classLabel  = (string)($Class_Name[1] ?? '分類');
 $layer       = (int)($Layer ?? 1);
 $extLower    = strtolower((string)($Ext[1] ?? ''));
 $layout_page_title = (string)($layout_page_title ?? ($isAdd ? '新增' : '編輯'));
-$managePhotoSlotMax = 1;
+$detailConfig = is_array($detailConfig ?? null) ? $detailConfig : (is_file(__DIR__ . '/_config.php') ? require __DIR__ . '/_config.php' : []);
+$__imgSlotFallback = 1;
+$__imgSlotImageOnly = true;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
+$managePhotoSlotMax = (int)$manageImageSlotEnd;
 ?>
 <?php require_once '../_layout_head.php'; ?>
 <?php echo script_open(); ?>

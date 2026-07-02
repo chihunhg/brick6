@@ -135,7 +135,7 @@ if (!function_exists('album_d_addin_save')) {
         array $detailConfig
     ): array {
         $table_name = (string)($detailConfig['master'] ?? 'album_img');
-        $addSlots = max(1, (int)($detailConfig['add_photo_slots'] ?? 10));
+        $addSlots = max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['add_photo_slots'] ?? 10));
         $albumPKey = (int)($parent['Album_PKey'] ?? 0);
         $existingRow = ($formPKey > 0 && $albumPKey > 0)
             ? album_d_fetch_row_for_edit($formPKey, $albumPKey)

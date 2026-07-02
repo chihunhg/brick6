@@ -20,7 +20,7 @@ $FKName     = $tables['fk'];
 $moduleCol  = (string)($tables['module_pk_col'] ?? 'Module_PKey');
 $hasSort       = (bool)($detailConfig['has_sort'] ?? true);
 $contentBlocks = max(1, (int)($detailConfig['content_blocks'] ?? 1));
-$photoFallback = max(1, (int)($detailConfig['photo_slots'] ?? 1));
+$photoFallback = max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['photo_slots'] ?? 1));
 
 $csrfKey = (string)($detailConfig['csrf'] ?? 'faq_addin');
 crud_csrf_verify_form($csrfKey);

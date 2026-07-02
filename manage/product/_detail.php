@@ -5,8 +5,9 @@ $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $showHomeField = manage_module_show_detail_field('home');
 $showInterviewField = manage_module_show_detail_field('interview');
 $showListField = manage_module_show_detail_field('list');
-$managePhotoSlotMax = 8;
-$managePhotoSlotStart = $showListField ? 1 : 2;
+$detailConfig = is_array($detailConfig ?? null) ? $detailConfig : (is_file(__DIR__ . '/_config.php') ? require __DIR__ . '/_config.php' : []);
+$__imgSlotFallback = 8;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
 $Ext = is_array($Ext ?? null) ? $Ext : [];
 $productRelations = is_array($productRelations ?? null) ? $productRelations : [];
@@ -27,13 +28,13 @@ $formFlashErrors = function_exists('manage_pull_form_flash_errors')
 <?php echo script_open(); ?>
 $(function() {
 	<?php
-	manage_echo_photo_delete_init_script(
-		manage_photo_delete_slots_for_range($PhotoS, (int)$managePhotoSlotStart, min(6, (int)$managePhotoSlotMax))
-	);
-	manage_echo_photo_delete_init_script(
-		manage_photo_delete_slots_for_range($PhotoS, 7, (int)$managePhotoSlotMax),
-		'file'
-	);
+    manage_echo_detail_img_slot_delete_scripts(
+        $PhotoS,
+        (int)$managePhotoSlotStart,
+        (int)$manageImageSlotEnd,
+        (int)$manageFileSlotFrom,
+        (int)$managePhotoSlotMax
+    );
 	?>
 	// jquery.maxlength 外掛在部分站台未部署，缺少時直接略過避免報錯
 	if ($.fn && typeof $.fn.maxlength === 'function') {
@@ -337,10 +338,11 @@ function fieldCheck0(theForm) {
                                     </div>
                                 </div>
                                 <?php } ?>
+                                <?php if ($manageImageSlotEnd >= max(2, (int)$managePhotoSlotStart)) { ?>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">圖片</label>
                                     <div class="col--10 inputGroup">
-                                        <?php for ($n = 2; $n <= 6; $n++) {
+                                        <?php for ($n = max(2, (int)$managePhotoSlotStart); $n <= $manageImageSlotEnd; $n++) {
                                             $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
                                             manage_render_upload_image_slot($n, $isAdd, $photoPath, (int)($PhotoS[$n] ?? 0));
                                         } ?>
@@ -351,10 +353,12 @@ function fieldCheck0(theForm) {
                                         </div>
                                     </div>
                                 </div>
+                                <?php } ?>
+                                <?php if ($manageFileSlotFrom <= $managePhotoSlotMax) { ?>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">檔案</label>
                                     <div class="col--10 inputGroup">
-                                        <?php for ($n = 7; $n <= 8; $n++) {
+                                        <?php for ($n = $manageFileSlotFrom; $n <= $managePhotoSlotMax; $n++) {
                                             $filePath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
                                             $ext = (string)($Ext[$n] ?? manage_file_ext_from_path($filePath));
                                             manage_render_upload_document_slot(
@@ -372,6 +376,7 @@ function fieldCheck0(theForm) {
                                         </div>
                                     </div>
                                 </div>
+                                <?php } ?>
                             </div>
                         </article>
 

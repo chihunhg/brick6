@@ -3,13 +3,14 @@
 $classLabel = (string)($Class_Name[1] ?? '類別');
 $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $langTotal = investor_lang_count();
+$detailConfig = is_array($detailConfig ?? null) ? $detailConfig : (is_file(__DIR__ . '/_config.php') ? require __DIR__ . '/_config.php' : []);
+$__imgSlotFallback = 10;
+require dirname(__DIR__) . '/_detail_img_slot_init.php';
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
 $Ext = is_array($Ext ?? null) ? $Ext : [];
 $show_type = (int)($show_type ?? 2);
 $show_year = (int)($show_year ?? 0);
 $year = (int)($year ?? 0);
-$managePhotoContentSlotEnd = 7;
-$managePhotoSlotMax = 10;
 
 ?>
 <!DOCTYPE html>
@@ -65,16 +66,13 @@ $(function() {
     }
 
     <?php
-    manage_echo_photo_delete_init_script(
-        manage_photo_delete_slots_for_range($PhotoS, 2, (int)$managePhotoContentSlotEnd)
+    manage_echo_detail_img_slot_delete_scripts(
+        $PhotoS,
+        2,
+        (int)$managePhotoContentSlotEnd,
+        (int)$manageFileSlotFrom,
+        (int)$managePhotoSlotMax
     );
-    $fileDeleteSlots = [];
-    for ($fs = 8; $fs <= 10; $fs++) {
-        if (!empty($PhotoS[$fs])) {
-            $fileDeleteSlots[$fs] = (int)$PhotoS[$fs];
-        }
-    }
-    manage_echo_photo_delete_init_script($fileDeleteSlots, 'file');
     ?>
 });
 

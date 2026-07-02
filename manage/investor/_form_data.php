@@ -35,7 +35,7 @@ if (!function_exists('investor_show_type_label')) {
 }
 
 if (!function_exists('investor_file_slot_for_lang')) {
-    /** 語系對應檔案上傳槽（Sort 8/9/10） */
+    /** 語系對應檔案上傳欄（Sort 8/9/10） */
     function investor_file_slot_for_lang(int $langIndex): int {
         $cfg = function_exists('manage_detail_tables') ? manage_detail_tables() : [];
         $map = (array)($cfg['file_lang_slots'] ?? [1 => 8, 2 => 9, 3 => 10]);

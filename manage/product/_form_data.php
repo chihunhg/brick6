@@ -48,8 +48,11 @@ if (!function_exists('class1_detail_init_defaults')) {
             'productRelations' => [],
             'Accessory_Total' => 0,
         ];
-        for ($s = 1; $s <= 8; $s++) {
-            $GLOBALS['class1_form_vars']['ImgType'][$s] = $s >= 7 ? 2 : 1;
+        $slotCfg = product_img_slot_config();
+        $maxSlots = $slotCfg['max'];
+        $fileFrom = $slotCfg['file_from'];
+        for ($s = 1; $s <= $maxSlots; $s++) {
+            $GLOBALS['class1_form_vars']['ImgType'][$s] = $s >= $fileFrom ? 2 : 1;
             $GLOBALS['class1_form_vars']['Ext'][$s] = '';
         }
 
@@ -156,15 +159,23 @@ if (!function_exists('class1_detail_load_children')) {
             : 6;
 
         if (($tables['img'] ?? '') !== '') {
-            $imgData = product_load_img_slots_data((string)$tables['img'], $fk, $pkey);
+            $slotCfg = product_img_slot_config();
+            $imgData = product_load_img_slots_data(
+                (string)$tables['img'],
+                $fk,
+                $pkey,
+                $slotCfg['max'],
+                $slotCfg['file_from']
+            );
             $v['Photo']   = $imgData['Photo'];
             $v['PhotoS']  = $imgData['PhotoS'];
             $v['PhotoM']  = $imgData['PhotoM'];
             $v['ImgType'] = $imgData['intType'];
             $v['Ext']     = $imgData['Ext'];
         } else {
-            for ($s = 1; $s <= 8; $s++) {
-                $v['ImgType'][$s] = $s >= 7 ? 2 : 1;
+            $slotCfg = product_img_slot_config();
+            for ($s = 1; $s <= $slotCfg['max']; $s++) {
+                $v['ImgType'][$s] = $s >= $slotCfg['file_from'] ? 2 : 1;
                 $v['Ext'][$s] = '';
             }
         }
@@ -345,7 +356,13 @@ if (!function_exists('product_load_img_slots_data')) {
      *
      * @return array{Photo: array<int,string>, PhotoS: array<int,int>, PhotoM: array<int,string>, intType: array<int,int>, Ext: array<int,string>}
      */
-    function product_load_img_slots_data(string $tableImg, string $fkName, int $fkValue, int $maxSlots = 8): array
+    function product_load_img_slots_data(
+        string $tableImg,
+        string $fkName,
+        int $fkValue,
+        int $maxSlots = 8,
+        int $fileFrom = 7
+    ): array
     {
         $Photo = [];
         $PhotoS = [];
@@ -354,7 +371,7 @@ if (!function_exists('product_load_img_slots_data')) {
         $Ext = [];
 
         for ($s = 1; $s <= $maxSlots; $s++) {
-            $intType[$s] = $s >= 7 ? 2 : 1;
+            $intType[$s] = $s >= $fileFrom ? 2 : 1;
             $Ext[$s] = '';
         }
 
@@ -380,7 +397,7 @@ if (!function_exists('product_load_img_slots_data')) {
                 $Ext[$i] = manage_file_ext_from_path($rel);
             }
             $rawType = (int)($r['intType'] ?? 0);
-            $intType[$i] = ($rawType === 1 || $rawType === 2) ? $rawType : ($i >= 7 ? 2 : 1);
+            $intType[$i] = ($rawType === 1 || $rawType === 2) ? $rawType : ($i >= $fileFrom ? 2 : 1);
             $PhotoM[$i] = (string)($r['PhotoM'] ?? '');
         }
 
@@ -429,9 +446,9 @@ if (!function_exists('product_save_img_slots')) {
 
             $slotType = isset($filter['intType' . $i])
                 ? (int)$filter['intType' . $i]
-                : ($i >= 7 ? 2 : 1);
+                : ($i >= (int)(product_img_slot_config()['file_from'] ?? 7) ? 2 : 1);
             if ($slotType !== 1 && $slotType !== 2) {
-                $slotType = $i >= 7 ? 2 : 1;
+                $slotType = $i >= (int)(product_img_slot_config()['file_from'] ?? 7) ? 2 : 1;
             }
 
             $row = [
@@ -461,6 +478,31 @@ if (!function_exists('product_save_img_slots')) {
             }
             $pdo->close();
         }
+    }
+}
+
+if (!function_exists('product_img_slot_config')) {
+    /**
+     * @return array{max:int,file_from:int}
+     */
+    function product_img_slot_config(): array
+    {
+        global $detailConfig;
+        $cfg = is_array($detailConfig ?? null) ? $detailConfig : [];
+        if ($cfg === [] && isset($GLOBALS['manage_detail_config']) && is_array($GLOBALS['manage_detail_config'])) {
+            $cfg = $GLOBALS['manage_detail_config'];
+        }
+
+        $max = max(1, (int)($cfg['img_slot_max'] ?? 8));
+        $fileFrom = (int)($cfg['img_file_from'] ?? 7);
+        if ($fileFrom < 1) {
+            $fileFrom = 1;
+        }
+        if ($fileFrom > ($max + 1)) {
+            $fileFrom = $max + 1;
+        }
+
+        return ['max' => $max, 'file_from' => $fileFrom];
     }
 }
 

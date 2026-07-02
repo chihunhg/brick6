@@ -85,7 +85,9 @@ $returnUrl = crud_addin_return_url($formPKey);
 $showListField = manage_module_show_detail_field('list');
 $hasSort       = (bool)($detailConfig['has_sort'] ?? true);
 
-$photoFallback = $showListField ? max(1, (int)($detailConfig['photo_slots'] ?? 1)) : 0;
+$photoFallback = $showListField
+    ? max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['photo_slots'] ?? 1))
+    : 0;
 
 
 

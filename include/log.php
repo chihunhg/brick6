@@ -10,9 +10,25 @@ if (!defined('LOG_SQL_TEXT_ENABLED'))   define('LOG_SQL_TEXT_ENABLED', true);
 if (!defined('LOG_SQL_JSON_ENABLED'))   define('LOG_SQL_JSON_ENABLED', true);
 if (!defined('LOG_MANAGE_TEXT_ENABLED')) define('LOG_MANAGE_TEXT_ENABLED', true);
 if (!defined('LOG_MANAGE_JSON_ENABLED')) define('LOG_MANAGE_JSON_ENABLED', true);
-/** 後台 manage_history：是否在 managelog／檔案日誌寫入完整 SqlCommand（常含綁定值、密碼雜湊）；預設關閉。需稽核時可於 _inc 前 define 為 true */
+/** 後台 manage_history：是否在「檔案日誌」寫入完整 SqlCommand（常含綁定值）；managelog 資料表預設一律寫入。 */
 if (!defined('LOG_MANAGE_FULL_SQL')) {
-    define('LOG_MANAGE_FULL_SQL', false);
+    $manageFullSql = false;
+    if (function_exists('host_env_bool')) {
+        $manageFullSql = host_env_bool('LOG_MANAGE_FULL_SQL', '0');
+    } else {
+        $raw = getenv('LOG_MANAGE_FULL_SQL');
+        if ($raw !== false && trim((string)$raw) !== '') {
+            $manageFullSql = in_array(strtolower(trim((string)$raw)), ['1', 'true', 'yes', 'on'], true);
+        }
+    }
+    define('LOG_MANAGE_FULL_SQL', $manageFullSql);
+}
+
+if (!function_exists('manage_history_file_sql_enabled')) {
+    function manage_history_file_sql_enabled(): bool
+    {
+        return defined('LOG_MANAGE_FULL_SQL') && LOG_MANAGE_FULL_SQL;
+    }
 }
 
 if (!defined('LOG_CALLER_SKIP_REGEX')) {
@@ -233,16 +249,17 @@ function manage_history(
     $ip = _log_ip();
     $Module_PKey = function_exists('SqlFilter') ? SqlFilter($Module_PKey, 'int') : (int)$Module_PKey;
 
-    $sqlForLog = (defined('LOG_MANAGE_FULL_SQL') && LOG_MANAGE_FULL_SQL) ? $SqlCommand : '';
+    $sqlForDb = function_exists('SqlFilter') ? SqlFilter($SqlCommand, 'tab') : $SqlCommand;
+    $sqlForFile = manage_history_file_sql_enabled() ? $sqlForDb : '';
 
     $data_array = array(
         'Module_PKey' => $Module_PKey,
-        'Module_Name' => $Module_Name,
-        'Method'      => $Action,
-        'strLink'     => $strLink,
-        'SqlCommand'  => $sqlForLog,
-        'UserIP'      => $ip,
-        'UserID'      => $UserID,
+        'Module_Name' => function_exists('SqlFilter') ? SqlFilter($Module_Name, 'tab') : $Module_Name,
+        'Method'      => function_exists('SqlFilter') ? SqlFilter($Action, 'tab') : $Action,
+        'strLink'     => function_exists('SqlFilter') ? SqlFilter($strLink, 'tab') : $strLink,
+        'SqlCommand'  => $sqlForDb,
+        'UserIP'      => function_exists('SqlFilter') ? SqlFilter($ip, 'tab') : $ip,
+        'UserID'      => function_exists('SqlFilter') ? SqlFilter($UserID, 'tab') : $UserID,
         'dtDate'      => date('Y-m-d H:i:s'),
     );
 
@@ -251,7 +268,7 @@ function manage_history(
         $data_array['SqlCommand'] = mb_strcut($data_array['SqlCommand'], 0, $MAX_BYTES - 20, 'UTF-8') . '...[truncated]';
     }
 
-    $SqlCommandOneLine = _oneline($sqlForLog);
+    $SqlCommandOneLine = _oneline($sqlForFile);
 
     if ($pdo = _log_mysql_pdo()) {
         $pdo->insert('managelog', $data_array);
