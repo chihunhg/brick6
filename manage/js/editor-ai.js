@@ -80,7 +80,7 @@
         var subject = title ? '為「' + title + '」' : '';
         var formatHints = {
             prose: '撰寫圖文段落內文：以 h2、h3 分段，p 段落說明，strong/em 標示重點。',
-            table: '撰寫內文並以 HTML table 呈現規格、方案比較或重點整理，搭配 h2 引言。',
+            table: '撰寫內文並以 HTML table 呈現規格、方案比較或重點整理；表頭用 thead/th、資料用 tbody/td，搭配 h2 引言。',
             list: '撰寫條列式內文：以 h2 小標搭配 ul/ol 條列重點，strong 標示關鍵字。',
             auto: '撰寫官網內文：依內容混合 h2/h3、p、ul/ol、strong/em，有數據比較時使用 table。'
         };

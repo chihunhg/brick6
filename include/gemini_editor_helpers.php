@@ -65,14 +65,14 @@ if (!function_exists('gemini_industry_options')) {
 if (!function_exists('gemini_editor_allowed_html_tags')) {
     /** CKEditor 產文允許的 HTML 標籤（供 strip_tags 與 System Instruction 共用） */
     function gemini_editor_allowed_html_tags(): string {
-        return '<h1><h2><h3><h4><h5><h6><p><br><strong><em><ul><ol><li><blockquote><small>'
+        return '<h1><h2><h3><h4><h5><h6><p><br><strong><em><ul><ol><li><blockquote><small><div>'
             . '<table><caption><thead><tbody><tr><th><td>';
     }
 }
 
 if (!function_exists('gemini_editor_allowed_html_tag_names')) {
     function gemini_editor_allowed_html_tag_names(): string {
-        return 'h1, h2, h3, h4, h5, h6, p, br, strong, em, ul, ol, li, blockquote, small, '
+        return 'h1, h2, h3, h4, h5, h6, p, br, strong, em, ul, ol, li, blockquote, small, div, '
             . 'table, caption, thead, tbody, tr, th, td';
     }
 }
@@ -113,7 +113,9 @@ if (!function_exists('gemini_editor_format_rules')) {
 
             'table' => "【排版模式：表格為主】\n"
                 . "- 至少包含一個完整 <table>（含 <thead> 或 <tbody>、<tr>、<th>、<td>）。\n"
-                . "- 規格、方案比較、流程步驟、數據整理優先放入表格；表格外以 <h2>/<p> 簡短引言。\n",
+                . "- 表頭列請放在 <thead>，資料列放在 <tbody>；欄位標題用 <th>，內容用 <td>。\n"
+                . "- 規格、方案比較、流程步驟、數據整理優先放入表格；表格外以 <h2>/<p> 簡短引言。\n"
+                . "- 系統會自動為表格加上 RWD 捲動外層與框線、隔行底色樣式，請勿自行加 class 或 style。\n",
 
             'list' => "【排版模式：條列重點】\n"
                 . "- 以 <ul> 或 <ol> 為主體呈現重點，每項可用 <strong> 標示關鍵字。\n"
@@ -226,8 +228,13 @@ if (!function_exists('gemini_sanitize_editor_html')) {
         $html = strip_tags($html, gemini_editor_allowed_html_tags());
         $html = preg_replace("/\r\n|\r/", "\n", $html) ?? $html;
         $html = preg_replace("/\n{3,}/", "\n\n", $html) ?? $html;
+        $html = trim($html);
 
-        return trim($html);
+        if ($html !== '' && function_exists('manage_enhance_content_tables')) {
+            $html = manage_enhance_content_tables($html);
+        }
+
+        return $html;
     }
 }
 

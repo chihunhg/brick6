@@ -213,6 +213,45 @@ button{background:none;}
 /* !====編輯器 */
 .tx01 img{max-width: 100%;height: auto!important;}
 /* !====RWD編輯器表格(X捲軸) */
+.tableContainer {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin: 0 0 1em;
+}
+.tableContainer table.ai-table,
+.tableContainer .ai-table {
+	width: 100%;
+	max-width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #ccc;
+	background: #fff;
+}
+.tableContainer .ai-table caption {
+	caption-side: top;
+	padding: 0.5em 0.75em;
+	font-weight: 600;
+	text-align: left;
+	color: #333;
+}
+.tableContainer .ai-table thead th {
+	background: #eef2f6;
+	font-weight: 600;
+}
+.tableContainer .ai-table th,
+.tableContainer .ai-table td {
+	min-width: 100px;
+	padding: 8px 10px;
+	border: 1px solid #ccc;
+	white-space: inherit;
+	vertical-align: top;
+}
+.tableContainer .ai-table tbody tr:nth-child(even) {
+	background-color: #f7f9fb;
+}
+.tableContainer .ai-table tbody tr:nth-child(odd) {
+	background-color: #fff;
+}
 .tableContainer table td{min-width:100px;padding:5px;border:1px solid #ccc;white-space:inherit}
 
 /* !====標題 */

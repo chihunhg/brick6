@@ -2156,6 +2156,189 @@ if (!function_exists('manage_render_content_layout_select')) {
     }
 }
 
+if (!function_exists('manage_detail_img_slot_config')) {
+    /**
+     * 自模組 _config.php 解析 img_slot_max / img_file_from
+     *
+     * @return array{max:int,file_from:int,image_end:int}
+     */
+    function manage_detail_img_slot_config(?array $detailConfig = null, int $fallbackMax = 7, bool $imageOnly = false): array
+    {
+        $cfg = is_array($detailConfig) ? $detailConfig : [];
+        if ($cfg === [] && isset($GLOBALS['manage_detail_config']) && is_array($GLOBALS['manage_detail_config'])) {
+            $cfg = $GLOBALS['manage_detail_config'];
+        }
+
+        $max = max(1, (int)($cfg['img_slot_max'] ?? $fallbackMax));
+        $fileFrom = (int)($cfg['img_file_from'] ?? ($max + 1));
+        if ($fileFrom < 1) {
+            $fileFrom = 1;
+        }
+        if ($fileFrom > ($max + 1)) {
+            $fileFrom = $max + 1;
+        }
+        $imageEnd = $imageOnly ? $max : min($max, $fileFrom - 1);
+
+        return [
+            'max'       => $max,
+            'file_from' => $fileFrom,
+            'image_end' => $imageEnd,
+        ];
+    }
+}
+
+if (!function_exists('manage_detail_init_img_slot_view')) {
+    /**
+     * 表單頁欄位變數（對應 product/_detail.php）
+     *
+     * @return array<string,mixed>
+     */
+    function manage_detail_init_img_slot_view(
+        ?array $detailConfig = null,
+        int $fallbackMax = 7,
+        bool $imageOnly = false,
+        ?bool $showListField = null
+    ): array {
+        if ($showListField === null) {
+            $showListField = manage_module_show_detail_field('list');
+        }
+        $cfg = manage_detail_img_slot_config($detailConfig, $fallbackMax, $imageOnly);
+
+        return [
+            'managePhotoSlotMax'        => $cfg['max'],
+            'manageFileSlotFrom'        => $cfg['file_from'],
+            'manageImageSlotEnd'        => $cfg['image_end'],
+            'managePhotoContentSlotEnd' => $cfg['image_end'],
+            'managePhotoSlotStart'      => $showListField ? 1 : 2,
+            'manageHasFileSlots'        => !$imageOnly && $cfg['file_from'] <= $cfg['max'],
+        ];
+    }
+}
+
+if (!function_exists('manage_echo_detail_img_slot_delete_scripts')) {
+    function manage_echo_detail_img_slot_delete_scripts(
+        array $photoS,
+        int $imageStart,
+        int $imageEnd,
+        int $fileFrom,
+        int $slotMax,
+        bool $includeFileSlots = true
+    ): void {
+        if ($imageEnd >= $imageStart) {
+            manage_echo_photo_delete_init_script(
+                manage_photo_delete_slots_for_range($photoS, $imageStart, $imageEnd)
+            );
+        }
+        if ($includeFileSlots && $fileFrom <= $slotMax) {
+            manage_echo_photo_delete_init_script(
+                manage_photo_delete_slots_for_range($photoS, $fileFrom, $slotMax),
+                'file'
+            );
+        }
+    }
+}
+
+if (!function_exists('crud_addin_process_img_file_uploads')) {
+    /**
+     * addin 圖片／檔案欄上傳（對應 product/addin.php）
+     *
+     * @return array{
+     *   photoSlots:array,
+     *   maxSlots:int,
+     *   Photo:array<int,string>,
+     *   PhotoW:array<int,int>,
+     *   PhotoH:array<int,int>,
+     *   PhotoM:array<int,string>,
+     *   messages:string,
+     *   forderVal:string,
+     *   upload_folder:string
+     * }
+     */
+    function crud_addin_process_img_file_uploads(
+        array $detailConfig,
+        array $filter_array,
+        array $file_array,
+        int $fallbackMax = 7,
+        bool $imageOnly = false
+    ): array {
+        $cfg = manage_detail_img_slot_config($detailConfig, $fallbackMax, $imageOnly);
+        $maxSlots = $cfg['max'];
+        $fileFrom = $cfg['file_from'];
+        $photoSlots = crud_resolve_photo_upload_slots($filter_array, $file_array, $maxSlots);
+
+        $uploadDirInfo = crud_upload_dir();
+        $uploadFolder  = $uploadDirInfo['dir'];
+        $messages      = $uploadDirInfo['error'];
+
+        $forderName  = (string)($detailConfig['forder_prefix'] ?? '');
+        $sizeBytes   = (int)($GLOBALS['size_bytes'] ?? 2000 * 1024);
+        $fileSize    = (int)($GLOBALS['file_size'] ?? 6000 * 1024);
+
+        $photoM = [];
+        for ($i = 1; $i <= $maxSlots; $i++) {
+            if (isset($filter_array['PhotoM' . $i])) {
+                $photoM[$i] = (string)$filter_array['PhotoM' . $i];
+            }
+        }
+
+        $photo  = [];
+        $photoW = [];
+        $photoH = [];
+
+        $imageEnd = $cfg['image_end'];
+        $imageIndices = $imageEnd >= 1 ? range(1, $imageEnd) : [];
+        $fileIndices  = (!$imageOnly && $fileFrom <= $maxSlots) ? range($fileFrom, $maxSlots) : [];
+
+        $uploadImg = crud_upload_file_slots($file_array, $uploadFolder, $imageIndices, [
+            'forder_prefix' => $forderName,
+            'size_bytes'    => $sizeBytes,
+            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
+            'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+            'field_prefix'  => 'Photo',
+            'resize_thumb'  => true,
+        ]);
+
+        $uploadFile = ['photos' => [], 'photoW' => [], 'photoH' => [], 'messages' => '', 'monthdir' => ''];
+        if ($fileIndices !== []) {
+            $uploadFile = crud_upload_file_slots($file_array, $uploadFolder, $fileIndices, [
+                'forder_prefix' => $forderName,
+                'size_bytes'    => $fileSize,
+                'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'],
+                'allowed_mimes' => [],
+                'field_prefix'  => 'Photo',
+                'resize_thumb'  => false,
+            ]);
+        }
+
+        foreach ([$uploadImg, $uploadFile] as $uploadResult) {
+            foreach ((array)($uploadResult['photos'] ?? []) as $idx => $filename) {
+                $photo[(int)$idx] = (string)$filename;
+            }
+            foreach ((array)($uploadResult['photoW'] ?? []) as $idx => $w) {
+                $photoW[(int)$idx] = (int)$w;
+            }
+            foreach ((array)($uploadResult['photoH'] ?? []) as $idx => $h) {
+                $photoH[(int)$idx] = (int)$h;
+            }
+            $messages .= (string)($uploadResult['messages'] ?? '');
+        }
+
+        $forderVal = crud_resolve_upload_monthdir($uploadImg, $uploadFile);
+
+        return [
+            'photoSlots'     => $photoSlots,
+            'maxSlots'       => $maxSlots,
+            'Photo'          => $photo,
+            'PhotoW'         => $photoW,
+            'PhotoH'         => $photoH,
+            'PhotoM'         => $photoM,
+            'messages'       => $messages,
+            'forderVal'      => $forderVal,
+            'upload_folder'  => $uploadFolder,
+        ];
+    }
+}
+
 if (!function_exists('manage_photo_slot_show_delete')) {
     /** 編輯頁且已有圖檔路徑時顯示刪除按鈕 */
     function manage_photo_slot_show_delete(bool $isAdd, string $photoPath): bool
@@ -2240,7 +2423,7 @@ if (!function_exists('manage_render_upload_file_prefile')) {
 }
 
 if (!function_exists('manage_render_upload_image_slot')) {
-    /** 圖片槽位（Sort 對應 Photo{n}） */
+    /** 圖片欄位（Sort 對應 Photo{n}） */
     function manage_render_upload_image_slot(
         int $slot,
         bool $isAdd,
@@ -2281,7 +2464,7 @@ if (!function_exists('manage_render_upload_image_slot')) {
 }
 
 if (!function_exists('manage_render_upload_document_slot')) {
-    /** 檔案槽位（product_img.intType=2）；選檔後依副檔名顯示圖示 */
+    /** 檔案欄位（product_img.intType=2）；選檔後依副檔名顯示圖示 */
     function manage_render_upload_document_slot(
         int $slot,
         bool $isAdd,
@@ -2445,7 +2628,7 @@ if (!function_exists('manage_render_field_help')) {
 
 if (!function_exists('manage_photo_delete_slots_for_range')) {
     /**
-     * 組出可綁定刪除事件的槽位（PhotoS 子表 PKey）
+     * 組出可綁定刪除事件的欄位（PhotoS 子表 PKey）
      *
      * @return array<int,int>
      */
@@ -2466,7 +2649,7 @@ if (!function_exists('manage_echo_photo_delete_init_script')) {
     /**
      * 輸出 $(function(){ ... }) 內的刪除圖檔 click 綁定（需已載入 filesize.js）
      *
-     * @param array<int,int> $slots 槽位 => 子表 PKey
+     * @param array<int,int> $slots 欄位 => 子表 PKey
      */
     function manage_echo_photo_delete_init_script(array $slots, string $fileType = 'img'): void
     {
@@ -2692,6 +2875,48 @@ if (!function_exists('manage_render_ckeditor_html')) {
         }
 
         return $html;
+    }
+}
+
+if (!function_exists('manage_enhance_content_tables')) {
+    /**
+     * CKEditor 內文表格：RWD 外層 + ai-table 框線／隔行變色（AI 產文與前台 rwd_table 共用）
+     */
+    function manage_enhance_content_tables(string $html): string {
+        if ($html === '' || stripos($html, '<table') === false) {
+            return $html;
+        }
+
+        $html = preg_replace(
+            '#<div\s+class=["\']tableContainer["\']>\s*(<table\b.*?</table>)\s*</div>#is',
+            '$1',
+            $html
+        ) ?? $html;
+
+        return preg_replace_callback(
+            '#<table\b([^>]*)>(.*?)</table>#is',
+            static function (array $m): string {
+                $attrs = $m[1];
+                $inner = $m[2];
+
+                if (preg_match('/\bclass=(["\'])([^"\']*)\1/i', $attrs, $classMatch)) {
+                    $classValue = trim((string)$classMatch[2]);
+                    if (!preg_match('/\bai-table\b/i', $classValue)) {
+                        $classValue = trim($classValue . ' ai-table');
+                    }
+                    $attrs = (string)preg_replace(
+                        '/\bclass=(["\'])[^"\']*\1/i',
+                        'class="' . $classValue . '"',
+                        $attrs
+                    );
+                } else {
+                    $attrs = ' class="ai-table"' . $attrs;
+                }
+
+                return '<div class="tableContainer"><table' . $attrs . '>' . $inner . '</table></div>';
+            },
+            $html
+        ) ?? $html;
     }
 }
 
@@ -4102,6 +4327,25 @@ if (!function_exists('crud_form_error_redirect')) {
     }
 }
 
+if (!function_exists('crud_resolve_upload_monthdir')) {
+    /**
+     * 從上傳結果取 YYYYMM 子目錄（空字串視為未設定；?? 無法略過 ''）
+     *
+     * @param array<string,mixed> ...$uploadResults crud_upload_file_slots 回傳陣列
+     */
+    function crud_resolve_upload_monthdir(array ...$uploadResults): string
+    {
+        foreach ($uploadResults as $result) {
+            $monthdir = rtrim((string)($result['monthdir'] ?? ''), "\\/");
+            if ($monthdir !== '') {
+                return $monthdir;
+            }
+        }
+
+        return date('Ym');
+    }
+}
+
 if (!function_exists('crud_upload_dir')) {
     /** 上傳目錄（結尾含 DIRECTORY_SEPARATOR），不可寫入時回傳錯誤訊息 */
     function crud_upload_dir(): array {
@@ -4296,7 +4540,7 @@ if (!function_exists('crud_delete_img_row')) {
 
 if (!function_exists('crud_save_img_slots')) {
     /**
-     * 儲存多槽位圖檔子表（paper_img 等）
+     * 儲存多欄位圖檔子表（paper_img 等）
      *
      * @param array<int,string> $photos   Sort => 檔名
      * @param array<int,int>    $photoW
@@ -4318,6 +4562,11 @@ if (!function_exists('crud_save_img_slots')) {
     ): void {
         if (!function_exists('chkTable') || !chkTable($tableImg)) {
             return;
+        }
+
+        $forderVal = rtrim(trim($forderVal), "\\/");
+        if ($forderVal === '') {
+            $forderVal = date('Ym');
         }
 
         for ($i = 1; $i <= $maxSlots; $i++) {
@@ -4380,7 +4629,10 @@ if (!function_exists('crud_save_img_slots')) {
             if (isset($photoM[$i])) {
                 $row['PhotoM'] = SqlFilter($photoM[$i], 'tab');
             }
-            if (isset($filter['intType' . $i])) {
+            if (isset($filter['intType' . $i]) && (int)$filter['intType' . $i] === 2
+                && function_exists('crud_table_has_column') && crud_table_has_column($tableImg, 'intType')) {
+                $row['intType'] = SqlFilter(2, 'int');
+            } elseif (isset($filter['intType' . $i])) {
                 $layoutVal = manage_content_img_layout_slot_value(
                     $i,
                     $filter['intType' . $i]
@@ -4430,7 +4682,7 @@ if (!function_exists('crud_save_img_slots')) {
 
 if (!function_exists('crud_photo_slot_max_from_filter')) {
     /**
-     * 讀取表單 PhotoSlotMax（由各模組 _detail.php 的 file 槽位數一致）
+     * 讀取表單 PhotoSlotMax（由各模組 _detail.php 的 file 欄位數一致）
      */
     function crud_photo_slot_max_from_filter(array $filter, int $fallbackMax = 1): int
     {
@@ -4445,7 +4697,7 @@ if (!function_exists('crud_photo_slot_max_from_filter')) {
 
 if (!function_exists('crud_resolve_photo_upload_slots')) {
     /**
-     * 依 PhotoSlotMax 與 $_FILES 解析圖檔上傳槽位
+     * 依 PhotoSlotMax 與 $_FILES 解析圖檔上傳欄位
      *
      * @return array{config_total:int,indices:list<int>,max_slots:int,slot_max:int}
      */
@@ -4470,7 +4722,7 @@ if (!function_exists('crud_resolve_photo_upload_slots')) {
 
 if (!function_exists('crud_detect_upload_indices')) {
     /**
-     * 從 $_FILES 鍵名偵測上傳槽位（Photo1、Photo2…）
+     * 從 $_FILES 鍵名偵測上傳欄位（Photo1、Photo2…）
      *
      * @return list<int>
      */
@@ -4504,7 +4756,7 @@ if (!function_exists('crud_detect_upload_indices')) {
 
 if (!function_exists('crud_upload_file_slots')) {
     /**
-     * 多槽位檔案上傳（圖片＋文件，knowledge 等模組）
+     * 多欄位檔案上傳（圖片＋文件，knowledge 等模組）
      *
      * @param list<int> $indices
      * @return array{photos: array<int,string>, photoW: array<int,int>, photoH: array<int,int>, messages: string, monthdir: string}

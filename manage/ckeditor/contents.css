@@ -229,3 +229,42 @@ a > img {
 .decoTt{--decoW: 0.625rem;--sp: 0.625rem;padding-left: calc(var(--decoW) + 1rem);position: relative;padding-bottom: var(--sp);font-size: clamp(1.125rem,1.2vw,1.25rem);font-weight: 500;}
 .decoTt:before{content:'';position: absolute;left: 0;top: calc(48% - var(--sp) / 2);transform: translateY(-50%);background: var(--subColor,#BF9771);width: var(--decoW);aspect-ratio: 1;}
 .decoTt:after{content:'';position:absolute;width: calc(var(--decoW) * 1.5);height:0.125rem;background: var(--mjColor-l,#698396);left: calc(var(--decoW) * 0.5);top: calc(48% - var(--sp) / 2);transform: translateY(-50%);/* mix-blend-mode: screen; */}
+
+/* AI / CKEditor 表格（RWD 捲動、框線、隔行變色） */
+.tableContainer {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin: 0 0 1em;
+}
+.cke_editable .tableContainer table.ai-table,
+.cke_editable .tableContainer .ai-table {
+	width: 100%;
+	max-width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #ccc;
+	background: #fff;
+}
+.cke_editable .tableContainer .ai-table caption {
+	caption-side: top;
+	padding: 0.5em 0.75em;
+	font-weight: 600;
+	text-align: left;
+}
+.cke_editable .tableContainer .ai-table thead th {
+	background: #eef2f6;
+	font-weight: 600;
+}
+.cke_editable .tableContainer .ai-table th,
+.cke_editable .tableContainer .ai-table td {
+	min-width: 100px;
+	padding: 8px 10px;
+	border: 1px solid #ccc;
+	vertical-align: top;
+}
+.cke_editable .tableContainer .ai-table tbody tr:nth-child(even) {
+	background-color: #f7f9fb;
+}
+.cke_editable .tableContainer .ai-table tbody tr:nth-child(odd) {
+	background-color: #fff;
+}

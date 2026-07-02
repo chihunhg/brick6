@@ -811,8 +811,13 @@ function rwd_width($txt){
 }
 
 function rwd_table($txt,$num){
-    $txt = preg_replace('/<table/i','<div class="tableContainer"><table', $txt);
-    $txt = preg_replace('/<\/table>/', '</table></div>', $txt);
+    $txt = (string)$txt;
+    if (function_exists('manage_enhance_content_tables')) {
+        $txt = manage_enhance_content_tables($txt);
+    } else {
+        $txt = preg_replace('/<table/i', '<div class="tableContainer"><table class="ai-table"', $txt);
+        $txt = preg_replace('/<\/table>/', '</table></div>', $txt);
+    }
     $txt = preg_replace('/target="_blank"/i','target="_blank" rel="noopener noreferrer"', $txt);
     return $txt;
 }

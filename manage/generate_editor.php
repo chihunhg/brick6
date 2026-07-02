@@ -24,6 +24,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+require_once dirname(__DIR__) . '/include/crud_helpers.php';
 
 $input = gemini_editor_parse_request();
 
