@@ -163,6 +163,14 @@
                     'isActive' => $Module_PKey === 3,
                 ];
             }
+            if ($Login_ID === 'Admin') {
+                $sidebarMenu[] = [
+                    'type'     => 'LINK',
+                    'label'    => (string)($Array_MU_Name[97] ?? '語系設定'),
+                    'link'     => '../language/list.php?manNo=97',
+                    'isActive' => $manNo === 97,
+                ];
+            }
             $sidebarMenu[] = [
                 'type'     => 'LINK',
                 'label'    => '變更密碼',

@@ -1,43 +1,30 @@
 <?php
 declare(strict_types=1);
 
-$manage_csp_editor = true;
 require_once '../_inc.php';
-require_once '../_module.php';
 
-/** ① 模組資料表與 FK：改 _config.php */
 $detailConfig = require __DIR__ . '/_config.php';
 manage_detail_set_config($detailConfig);
 
-$table_name = $detailConfig['master'];
-$PKName     = 'PKey';
-$FKName     = $detailConfig['fk'];
+require_once '_form_data.php';
+language_require_admin();
 
-$__csrf_key = $detailConfig['csrf'];
+$manNo = 97;
+$GLOBALS['manNo'] = $manNo;
+
+$__csrf_key = (string)($detailConfig['csrf'] ?? 'language_addin');
 $csrf_token = crud_csrf_ensure_page($__csrf_key);
 
-require_once '_form_data.php';
+language_detail_init_defaults();
 
-/** 新增：不檢查資料必須存在；PKey 僅供複製來源（選填） */
-class1_detail_init_defaults();
-$Update_PKey = 0;
+$GLOBALS['language_form_vars']['Sort'] = language_next_sort();
+language_detail_export_vars();
 
-$copyPkey = safe_int($filter_array['PKey'] ?? 0);
-if ($copyPkey > 0) {
-    class1_detail_load($copyPkey);
-    $Update_PKey = 0;
-    /** 新增頁不顯示既有圖檔預覽 */
-    $GLOBALS['class1_form_vars']['Photo']  = [];
-    $GLOBALS['class1_form_vars']['PhotoS'] = [];
-    $GLOBALS['class1_form_vars']['PhotoM'] = [];
-    class1_detail_export_vars();
-}
-
-$Sort = crud_next_sort($table_name, ['Module_PKey' => SqlFilter($Module_PKey ?? 0, 'int')]);
-$GLOBALS['class1_form_vars']['Sort'] = $Sort;
-class1_detail_export_vars();
-
-$breadcrumbs = manage_breadcrumbs_for_form('新增');
+$breadcrumbs = [
+    ['label' => '系統管理'],
+    ['label' => '語系設定', 'href' => 'list.php?manNo=97'],
+    ['label' => '新增'],
+];
 $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
 
 require_once '_detail.php';

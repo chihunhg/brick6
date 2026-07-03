@@ -1,45 +1,38 @@
 <?php
 declare(strict_types=1);
 
-$manage_csp_editor = true;
 require_once '../_inc.php';
-require_once '../_module.php';
 
-/** ① 模組資料表與 FK：改 _config.php */
 $detailConfig = require __DIR__ . '/_config.php';
-/** 編輯頁：僅註冊主檔設定；載入時只檢查 dbclass1.PKey + Module_PKey */
 manage_detail_set_config($detailConfig, true);
 
-$table_name = $detailConfig['master'];
-$PKName     = 'PKey';
-$FKName     = $detailConfig['fk'];
+require_once '_form_data.php';
+language_require_admin();
 
-$__csrf_key = $detailConfig['csrf'];
+$manNo = 97;
+$GLOBALS['manNo'] = $manNo;
+
+$__csrf_key = (string)($detailConfig['csrf'] ?? 'language_addin');
 $csrf_token = crud_csrf_ensure_page($__csrf_key);
 
-require_once '_form_data.php';
-
-/** PKey：先讀 URL（不可用 $Update_PKey 傳遞，init_defaults 會把全域 Update_PKey 重設為 0） */
 $editPKey = manage_request_pkey();
 if ($editPKey <= 0) {
-    manage_alert_script('參數錯誤：PKey 無效', manage_breadcrumbs_list_href('list.php'));
+    manage_alert_script('參數錯誤：PKey 無效', 'list.php?manNo=97');
     exit;
 }
 
-class1_detail_init_defaults();
+language_detail_init_defaults();
 
-$listUrl = manage_breadcrumbs_list_href('list.php');
-/** 與列表相同：以 _module.php 設定的 Module_PKey 篩選（非僅 manNo） */
-$modulePKey = (int)($GLOBALS['Module_PKey'] ?? 0);
-if ($modulePKey <= 0) {
-    $modulePKey = class1_detail_resolve_module_pkey();
-}
-if (!class1_detail_load($editPKey, $modulePKey)) {
-    manage_alert_script('查無要修改資料!', $listUrl);
+if (!language_detail_load($editPKey)) {
+    manage_alert_script('查無要修改資料!', 'list.php?manNo=97');
     exit;
 }
 
-$breadcrumbs = manage_breadcrumbs_for_form('編輯');
+$breadcrumbs = [
+    ['label' => '系統管理'],
+    ['label' => '語系設定', 'href' => 'list.php?manNo=97'],
+    ['label' => manage_breadcrumb_form_action_label()],
+];
 $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
 
 require_once '_detail.php';

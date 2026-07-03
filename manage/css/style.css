@@ -510,6 +510,10 @@ body.seo-tdk-page-busy {
 .tableRow__data.tableGrid--module{grid-template-columns:50px 50px 70px minmax(90px,1fr) 80px minmax(100px,1fr) 50px 90px 100px;}
 .tableHeader.tableGrid--module-compact,
 .tableRow__data.tableGrid--module-compact{grid-template-columns:50px 70px minmax(90px,1fr) 80px minmax(100px,1fr) 50px 90px 100px;}
+.tableHeader.tableGrid--language,
+.tableRow__data.tableGrid--language{grid-template-columns:50px 80px 1fr 100px 120px;}
+.tableHeader.tableGrid--language-compact,
+.tableRow__data.tableGrid--language-compact{grid-template-columns:50px 80px 1fr 100px 120px;}
 .moduleProgramList{display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;list-style:none;margin:0;padding:0;}
 .moduleProgramList__item{margin:0;}
 .moduleLayerList{margin-top:1rem;}
