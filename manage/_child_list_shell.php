@@ -39,7 +39,7 @@ declare(strict_types=1);
                             <?php require $childListModuleDir . '/_list.php'; ?>
 
                             <?php echo $listHiddenHtml; ?>
-                            <?php echo hiddenNumeric('Total', (int)($i ?? 0)) . PHP_EOL; ?>
+                            <?php echo hiddenNumeric('Total', (int)($Total ?? 0)) . PHP_EOL; ?>
 
                             <?php if (file_exists(__DIR__ . '/_page.php')) {
                                 require_once __DIR__ . '/_page.php';

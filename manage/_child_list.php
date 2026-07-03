@@ -129,6 +129,7 @@ if (!function_exists('manage_child_list_prepare')) {
             'tPage'     => $tPage,
             'tPageSize' => $tPageSize,
             'tPageTotal'=> $tPageTotal,
+            'Total'     => $Total,
         ];
 
         return [
@@ -148,9 +149,11 @@ if (!function_exists('manage_child_list_prepare')) {
             ),
             'notes_html'         => (string)($opts['notes_html'] ?? ''),
             'i'                  => $i,
+            'Total'              => $Total,
             'tPage'              => $tPage,
             'tPageSize'          => $tPageSize,
             'tPageTotal'         => $tPageTotal,
+            'offset'             => $offset,
         ];
     }
 }
@@ -185,7 +188,7 @@ if (!function_exists('manage_child_list_render')) {
     {
         global $listRows, $breadcrumbs, $layout_page_title, $layout_container_class;
         global $listBackUrl, $listBackLabel, $addUrl, $listHiddenHtml, $childListNotesHtml;
-        global $PKName, $table_name, $i, $tPage, $tPageSize;
+        global $PKName, $table_name, $i, $Total, $tPage, $tPageSize, $tPageTotal, $offset;
 
         manage_child_list_import_parent_vars((array)($ctx['parent'] ?? []));
 
@@ -209,8 +212,11 @@ if (!function_exists('manage_child_list_render')) {
         $PKName = (string)($ctx['PKName'] ?? 'PKey');
         $table_name = (string)($ctx['table_name'] ?? '');
         $i = (int)($ctx['i'] ?? 0);
+        $Total = (int)($ctx['Total'] ?? 0);
         $tPage = (int)($ctx['tPage'] ?? 1);
         $tPageSize = (int)($ctx['tPageSize'] ?? 15);
+        $tPageTotal = (int)($ctx['tPageTotal'] ?? 1);
+        $offset = (int)($ctx['offset'] ?? 0);
 
         $childListModuleDir = $moduleDir;
 
