@@ -103,6 +103,29 @@
         return stripHtml($el.val() || $el.html() || '');
     }
 
+    function resolveIndustry(el) {
+        var $select = $('[data-seo-tdk-industry-select]');
+        if ($select.length) {
+            return $.trim(String($select.val() || 'general')) || 'general';
+        }
+        return $.trim(String(el.getAttribute('data-seo-tdk-industry') || 'general')) || 'general';
+    }
+
+    function resolveLangPayload(el, langSlot) {
+        langSlot = parseInt(langSlot || el.getAttribute('data-lang-slot') || '0', 10);
+        var langLabel = $.trim(String(el.getAttribute('data-lang-label') || ''));
+        if (langLabel === '' && langSlot > 0) {
+            var $tab = $('#tabNav_' + langSlot);
+            if ($tab.length) {
+                langLabel = $.trim($tab.text());
+            }
+        }
+        return {
+            lang_slot: langSlot,
+            lang_label: langLabel
+        };
+    }
+
     function buildSeoTdkPrompt(langSlot) {
         var parts = [];
         var title = $.trim($('#strName' + langSlot).val() || '');
@@ -269,13 +292,15 @@
 
         endDialog(el);
         var $btn = $(el);
+        var industry = resolveIndustry(el);
+        var langPayload = resolveLangPayload(el, langSlot);
         setAiBusyState($btn, langSlot, true);
 
         $.ajax({
             type: 'POST',
             url: resolveApiUrl(),
             dataType: 'text',
-            data: { prompt: prompt }
+            data: { prompt: prompt, industry: industry, lang_slot: langPayload.lang_slot, lang_label: langPayload.lang_label }
         })
             .done(function (raw) {
                 var res;
