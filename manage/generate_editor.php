@@ -6,8 +6,9 @@ declare(strict_types=1);
  *
  * POST / JSON body 參數：
  * - prompt（必填）使用者提示詞
- * - source_url（選填）參考網址；有提供時模型僅能依此改寫或延伸
+ * - source_url（選填）參考網址；有提供時後端先抓取網頁並萃取純文字，再傳給模型改寫或延伸
  * - industry（可選）medical | biotech | electronics | listed_company | japanese_client | general
+ *   醫療／生技／上市櫃／金融等產業會啟用較嚴格的 Gemini Safety Settings
  * - format_mode（可選）auto | prose | table | list
  *
  * 環境變數：GEMINI_API_KEY 或 GOOGLE_API_KEY（.env）
@@ -24,6 +25,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+require_once dirname(__DIR__) . '/include/gemini_lang_helpers.php';
 require_once dirname(__DIR__) . '/include/crud_helpers.php';
 
 $input = gemini_editor_parse_request();
@@ -32,6 +34,7 @@ $prompt = trim((string)($input['prompt'] ?? $input['Prompt'] ?? ''));
 $sourceUrlRaw = trim((string)($input['source_url'] ?? $input['sourceUrl'] ?? ''));
 $industry = trim((string)($input['industry'] ?? 'general'));
 $formatMode = trim((string)($input['format_mode'] ?? $input['formatMode'] ?? 'auto'));
+$langContext = gemini_resolve_output_language($input);
 
 if ($prompt === '') {
     json_out(['success' => false, 'error' => 'prompt is required'], 400);
@@ -70,10 +73,23 @@ try {
     $client = gemini_create_client($apiKey);
     $normalizedIndustry = gemini_normalize_industry($industry);
     $normalizedFormatMode = gemini_normalize_format_mode($formatMode);
+
+    $sourcePageText = '';
+    if ($sourceUrl !== '') {
+        try {
+            $sourcePageText = gemini_fetch_source_page_text($sourceUrl);
+        } catch (RuntimeException $e) {
+            json_out(['success' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
+
     $finalPrompt = gemini_build_editor_user_prompt(
         userPrompt: $prompt,
         sourceUrl: $sourceUrl,
         formatMode: $normalizedFormatMode,
+        sourcePageText: $sourcePageText,
+        industry: $normalizedIndustry,
+        langContext: $langContext,
     );
 
     $generationConfig = new GenerationConfig(
@@ -92,17 +108,27 @@ try {
         ),
     );
 
-    $result = $client
+    $model = $client
         ->generativeModel(model: 'gemini-2.5-flash')
         ->withSystemInstruction(Content::parse(
             gemini_editor_system_instruction(
                 industry: $normalizedIndustry,
                 sourceUrl: $sourceUrl,
                 formatMode: $normalizedFormatMode,
+                outputLocale: $langContext['locale'],
+                langLabel: $langContext['label'],
             )
         ))
-        ->withGenerationConfig($generationConfig)
-        ->generateContent($finalPrompt);
+        ->withGenerationConfig($generationConfig);
+
+    $model = gemini_generative_model_with_safety_settings($model, $normalizedIndustry);
+
+    $result = $model->generateContent($finalPrompt);
+
+    $safetyBlockedMessage = gemini_response_safety_blocked_message($result);
+    if ($safetyBlockedMessage !== null) {
+        json_out(['success' => false, 'error' => $safetyBlockedMessage], 422);
+    }
 
     $data = $result->json(associative: true);
     if (!is_array($data)) {

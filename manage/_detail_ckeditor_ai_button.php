@@ -56,6 +56,13 @@ $editorAiIndustryOptions = gemini_industry_options();
 
 $editorAiFormatOptions = gemini_format_mode_options();
 
+$editorAiLangSlot = 0;
+if (preg_match('/_(\d+)$/', $editorAiFieldId, $editorAiLangMatch)) {
+    $editorAiLangSlot = (int)$editorAiLangMatch[1];
+}
+global $array_lang;
+$editorAiLangLabel = trim((string)($array_lang[$editorAiLangSlot] ?? ''));
+
 
 
 static $manageEditorAiAssetsLoaded = false;
@@ -135,6 +142,10 @@ if (!$manageEditorAiAssetsLoaded) {
                                                     data-manage-action="editor-ai-generate"
 
                                                     data-editor-target="<?php echo e($editorAiFieldId); ?>"
+
+                                                    data-lang-slot="<?php echo $editorAiLangSlot; ?>"
+
+                                                    data-lang-label="<?php echo e($editorAiLangLabel); ?>"
 
                                                     <?php if ($editorAiSourceUrl !== '') { ?>
 

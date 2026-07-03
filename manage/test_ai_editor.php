@@ -198,7 +198,7 @@ $cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
         setStatus('產生中，請稍候…');
 
         var editorPayload = { prompt: prompt, source_url: sourceUrl, industry: industry };
-        var tdkPayload = { prompt: prompt };
+        var tdkPayload = { prompt: prompt, industry: industry };
 
         try {
             var results = await Promise.allSettled([

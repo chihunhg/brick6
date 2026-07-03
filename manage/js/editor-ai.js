@@ -82,6 +82,24 @@
         return match ? (parseInt(match[1], 10) || 0) : 0;
     }
 
+    function resolveLangPayload(el, editorId) {
+        var langSlot = parseInt(el.getAttribute('data-lang-slot') || '0', 10);
+        if (langSlot <= 0) {
+            langSlot = resolveLangSlotFromEditorId(editorId);
+        }
+        var langLabel = $.trim(String(el.getAttribute('data-lang-label') || ''));
+        if (langLabel === '' && langSlot > 0) {
+            var $tab = $('#tabNav_' + langSlot);
+            if ($tab.length) {
+                langLabel = $.trim($tab.text());
+            }
+        }
+        return {
+            lang_slot: langSlot,
+            lang_label: langLabel
+        };
+    }
+
     function buildDefaultPrompt(editorId, hasSourceUrl, formatMode) {
         var langSlot = resolveLangSlotFromEditorId(editorId);
         var title = langSlot > 0 ? $.trim($('#strName' + langSlot).val() || '') : '';
@@ -328,12 +346,15 @@
         var $btn = $(el);
         setAiBusyState($btn, editorId, true);
 
+        var langPayload = resolveLangPayload(el, editorId);
         var payload = {
             prompt: userPrompt,
             source_url: sourceUrl,
             industry: industry,
             format_mode: formatMode,
-            editor_target: editorId
+            editor_target: editorId,
+            lang_slot: langPayload.lang_slot,
+            lang_label: langPayload.lang_label
         };
 
         $.ajax({
