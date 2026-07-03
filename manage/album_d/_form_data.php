@@ -105,11 +105,19 @@ if (!function_exists('album_d_addin_validate')) {
                 }
             }
         } else {
+            $stagedIds = isset($filter['staged_upload_id']) && is_array($filter['staged_upload_id'])
+                ? array_values(array_filter(array_map(static fn($id): string => trim((string)$id), $filter['staged_upload_id'])))
+                : [];
             $hasUpload = false;
-            for ($i = 1; $i <= $addSlots; $i++) {
-                if (!empty($file_array['Photo' . $i]['name'] ?? '')) {
-                    $hasUpload = true;
-                    break;
+            if ($stagedIds !== []) {
+                $hasUpload = count(album_d_staging_resolve($albumPKey, $stagedIds)) > 0;
+            }
+            if (!$hasUpload) {
+                for ($i = 1; $i <= $addSlots; $i++) {
+                    if (!empty($file_array['Photo' . $i]['name'] ?? '')) {
+                        $hasUpload = true;
+                        break;
+                    }
                 }
             }
             if (!$hasUpload) {
@@ -232,6 +240,55 @@ if (!function_exists('album_d_addin_save')) {
             : album_d_next_sort($albumPKey);
         $inserted = 0;
         $maxInsertSlots = $recreateAfterDelete ? 1 : $addSlots;
+
+        $stagedIds = isset($filter['staged_upload_id']) && is_array($filter['staged_upload_id'])
+            ? array_values(array_filter(array_map(static fn($id): string => trim((string)$id), $filter['staged_upload_id'])))
+            : [];
+        $stagedCaptions = isset($filter['staged_photo_m']) && is_array($filter['staged_photo_m'])
+            ? $filter['staged_photo_m']
+            : [];
+
+        if (!$recreateAfterDelete && $stagedIds !== []) {
+            $stagedItems = album_d_staging_resolve($albumPKey, $stagedIds);
+            if ($stagedItems === []) {
+                throw new RuntimeException('沒有有效的上傳圖片');
+            }
+
+            $pdo = new dbPDO();
+            foreach ($stagedItems as $idx => $item) {
+                $photoMCaption = (string)($stagedCaptions[$idx] ?? '');
+                $data_array = [
+                    'Album_PKey' => SqlFilter($albumPKey, 'int'),
+                    'Sort'       => SqlFilter($nextSort + $inserted, 'int'),
+                    'PhotoM'     => SqlFilter($photoMCaption, 'tab'),
+                    'Forder'     => SqlFilter((string)($item['forder'] ?? ''), 'tab'),
+                    'Photo1'     => SqlFilter((string)($item['photo'] ?? ''), 'tab'),
+                    'PhotoW1'    => SqlFilter((int)($item['photoW'] ?? 0), 'int'),
+                    'PhotoH1'    => SqlFilter((int)($item['photoH'] ?? 0), 'int'),
+                    'intType'    => SqlFilter(1, 'int'),
+                    'dtUDate'    => date('Y-m-d H:i:s'),
+                    'dtDate'     => date('Y-m-d H:i:s'),
+                    'UserID'     => SqlFilter($loginId, 'tab'),
+                ];
+                $data_array = crud_filter_row_for_table($table_name, $data_array);
+                $pdo->insert($table_name, $data_array);
+                $err = $pdo->getErrorMessage();
+                if ($err !== '') {
+                    $pdo->close();
+                    crud_fail_db('album_d insert staged', $err, $data_array, true);
+                }
+                $inserted++;
+            }
+            $pdo->close();
+            album_d_staging_release($albumPKey);
+
+            if ($inserted === 0) {
+                throw new RuntimeException('沒有成功上傳的圖片');
+            }
+
+            return ['action' => '新增成功!'];
+        }
+
         $pdo = new dbPDO();
         for ($i = 1; $i <= $maxInsertSlots; $i++) {
             if (empty($Photo[$i])) {
@@ -267,6 +324,8 @@ if (!function_exists('album_d_addin_save')) {
         if ($inserted === 0) {
             throw new RuntimeException('沒有成功上傳的圖片');
         }
+
+        album_d_staging_release($albumPKey);
 
         return ['action' => $recreateAfterDelete ? '修改成功!' : '新增成功!'];
     }

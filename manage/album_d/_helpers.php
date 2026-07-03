@@ -278,3 +278,254 @@ if (!function_exists('album_d_fetch_row_for_edit')) {
         );
     }
 }
+
+if (!function_exists('album_d_ajax_csrf_verify')) {
+    function album_d_ajax_csrf_verify(string $csrfKey = 'album_d_addin'): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            @session_start();
+        }
+        $posted = (string)($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        $session = (string)($_SESSION['csrf'][$csrfKey] ?? '');
+        if ($posted === '' || $session === '' || !hash_equals($session, $posted)) {
+            crud_json_response(false, 'CSRF 驗證失敗');
+        }
+    }
+}
+
+if (!function_exists('album_d_staged_preview_url')) {
+    function album_d_staged_preview_url(string $forder, string $photo): string
+    {
+        $forder = trim($forder);
+        $photo = trim($photo);
+        if ($forder === '' || $photo === '') {
+            return '';
+        }
+        $relDir = '../../Upload/' . $forder . '/';
+        $absDir = rtrim(crud_upload_base(), '/\\') . '/' . $forder . '/';
+        foreach (['thumb_', 's_', ''] as $prefix) {
+            $file = $prefix . $photo;
+            if (is_file($absDir . $file)) {
+                return $relDir . $file . '?' . time();
+            }
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('album_d_staging_count')) {
+    function album_d_staging_count(int $albumPKey): int
+    {
+        if ($albumPKey <= 0 || !isset($_SESSION['album_d_staged'][$albumPKey])) {
+            return 0;
+        }
+        $bucket = $_SESSION['album_d_staged'][$albumPKey];
+
+        return is_array($bucket) ? count($bucket) : 0;
+    }
+}
+
+if (!function_exists('album_d_staging_list')) {
+    /**
+     * @return list<array{upload_id:string, preview_url:string, original_name:string}>
+     */
+    function album_d_staging_list(int $albumPKey): array
+    {
+        if ($albumPKey <= 0) {
+            return [];
+        }
+        $bucket = $_SESSION['album_d_staged'][$albumPKey] ?? [];
+        if (!is_array($bucket)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($bucket as $id => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $forder = (string)($item['forder'] ?? '');
+            $photo = (string)($item['photo'] ?? '');
+            $result[] = [
+                'upload_id'     => (string)$id,
+                'preview_url'   => album_d_staged_preview_url($forder, $photo),
+                'original_name' => (string)($item['name'] ?? ''),
+            ];
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('album_d_staging_release')) {
+    /** 清空暫存索引（不刪除實體檔；成功寫入 DB 後使用） */
+    function album_d_staging_release(int $albumPKey): void
+    {
+        if ($albumPKey <= 0) {
+            return;
+        }
+        unset($_SESSION['album_d_staged'][$albumPKey]);
+    }
+}
+
+if (!function_exists('album_d_staging_purge')) {
+    /** 放棄上傳：刪除暫存實體檔並清空 session */
+    function album_d_staging_purge(int $albumPKey): void
+    {
+        if ($albumPKey <= 0) {
+            return;
+        }
+        $bucket = $_SESSION['album_d_staged'][$albumPKey] ?? [];
+        if (is_array($bucket)) {
+            foreach ($bucket as $item) {
+                if (!is_array($item) || (string)($item['photo'] ?? '') === '') {
+                    continue;
+                }
+                crud_delete_image_variants(
+                    crud_upload_base(),
+                    (string)($item['forder'] ?? ''),
+                    (string)$item['photo']
+                );
+            }
+        }
+        unset($_SESSION['album_d_staged'][$albumPKey]);
+    }
+}
+
+if (!function_exists('album_d_staging_resolve')) {
+    /**
+     * @param list<string> $ids
+     * @return list<array<string,mixed>>
+     */
+    function album_d_staging_resolve(int $albumPKey, array $ids): array
+    {
+        if ($albumPKey <= 0 || $ids === []) {
+            return [];
+        }
+        $bucket = $_SESSION['album_d_staged'][$albumPKey] ?? [];
+        if (!is_array($bucket)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($ids as $id) {
+            $id = trim((string)$id);
+            if ($id === '' || !isset($bucket[$id]) || !is_array($bucket[$id])) {
+                continue;
+            }
+            $result[] = array_merge($bucket[$id], ['upload_id' => $id]);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('album_d_staging_consume')) {
+    /** @param list<string> $ids */
+    function album_d_staging_consume(int $albumPKey, array $ids): void
+    {
+        if ($albumPKey <= 0 || $ids === []) {
+            return;
+        }
+        if (!isset($_SESSION['album_d_staged'][$albumPKey]) || !is_array($_SESSION['album_d_staged'][$albumPKey])) {
+            return;
+        }
+        foreach ($ids as $id) {
+            unset($_SESSION['album_d_staged'][$albumPKey][trim((string)$id)]);
+        }
+    }
+}
+
+if (!function_exists('album_d_staging_remove')) {
+    function album_d_staging_remove(int $albumPKey, string $id, bool $deleteFiles = true): bool
+    {
+        $id = trim($id);
+        if ($albumPKey <= 0 || $id === '') {
+            return false;
+        }
+        if (!isset($_SESSION['album_d_staged'][$albumPKey][$id])) {
+            return false;
+        }
+
+        $item = (array)$_SESSION['album_d_staged'][$albumPKey][$id];
+        if ($deleteFiles && (string)($item['photo'] ?? '') !== '') {
+            crud_delete_image_variants(
+                crud_upload_base(),
+                (string)($item['forder'] ?? ''),
+                (string)$item['photo']
+            );
+        }
+        unset($_SESSION['album_d_staged'][$albumPKey][$id]);
+
+        return true;
+    }
+}
+
+if (!function_exists('album_d_upload_staged_file')) {
+    /**
+     * @param array<string,mixed> $file $_FILES 單檔結構
+     * @param array<string,mixed> $detailConfig
+     * @return array{upload_id:string, preview_url:string, original_name:string}
+     */
+    function album_d_upload_staged_file(int $albumPKey, array $file, array $detailConfig): array
+    {
+        if ($albumPKey <= 0) {
+            throw new RuntimeException('相簿參數錯誤');
+        }
+
+        $maxSlots = max(1, (int)($detailConfig['img_slot_max'] ?? $detailConfig['add_photo_slots'] ?? 10));
+        if (album_d_staging_count($albumPKey) >= $maxSlots) {
+            throw new RuntimeException('已達最多 ' . $maxSlots . ' 張圖片');
+        }
+
+        $uploadDirInfo = crud_upload_dir();
+        if ($uploadDirInfo['error'] !== '') {
+            throw new RuntimeException($uploadDirInfo['error']);
+        }
+
+        global $size_bytes;
+        $size_bytes = (int)($size_bytes ?? 2000 * 1024);
+
+        $file_array = ['Photo1' => $file];
+        $uploadResult = crud_upload_file_slots($file_array, $uploadDirInfo['dir'], [1], [
+            'forder_prefix' => (string)($detailConfig['forder_prefix'] ?? 'album_'),
+            'size_bytes'    => $size_bytes,
+            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
+            'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+            'field_prefix'  => 'Photo',
+            'resize_thumb'  => true,
+        ]);
+
+        $uploadMsg = trim((string)($uploadResult['messages'] ?? ''));
+        if ($uploadMsg !== '') {
+            throw new RuntimeException($uploadMsg);
+        }
+        if (empty($uploadResult['photos'][1])) {
+            throw new RuntimeException('上傳失敗');
+        }
+
+        $id = bin2hex(random_bytes(16));
+        $item = [
+            'forder'  => rtrim((string)($uploadResult['monthdir'] ?? date('Ym')), "\\/"),
+            'photo'   => (string)$uploadResult['photos'][1],
+            'photoW'  => (int)($uploadResult['photoW'][1] ?? 0),
+            'photoH'  => (int)($uploadResult['photoH'][1] ?? 0),
+            'name'    => (string)($file['name'] ?? ''),
+        ];
+
+        if (!isset($_SESSION['album_d_staged']) || !is_array($_SESSION['album_d_staged'])) {
+            $_SESSION['album_d_staged'] = [];
+        }
+        if (!isset($_SESSION['album_d_staged'][$albumPKey]) || !is_array($_SESSION['album_d_staged'][$albumPKey])) {
+            $_SESSION['album_d_staged'][$albumPKey] = [];
+        }
+        $_SESSION['album_d_staged'][$albumPKey][$id] = $item;
+
+        return [
+            'upload_id'     => $id,
+            'preview_url'   => album_d_staged_preview_url($item['forder'], $item['photo']),
+            'original_name' => $item['name'],
+        ];
+    }
+}

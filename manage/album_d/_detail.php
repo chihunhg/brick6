@@ -15,6 +15,7 @@ $PhotoS = [];
 if (!$isAdd && $Update_PKey > 0) {
     $PhotoS[1] = $Update_PKey;
 }
+$albumDStagedUploads = $isAdd ? album_d_staging_list((int)$Album_PKey) : [];
 ?>
 <!DOCTYPE html>
 <html <?php echo $lang_text['lang'][$this_lang]; ?>>
@@ -39,14 +40,12 @@ function fieldCheck0(theForm) {
     var array = [];
 
     <?php if ($isAdd) { ?>
-    var total = 0;
-    for (var i = 1; i <= <?php echo $addPhotoSlots; ?>; i++) {
-        var src = $('#preview' + i).prop('src') || '';
-        if (src !== '') {
-            total++;
-        }
-    }
-    if (total === 0) {
+    var doneCount = typeof albumDMultiUploadDoneCount === 'function' ? albumDMultiUploadDoneCount() : 0;
+    var pendingCount = typeof albumDMultiUploadPendingCount === 'function' ? albumDMultiUploadPendingCount() : 0;
+    if (pendingCount > 0) {
+        errors.push('圖片仍在上傳中，請稍候');
+        array.push('Photo1');
+    } else if (doneCount === 0) {
         errors.push('請至少上傳一張圖片');
         array.push('Photo1');
     }
@@ -68,7 +67,12 @@ function fieldCheck0(theForm) {
     }
     return window.manageFormValidationOk(theForm);
 }
-<?php echo script_close(); ?>
+    <?php echo script_close(); ?>
+    <?php if ($isAdd) {
+        $__albumDJs = __DIR__ . '/../js/album-d-multi-upload.js';
+        $__albumDJsVer = is_file($__albumDJs) ? (string)filemtime($__albumDJs) : '1';
+        echo script_src_tag('../js/album-d-multi-upload.js?ver=' . $__albumDJsVer);
+    } ?>
 </head>
 
 <body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
@@ -134,20 +138,31 @@ function fieldCheck0(theForm) {
                                     </label>
                                     <div class="col--10 inputGroup">
                                         <?php if ($isAdd) { ?>
-                                            <?php for ($n = 1; $n <= $addPhotoSlots; $n++) { ?>
-                                        <div class="inputGroup">
-                                            <?php manage_render_upload_image_slot($n, true, '', 0); ?>
-                                            <label class="inputLabel" for="PhotoM<?php echo $n; ?>">圖說 <?php echo $n; ?></label>
-                                            <input name="PhotoM<?php echo $n; ?>" type="text" id="PhotoM<?php echo $n; ?>"
-                                                class="formInput" maxlength="50" value="">
-                                            <?php if ($n === 1) { ?>
+                                        <div id="albumDMultiUpload" class="album-d-multi-upload"
+                                            data-max-slots="<?php echo (int)$addPhotoSlots; ?>"
+                                            data-upload-url="_ajax_upload.php"
+                                            data-remove-url="_ajax_upload_remove.php"
+                                            data-clear-url="_ajax_upload_clear.php"
+                                            data-album-pkey="<?php echo (int)$Album_PKey; ?>"
+                                            data-staged="<?php echo htmlspecialchars((string)json_encode($albumDStagedUploads, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <div class="album-d-dropzone" id="albumDDropzone">
+                                                <p class="album-d-dropzone__hint">
+                                                    拖曳圖片到此處，或
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="albumDChooseBtn">選擇多個檔案</button>
+                                                </p>
+                                                <input type="file" id="albumDFileInput" multiple
+                                                    accept="image/jpeg,image/gif,image/png,image/webp"
+                                                    class="album-d-dropzone__input" tabindex="-1">
+                                            </div>
+                                            <div class="album-d-upload-actions">
+                                                <button type="button" class="btn btn-outline-warning btn-sm" id="albumDClearAllBtn">一鍵清除</button>
+                                            </div>
+                                            <div class="album-d-preview-grid" id="albumDPreviewGrid"></div>
                                             <span id="Photo1_txt" class="input__errorTxt"></span>
-                                            <?php } ?>
                                         </div>
-                                            <?php } ?>
                                         <div class="notes">
                                             <ul class="notes__list">
-                                                <li>最多可一次上傳 <?php echo $addPhotoSlots; ?> 張圖片。</li>
+                                                <li>最多可一次上傳 <?php echo (int)$addPhotoSlots; ?> 張圖片；支援拖曳或一次選取多檔。</li>
                                                 <li>圖片：寬 800px 以內，高不限。</li>
                                             </ul>
                                         </div>
