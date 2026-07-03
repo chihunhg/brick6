@@ -16,21 +16,77 @@ $seoDescPlaceholder = (string)($seoDescPlaceholder ?? '請輸入160字元內的�
 static $manageSeoTdkAiAssetsLoaded = false;
 if (!$manageSeoTdkAiAssetsLoaded) {
     $manageSeoTdkAiAssetsLoaded = true;
+    if (!function_exists('gemini_normalize_industry')) {
+        require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+    }
     $__seoTdkJs = __DIR__ . '/js/seo-tdk-ai.js';
     $__seoTdkJsVer = is_file($__seoTdkJs) ? (string)filemtime($__seoTdkJs) : '1';
     echo script_src_tag('../js/seo-tdk-ai.js?ver=' . $__seoTdkJsVer);
+    $__contentTdkJs = __DIR__ . '/js/content-tdk-ai.js';
+    $__contentTdkJsVer = is_file($__contentTdkJs) ? (string)filemtime($__contentTdkJs) : '1';
+    echo script_src_tag('../js/content-tdk-ai.js?ver=' . $__contentTdkJsVer);
+}
+
+$tdkAiIndustry = gemini_normalize_industry((string)($tdkAiIndustry ?? $editorAiIndustry ?? 'general'));
+$tdkAiIndustryOptions = gemini_industry_options();
+$tdkAiFormatMode = gemini_normalize_format_mode((string)($tdkAiFormatMode ?? 'auto'));
+$tdkAiFormatOptions = gemini_format_mode_options();
+$combinedEditorTarget = 'Contents1_' . $seoLangSlot;
+global $array_lang;
+$seoLangLabel = trim((string)($array_lang[$seoLangSlot] ?? ''));
+
+static $manageSeoTdkIndustrySelectRendered = false;
+$showTdkIndustrySelect = !$manageSeoTdkIndustrySelectRendered;
+if ($showTdkIndustrySelect) {
+    $manageSeoTdkIndustrySelectRendered = true;
 }
 ?>
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel">SEO 工具</label>
-                                        <div class="col--10">
+                                        <div class="col--10 flex flex-wrap items-center gap--2">
+                                            <?php if ($showTdkIndustrySelect) { ?>
+                                            <label class="text-muted mb-0" style="font-size:13px;" for="seoTdkIndustry">產業別</label>
+                                            <select id="seoTdkIndustry"
+                                                class="formInput"
+                                                style="width:auto; min-width:8rem;"
+                                                data-seo-tdk-industry-select>
+                                                <?php foreach ($tdkAiIndustryOptions as $industryValue => $industryLabel) { ?>
+                                                <option value="<?php echo e($industryValue); ?>"
+                                                    <?php echo $tdkAiIndustry === $industryValue ? 'selected' : ''; ?>>
+                                                    <?php echo e($industryLabel); ?>
+                                                </option>
+                                                <?php } ?>
+                                            </select>
+                                            <label class="text-muted mb-0" style="font-size:13px;" for="contentTdkFormat">內文排版</label>
+                                            <select id="contentTdkFormat"
+                                                class="formInput"
+                                                style="width:auto; min-width:8rem;"
+                                                data-content-tdk-format-select>
+                                                <?php foreach ($tdkAiFormatOptions as $formatValue => $formatLabel) { ?>
+                                                <option value="<?php echo e($formatValue); ?>"
+                                                    <?php echo $tdkAiFormatMode === $formatValue ? 'selected' : ''; ?>>
+                                                    <?php echo e($formatLabel); ?>
+                                                </option>
+                                                <?php } ?>
+                                            </select>
+                                            <?php } ?>
+                                            <button type="button"
+                                                class="btnStyle btnStyle--outline btnStyle--sm"
+                                                data-manage-action="content-tdk-generate"
+                                                data-lang-slot="<?php echo $seoLangSlot; ?>"
+                                                data-lang-label="<?php echo e($seoLangLabel); ?>"
+                                                data-editor-target="<?php echo e($combinedEditorTarget); ?>">
+                                                <i class="bi bi-lightning-charge" aria-hidden="true"></i> AI 同步產生 TDK 與內文
+                                            </button>
                                             <button type="button"
                                                 class="btnStyle btnStyle--outline btnStyle--sm"
                                                 data-manage-action="seo-tdk-generate"
-                                                data-lang-slot="<?php echo $seoLangSlot; ?>">
+                                                data-lang-slot="<?php echo $seoLangSlot; ?>"
+                                                data-lang-label="<?php echo e($seoLangLabel); ?>"
+                                                data-seo-tdk-industry="<?php echo e($tdkAiIndustry); ?>">
                                                 <i class="bi bi-stars" aria-hidden="true"></i> AI 產生 TDK
                                             </button>
-                                            <span class="text-muted ms-2" style="font-size:13px;">建議先填寫標題與下方內容區，再依同語系資料自動產生 SEO 欄位</span>
+                                            <span class="text-muted" style="font-size:13px;">同步產生會填入 SEO 欄位與「內容1」；建議先填寫標題</span>
                                         </div>
                                     </div>
                                     <div class="formGrid">
