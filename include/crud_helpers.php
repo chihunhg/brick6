@@ -3911,6 +3911,100 @@ if (!function_exists('crud_validate_lang_show_strname')) {
     }
 }
 
+if (!function_exists('crud_remove_dangerous_html_embeds')) {
+    /**
+     * 移除常見 XSS 載體標籤（保留 img 等 CKEditor 圖文內容）
+     */
+    function crud_remove_dangerous_html_embeds(string $html): string {
+        if (trim($html) === '' || !class_exists(DOMDocument::class)) {
+            return $html;
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $previousLibxmlState = libxml_use_internal_errors(true);
+        $wrapperId = 'crud_html_root_' . bin2hex(random_bytes(4));
+        $document->loadHTML(
+            '<!DOCTYPE html><meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
+            . '<div id="' . $wrapperId . '">' . $html . '</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousLibxmlState);
+
+        $xpath = new DOMXPath($document);
+        $wrapper = $xpath->query('//*[@id="' . $wrapperId . '"]')->item(0);
+        if (!$wrapper instanceof DOMElement) {
+            return $html;
+        }
+
+        $dangerousTags = [
+            'script', 'iframe', 'object', 'embed', 'form', 'input', 'button',
+            'textarea', 'select', 'option', 'meta', 'link', 'base', 'style', 'noscript',
+        ];
+        $dangerQuery = './/' . implode('|.//', $dangerousTags);
+        foreach ($xpath->query($dangerQuery, $wrapper) as $node) {
+            $node->parentNode?->removeChild($node);
+        }
+
+        foreach ($xpath->query('.//*[@href or @src or @style]', $wrapper) as $node) {
+            if (!$node instanceof DOMElement) {
+                continue;
+            }
+            foreach (iterator_to_array($node->attributes ?? []) as $attribute) {
+                $name = strtolower($attribute->nodeName);
+                if (str_starts_with($name, 'on')) {
+                    $node->removeAttribute($attribute->nodeName);
+                    continue;
+                }
+                if (in_array($name, ['href', 'src', 'xlink:href'], true)) {
+                    $value = html_entity_decode((string)$attribute->nodeValue, ENT_QUOTES, 'UTF-8');
+                    if (preg_match('/^(javascript|data|vbscript):/i', trim($value))) {
+                        $node->removeAttribute($attribute->nodeName);
+                    }
+                }
+            }
+        }
+
+        $output = '';
+        foreach ($wrapper->childNodes as $child) {
+            $output .= $document->saveHTML($child);
+        }
+
+        return trim($output);
+    }
+}
+
+if (!function_exists('crud_sanitize_ckeditor_html_for_storage')) {
+    /**
+     * CKEditor / AI 產文 HTML 寫入 DB 前清理，防 XSS
+     */
+    function crud_sanitize_ckeditor_html_for_storage(string $html): string {
+        $html = trim($html);
+        if ($html === '') {
+            return '';
+        }
+
+        if (!function_exists('gemini_sanitize_editor_html')) {
+            $helper = __DIR__ . '/gemini_editor_helpers.php';
+            if (is_file($helper)) {
+                require_once $helper;
+            }
+        }
+
+        $hasRichMedia = (bool)preg_match('/<(img|iframe|video|audio|embed|object)\b/i', $html);
+
+        if (!$hasRichMedia && function_exists('gemini_sanitize_editor_html')) {
+            return gemini_sanitize_editor_html($html);
+        }
+
+        if (function_exists('filter_html')) {
+            $html = filter_html($html, 'tab');
+        }
+
+        return crud_remove_dangerous_html_embeds($html);
+    }
+}
+
 if (!function_exists('crud_decode_b64_content_multilang')) {
     /**
      * 解碼 CKEditor 欄位 Contents{段}_{語系}_b64 → [語系][段] => HTML
@@ -3941,9 +4035,7 @@ if (!function_exists('crud_decode_b64_content_multilang')) {
                     $error .= "【{$k}】解碼失敗或格式不合法\n";
                     continue;
                 }
-                $contents[$lang][$block] = function_exists('filter_html')
-                    ? filter_html($html, 'tab')
-                    : $html;
+                $contents[$lang][$block] = crud_sanitize_ckeditor_html_for_storage($html);
                 continue;
             }
             if (!preg_match('/^Contents(\d+)_(\d+)$/', (string)$k, $m)) {
@@ -3961,9 +4053,7 @@ if (!function_exists('crud_decode_b64_content_multilang')) {
             if ($html === '') {
                 continue;
             }
-            $contents[$lang][$block] = function_exists('filter_html')
-                ? filter_html($html, 'tab')
-                : $html;
+            $contents[$lang][$block] = crud_sanitize_ckeditor_html_for_storage($html);
         }
 
         return ['contents' => $contents, 'error' => $error];
@@ -4045,7 +4135,7 @@ if (!function_exists('crud_save_lang_slots')) {
                 if ($html === '' && isset($filter['Contents' . $n])) {
                     $html = (string)$filter['Contents' . $n];
                 }
-                $row['Contents'] = SqlFilter($html, 'tab');
+                $row['Contents'] = SqlFilter(crud_sanitize_ckeditor_html_for_storage($html), 'tab');
             }
             if (isset($filter['intLink' . $n]) && crud_table_has_column($tableLang, 'intLink')) {
                 $row['intLink'] = SqlFilter($filter['intLink' . $n], 'int');
@@ -4248,7 +4338,9 @@ if (!function_exists('crud_save_msg_blocks_multilang')) {
             }
             for ($i = 1; $i <= $blockCount; $i++) {
                 $showKey = 'isShow' . $i . '_' . $n;
-                $html    = (string)($contentsByLangBlock[$n][$i] ?? '');
+                $html    = crud_sanitize_ckeditor_html_for_storage(
+                    (string)($contentsByLangBlock[$n][$i] ?? '')
+                );
                 if ($html === '' && !isset($filter[$showKey])) {
                     continue;
                 }
@@ -4390,7 +4482,7 @@ if (!function_exists('crud_decode_b64_content_fields')) {
                 $errors .= "【{$k}】解碼失敗或格式不合法\n";
                 continue;
             }
-            $decoded[(string)$k] = $html;
+            $decoded[(string)$k] = crud_sanitize_ckeditor_html_for_storage($html);
             $indexes[$idx] = true;
         }
 
@@ -4466,7 +4558,7 @@ if (!function_exists('crud_save_msg_blocks')) {
                 }
                 $decodedHtml = '';
             } else {
-                $decodedHtml = $decodedByKey[$b64Key];
+                $decodedHtml = crud_sanitize_ckeditor_html_for_storage($decodedByKey[$b64Key]);
             }
 
             $row = [
