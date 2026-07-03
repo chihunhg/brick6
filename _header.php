@@ -7,7 +7,7 @@ require('_in_gtm2.php');
 		<a class="navbarBrand" href="<?php echo e_attr($web_root); ?>" title="<?php echo e_attr($pageTitle2); ?>">
 			<h1 class="logo">
 				<figure>
-					<img src="<?php echo e_attr($web_root); ?>images/all/logo.svg" alt="<?php echo e_attr($pageTitle2); ?>">
+					<img src="<?php echo e_attr($web_root); ?>images/all/logo.png" alt="<?php echo e_attr($pageTitle2); ?>">
 				</figure>
 			</h1>
 		</a>
