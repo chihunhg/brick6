@@ -10,6 +10,8 @@ require_once __DIR__ . '/../question/_helpers.php';
 
 if (!function_exists('question_class_resolve_question_pkey')) {
 
+    /** 自 filter／REQUEST 解析問卷主檔 PKey */
+
     function question_class_resolve_question_pkey(): int
 
     {
@@ -77,6 +79,8 @@ if (!function_exists('question_class_load_parent')) {
 
 
 if (!function_exists('question_class_delete_related_rows')) {
+
+    /** 刪除類別及其題目、語系等關聯資料 */
 
     function question_class_delete_related_rows(int $classPKey): void
 
@@ -157,6 +161,7 @@ if (!function_exists('question_class_form_skip_global')) {
 }
 
 if (!function_exists('question_class_lang_count')) {
+    /** 後台語系數量 */
     function question_class_lang_count(): int
     {
         return manage_lang_count();
@@ -172,6 +177,7 @@ if (!function_exists('question_class_empty_strname_slots')) {
 }
 
 if (!function_exists('question_class_resolve_strname_from_filter')) {
+    /** 自表單 filter 解析類別主檔名稱 */
     function question_class_resolve_strname_from_filter(array $filter): string
     {
         return manage_resolve_lang_field_from_filter($filter, 'strName');
@@ -179,6 +185,7 @@ if (!function_exists('question_class_resolve_strname_from_filter')) {
 }
 
 if (!function_exists('question_class_validate_strname_from_filter')) {
+    /** 驗證類別名稱至少填寫一個語系 */
     function question_class_validate_strname_from_filter(array $filter): string
     {
         return manage_validate_lang_field_from_filter(
@@ -222,6 +229,8 @@ if (!function_exists('question_class_find_lang_row')) {
 
 
 if (!function_exists('question_class_display_strname')) {
+
+    /** 顯示用類別名稱（主檔或語系表 fallback） */
 
     function question_class_display_strname(int $classPKey): string
 
@@ -418,6 +427,7 @@ if (!function_exists('question_class_save_multilang')) {
 
 
 if (!function_exists('question_class_form_init')) {
+    /** 初始化類別表單 bag 預設值 */
     function question_class_form_init(): void
     {
         manage_form_bag_init('question_class_form', [
@@ -434,6 +444,7 @@ if (!function_exists('question_class_form_init')) {
 }
 
 if (!function_exists('question_class_form_export')) {
+    /** 將類別表單 bag 匯出至 $GLOBALS */
     function question_class_form_export(): void
     {
         manage_form_bag_export('question_class_form', question_class_form_skip_global());
@@ -441,6 +452,7 @@ if (!function_exists('question_class_form_export')) {
 }
 
 if (!function_exists('question_class_form_apply_parent')) {
+    /** 寫入問卷父層資訊至表單 bag */
     function question_class_form_apply_parent(int $questionPKey, string $questionName): void
     {
         if (!isset($GLOBALS['question_class_form']) || !is_array($GLOBALS['question_class_form'])) {
@@ -493,6 +505,8 @@ if (!function_exists('question_class_breadcrumbs_for_form')) {
 
 
 if (!function_exists('question_class_form_load')) {
+
+    /** 自 DB 載入類別至表單 bag */
 
     function question_class_form_load(int $pkey, int $questionPKey): bool
 
@@ -578,6 +592,8 @@ if (!function_exists('question_class_form_load')) {
 
 
 if (!function_exists('question_class_next_sort')) {
+
+    /** 同問卷下下一個 Sort 值 */
 
     function question_class_next_sort(int $questionPKey): int
 

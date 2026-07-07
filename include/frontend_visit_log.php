@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 前台單元瀏覽記錄：寫入、GeoIP、Session 防重複與月度封存
+ */
+
 if (!function_exists('frontend_visit_env_flag')) {
     /** 讀取 .env 開關（getenv 未設定時回傳 false，不可直接用 ?? 接預設值） */
     function frontend_visit_env_flag(string $name, string $default = '1'): bool
@@ -16,6 +20,7 @@ if (!function_exists('frontend_visit_env_flag')) {
 }
 
 if (!function_exists('frontend_visit_log_enabled')) {
+    /** 是否啟用前台瀏覽記錄（FRONTEND_VISIT_LOG_ENABLED） */
     function frontend_visit_log_enabled(): bool
     {
         return frontend_visit_env_flag('FRONTEND_VISIT_LOG_ENABLED', '1');
@@ -23,6 +28,7 @@ if (!function_exists('frontend_visit_log_enabled')) {
 }
 
 if (!function_exists('frontend_visit_log_table')) {
+    /** 主表名稱 */
     function frontend_visit_log_table(): string
     {
         return 'frontend_visit_log';
@@ -30,6 +36,7 @@ if (!function_exists('frontend_visit_log_table')) {
 }
 
 if (!function_exists('frontend_visit_skip_bots')) {
+    /** 是否略過爬蟲／Bot（FRONTEND_VISIT_LOG_SKIP_BOTS） */
     function frontend_visit_skip_bots(): bool
     {
         return frontend_visit_env_flag('FRONTEND_VISIT_LOG_SKIP_BOTS', '1');
@@ -37,6 +44,7 @@ if (!function_exists('frontend_visit_skip_bots')) {
 }
 
 if (!function_exists('frontend_visit_request_user_agent')) {
+    /** 取得目前請求的 User-Agent */
     function frontend_visit_request_user_agent(): string
     {
         return trim((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
@@ -121,6 +129,7 @@ if (!function_exists('frontend_visit_is_crawler')) {
 }
 
 if (!function_exists('frontend_visit_geo_enabled')) {
+    /** 是否啟用 IP 國別查詢（FRONTEND_VISIT_GEO_ENABLED） */
     function frontend_visit_geo_enabled(): bool
     {
         return frontend_visit_env_flag('FRONTEND_VISIT_GEO_ENABLED', '1');
@@ -128,6 +137,7 @@ if (!function_exists('frontend_visit_geo_enabled')) {
 }
 
 if (!function_exists('frontend_visit_log_session_key')) {
+    /** 依頁面連結產生 Session 防重複鍵 */
     function frontend_visit_log_session_key(string $pageLink): string
     {
         return 'frontend_visit_log_' . hash('sha256', frontend_visit_normalize_page_link($pageLink));
@@ -135,6 +145,7 @@ if (!function_exists('frontend_visit_log_session_key')) {
 }
 
 if (!function_exists('frontend_visit_log_already_recorded')) {
+    /** 同 Session 是否已記錄此頁瀏覽 */
     function frontend_visit_log_already_recorded(string $pageLink): bool
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -146,6 +157,7 @@ if (!function_exists('frontend_visit_log_already_recorded')) {
 }
 
 if (!function_exists('frontend_visit_log_mark_recorded')) {
+    /** 標記 Session 已記錄此頁瀏覽 */
     function frontend_visit_log_mark_recorded(string $pageLink): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -157,6 +169,7 @@ if (!function_exists('frontend_visit_log_mark_recorded')) {
 }
 
 if (!function_exists('frontend_visit_http_get')) {
+    /** 以 cURL 發送 GET 請求；失敗或無 cURL 時回傳空字串 */
     function frontend_visit_http_get(string $url, int $timeoutSec = 2): string
     {
         if (!function_exists('curl_init')) {
@@ -180,6 +193,7 @@ if (!function_exists('frontend_visit_http_get')) {
 }
 
 if (!function_exists('frontend_visit_client_ip')) {
+    /** 取得訪客 IP（信任代理時優先 X-Forwarded-For） */
     function frontend_visit_client_ip(): string
     {
         if (function_exists('is_trusted_proxy') && is_trusted_proxy()) {
@@ -204,6 +218,7 @@ if (!function_exists('frontend_visit_client_ip')) {
 }
 
 if (!function_exists('frontend_visit_is_public_ip')) {
+    /** 判斷是否為公網 IP（排除私網與保留位址） */
     function frontend_visit_is_public_ip(string $ip): bool
     {
         return filter_var(
@@ -283,6 +298,7 @@ if (!function_exists('frontend_visit_lookup_country')) {
 }
 
 if (!function_exists('frontend_visit_normalize_page_link')) {
+    /** 正規化頁面連結（補前導斜線、截長、清理控制字元） */
     function frontend_visit_normalize_page_link(string $pageLink): string
     {
         $pageLink = trim($pageLink);
@@ -306,6 +322,7 @@ if (!function_exists('frontend_visit_normalize_page_link')) {
 }
 
 if (!function_exists('frontend_visit_resolve_module_pkey')) {
+    /** 解析單元主鍵；未提供時依頁面連結推斷 */
     function frontend_visit_resolve_module_pkey(int $modulePKey, string $pageLink): int
     {
         if ($modulePKey > 0) {
@@ -336,6 +353,7 @@ if (!function_exists('frontend_visit_resolve_module_pkey')) {
 }
 
 if (!function_exists('frontend_visit_log_table_ready')) {
+    /** 主表是否存在（結果靜態快取） */
     function frontend_visit_log_table_ready(?PDO $pdo = null): bool
     {
         static $ready = null;
@@ -444,6 +462,7 @@ if (!function_exists('frontend_visit_log_archive_table_name')) {
 }
 
 if (!function_exists('frontend_visit_log_is_valid_archive_table')) {
+    /** 驗證封存表名格式（frontend_visit_log_YYYYMM） */
     function frontend_visit_log_is_valid_archive_table(string $table): bool
     {
         if (!function_exists('crud_is_safe_sql_identifier') || !crud_is_safe_sql_identifier($table)) {
@@ -475,6 +494,7 @@ if (!function_exists('frontend_visit_log_archive_month_bounds')) {
 }
 
 if (!function_exists('frontend_visit_log_archive_create_table_sql')) {
+    /** 產生存封表 CREATE TABLE SQL */
     function frontend_visit_log_archive_create_table_sql(string $archiveTable, string $monthLabel): string
     {
         if (!frontend_visit_log_is_valid_archive_table($archiveTable)) {
@@ -502,6 +522,7 @@ if (!function_exists('frontend_visit_log_archive_create_table_sql')) {
 }
 
 if (!function_exists('frontend_visit_log_archive_create_table')) {
+    /** 建立封存表並確認表已存在 */
     function frontend_visit_log_archive_create_table(PDO $pdo, string $archiveTable, string $monthLabel): bool
     {
         $sql = frontend_visit_log_archive_create_table_sql($archiveTable, $monthLabel);
@@ -576,6 +597,7 @@ if (!function_exists('frontend_visit_log_archive_resolve_month')) {
 }
 
 if (!function_exists('frontend_visit_log_archive_current_month_start')) {
+    /** 取得當月首日 00:00（封存切分基準） */
     function frontend_visit_log_archive_current_month_start(): DateTimeImmutable
     {
         return new DateTimeImmutable('first day of this month midnight');

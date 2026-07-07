@@ -44,7 +44,8 @@ $Keywords = crud_list_apply_keyword_search(
     $Cond_Array,
     $filter_array ?? [],
     'strName',
-    $kwPlaceholder
+    $kwPlaceholder,
+    ['table' => $table_name, 'pk' => $PKName],
 );
 if ($Keywords === '') {
     $Keywords = $kwPlaceholder;
@@ -95,6 +96,7 @@ $clearUrl = ($WorkFile ?? 'list.php')
                             <div class="filterWrap__content">
                                 <div class="filterWrap__grid">
                                     <?php $searchAutoSubmit = true; require_once '../_search.php'; ?>
+                                    <?php require_once '../_list_semantic_search.php'; ?>
                                     <div class="inputGroup">
                                         <label class="inputLabel" for="OpenDate">刊登日期（起）</label>
                                         <div class="inputWrapper">

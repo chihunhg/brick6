@@ -37,18 +37,16 @@ crud_list_apply_class_filters(
 );
 
 $kwPlaceholder = '請輸入標題或型號搜尋';
-$Keywords = $kwPlaceholder;
-$submitted = (isset($filter_array['Submit']) && $filter_array['Submit'] === '搜尋')
-    || (isset($filter_array['Send']) && $filter_array['Send'] === '搜尋');
-if ($submitted && isset($filter_array['Keywords'])) {
-    $kw = trim((string)$filter_array['Keywords']);
-    if ($kw !== '' && $kw !== $kwPlaceholder) {
-        $kw = mb_substr($kw, 0, 50);
-        $Cond_Array['Keyword'] = str_replace(' ', '', $kw);
-        $PDO_Cond .= " AND (LOCATE(:Keyword, REPLACE(strName, ' ', '')) > 0"
-            . " OR LOCATE(:Keyword, REPLACE(strNo, ' ', '')) > 0)";
-        $Keywords = $kw;
-    }
+$Keywords = crud_list_apply_keyword_search(
+    $PDO_Cond,
+    $Cond_Array,
+    $filter_array ?? [],
+    ['strName', 'strNo'],
+    $kwPlaceholder,
+    ['table' => $table_name, 'pk' => $PKName],
+);
+if ($Keywords === '') {
+    $Keywords = $kwPlaceholder;
 }
 
 $Total = crud_fetch_scalar(
@@ -89,7 +87,7 @@ $clearUrl = ($WorkFile ?? 'list.php')
                                 <div class="filterWrap__grid">
                                     <?php $searchAutoSubmit = true; require_once '../_search.php'; ?>
                                     <div class="inputGroup">
-                                        <label class="inputLabel" for="Keywords">關鍵字搜尋</label>
+                                        <label class="inputLabel" for="Keywords">智慧語意搜尋</label>
                                         <div class="inputWrapper">
                                             <input type="text" name="Keywords" id="Keywords"
                                                 value="<?php echo e($Keywords === $kwPlaceholder ? '' : $Keywords); ?>"

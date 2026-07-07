@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 if (!function_exists('json_clear_output_buffers')) {
+    /** 清空所有 output buffer（JSON 輸出前） */
     function json_clear_output_buffers(): void {
         while (ob_get_level() > 0) {
             ob_end_clean();

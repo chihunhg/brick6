@@ -5,6 +5,51 @@ declare(strict_types=1);
  * Gemini 編輯器 HTML 產生：清理、驗證與產業規範
  */
 
+if (!function_exists('gemini_sanitize_utf8_text')) {
+    /**
+     * 確保字串為有效 UTF-8（Gemini SDK json_encode 不接受畸形位元組）
+     */
+    function gemini_sanitize_utf8_text(string $text): string {
+        if ($text === '') {
+            return '';
+        }
+        if (mb_check_encoding($text, 'UTF-8')) {
+            return $text;
+        }
+
+        $clean = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        if (is_string($clean) && mb_check_encoding($clean, 'UTF-8')) {
+            return $clean;
+        }
+
+        if (function_exists('iconv')) {
+            $iconv = @iconv('UTF-8', 'UTF-8//IGNORE', $text);
+            if (is_string($iconv)) {
+                return $iconv;
+            }
+        }
+
+        $stripped = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text);
+
+        return is_string($stripped) ? $stripped : '';
+    }
+}
+
+if (!function_exists('gemini_sanitize_utf8_array')) {
+    /** @param array<string, mixed> $data @return array<string, mixed> */
+    function gemini_sanitize_utf8_array(array $data): array {
+        foreach ($data as $key => $value) {
+            if (is_string($value)) {
+                $data[$key] = gemini_sanitize_utf8_text($value);
+            } elseif (is_array($value)) {
+                $data[$key] = gemini_sanitize_utf8_array($value);
+            }
+        }
+
+        return $data;
+    }
+}
+
 if (!function_exists('gemini_editor_parse_request')) {
     /**
      * 解析 POST 表單或 JSON body（application/json）
@@ -13,21 +58,22 @@ if (!function_exists('gemini_editor_parse_request')) {
      */
     function gemini_editor_parse_request(): array {
         $input = $_POST;
-        if ($input !== []) {
-            return $input;
+        if ($input === []) {
+            $raw = file_get_contents('php://input');
+            if (!is_string($raw) || trim($raw) === '') {
+                return [];
+            }
+
+            $decoded = json_decode($raw, true);
+            $input = is_array($decoded) ? $decoded : [];
         }
 
-        $raw = file_get_contents('php://input');
-        if (!is_string($raw) || trim($raw) === '') {
-            return [];
-        }
-
-        $decoded = json_decode($raw, true);
-        return is_array($decoded) ? $decoded : [];
+        return gemini_sanitize_utf8_array($input);
     }
 }
 
 if (!function_exists('gemini_normalize_industry')) {
+    /** 正規化產業代碼（中英文別名對應至標準值） */
     function gemini_normalize_industry(string $industry): string {
         $key = strtolower(trim($industry));
 
@@ -70,6 +116,7 @@ if (!function_exists('gemini_editor_allowed_html_tags')) {
 }
 
 if (!function_exists('gemini_editor_allowed_html_tag_names')) {
+    /** 白名單 HTML 標籤名稱（逗號分隔，供 DOM 清理與規則共用） */
     function gemini_editor_allowed_html_tag_names(): string {
         return 'h1, h2, h3, p, strong, ul, li, table, tr, td, a';
     }
@@ -136,6 +183,7 @@ if (!function_exists('gemini_editor_style_rules')) {
 }
 
 if (!function_exists('gemini_editor_style_hint_line')) {
+    /** 產文提示：適度使用 strong 標示關鍵字句 */
     function gemini_editor_style_hint_line(): string {
         return "- 適度使用 <strong> 標示關鍵字句。\n";
     }
@@ -156,6 +204,7 @@ if (!function_exists('gemini_format_mode_options')) {
 }
 
 if (!function_exists('gemini_normalize_format_mode')) {
+    /** 正規化排版模式（auto / prose / table / list） */
     function gemini_normalize_format_mode(string $formatMode): string {
         $key = strtolower(trim($formatMode));
 
@@ -169,6 +218,7 @@ if (!function_exists('gemini_normalize_format_mode')) {
 }
 
 if (!function_exists('gemini_editor_format_rules')) {
+    /** 依排版模式回傳 System Instruction 段落 */
     function gemini_editor_format_rules(string $formatMode): string {
         $styleHint = gemini_editor_style_hint_line();
 
@@ -222,6 +272,7 @@ if (!function_exists('gemini_editor_industry_template_priority_block')) {
 }
 
 if (!function_exists('gemini_industry_rules')) {
+    /** 取得產業規範指令（IndustryTemplates） */
     function gemini_industry_rules(string $industry): string {
         return gemini_industry_template_instruction($industry);
     }
@@ -303,6 +354,7 @@ if (!function_exists('gemini_fetch_source_url_html')) {
 }
 
 if (!function_exists('gemini_normalize_fetched_html_charset')) {
+    /** 將抓取 HTML 轉為 UTF-8（依 meta 或偵測編碼） */
     function gemini_normalize_fetched_html_charset(string $html): string {
         if ($html === '') {
             return '';
@@ -312,13 +364,29 @@ if (!function_exists('gemini_normalize_fetched_html_charset')) {
             $charset = trim((string)$match[1]);
             if ($charset !== '' && strtoupper($charset) !== 'UTF-8') {
                 $converted = @mb_convert_encoding($html, 'UTF-8', $charset);
-                if (is_string($converted) && $converted !== '') {
+                if (is_string($converted) && $converted !== '' && mb_check_encoding($converted, 'UTF-8')) {
                     return $converted;
                 }
             }
         }
 
-        return $html;
+        if (mb_check_encoding($html, 'UTF-8')) {
+            return $html;
+        }
+
+        $detected = mb_detect_encoding(
+            $html,
+            ['UTF-8', 'BIG5', 'CP950', 'GB2312', 'GBK', 'EUC-JP', 'ISO-8859-1', 'Windows-1252'],
+            true
+        );
+        if (is_string($detected) && $detected !== '' && strtoupper($detected) !== 'UTF-8') {
+            $converted = @mb_convert_encoding($html, 'UTF-8', $detected);
+            if (is_string($converted) && $converted !== '' && mb_check_encoding($converted, 'UTF-8')) {
+                return $converted;
+            }
+        }
+
+        return gemini_sanitize_utf8_text($html);
     }
 }
 
@@ -385,7 +453,7 @@ if (!function_exists('gemini_fetch_source_page_text')) {
             $text = mb_substr($text, 0, $maxChars, 'UTF-8') . '…（內文已截斷）';
         }
 
-        return $text;
+        return gemini_sanitize_utf8_text($text);
     }
 }
 
@@ -407,6 +475,7 @@ if (!function_exists('gemini_strip_markdown_fences')) {
 }
 
 if (!function_exists('gemini_sanitize_color_value')) {
+    /** 驗證色碼（#rgb 展開為 #rrggbb）；無效回傳空字串 */
     function gemini_sanitize_color_value(string $value): string {
         $value = strtolower(trim($value));
         if ($value === '') {
@@ -425,6 +494,7 @@ if (!function_exists('gemini_sanitize_color_value')) {
 }
 
 if (!function_exists('gemini_sanitize_font_size_value')) {
+    /** 驗證 px 字級（10–72）；無效回傳空字串 */
     function gemini_sanitize_font_size_value(string $value): string {
         $value = strtolower(trim($value));
         if (!preg_match('/^(\d{1,2})px$/', $value, $match)) {
@@ -440,6 +510,7 @@ if (!function_exists('gemini_sanitize_font_size_value')) {
 }
 
 if (!function_exists('gemini_sanitize_span_style')) {
+    /** 過濾 span 允許的 inline style（color、font-size） */
     function gemini_sanitize_span_style(string $style): string {
         $parts = [];
         foreach (explode(';', $style) as $declaration) {
@@ -469,6 +540,7 @@ if (!function_exists('gemini_sanitize_span_style')) {
 }
 
 if (!function_exists('gemini_sanitize_anchor_href')) {
+    /** 清理連結 href（阻擋 javascript/data，僅允許 http(s)/mailto/站內路徑） */
     function gemini_sanitize_anchor_href(string $href): string {
         $href = trim(htmlspecialchars_decode($href, ENT_QUOTES));
         if ($href === '' || $href === '#') {
@@ -497,6 +569,7 @@ if (!function_exists('gemini_sanitize_anchor_href')) {
 }
 
 if (!function_exists('gemini_dom_unwrap_element')) {
+    /** 移除元素但保留子節點至父層 */
     function gemini_dom_unwrap_element(DOMNode $element): void {
         $parent = $element->parentNode;
         if ($parent === null) {
@@ -510,6 +583,7 @@ if (!function_exists('gemini_dom_unwrap_element')) {
 }
 
 if (!function_exists('gemini_dom_replace_element_tag')) {
+    /** 替換 DOM 元素標籤並保留屬性與子節點 */
     function gemini_dom_replace_element_tag(DOMElement $element, string $newTag, DOMDocument $document): DOMElement {
         $replacement = $document->createElement($newTag);
         if ($element->hasAttributes()) {
@@ -527,6 +601,7 @@ if (!function_exists('gemini_dom_replace_element_tag')) {
 }
 
 if (!function_exists('gemini_sanitize_editor_html_dom')) {
+    /** 以 DOM 清理編輯器 HTML（白名單標籤、移除危險屬性） */
     function gemini_sanitize_editor_html_dom(string $html): string {
         if (!class_exists(DOMDocument::class)) {
             return '';
@@ -655,6 +730,7 @@ if (!function_exists('gemini_sanitize_editor_html')) {
 }
 
 if (!function_exists('gemini_editor_system_instruction')) {
+    /** 組裝 Gemini 編輯器 System Instruction（語言、產業、排版、HTML 規則） */
     function gemini_editor_system_instruction(
         string $industry = 'general',
         string $sourceUrl = '',
@@ -698,6 +774,11 @@ TEXT;
 }
 
 if (!function_exists('gemini_build_editor_user_prompt')) {
+    /**
+     * 組裝編輯器 User Prompt（語言、產業、參考網址、排版、寫作任務）
+     *
+     * @param array<string, mixed> $langContext
+     */
     function gemini_build_editor_user_prompt(
         string $userPrompt,
         string $sourceUrl,

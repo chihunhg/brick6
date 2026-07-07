@@ -12,7 +12,7 @@
 						<span class="txt"><?php echo $lang_text['ft_Reg'][$this_lang]; ?></span>
 					</div>
 					<a class="ftInfoList__item --clock" title="<?php echo $lang_text['ft_opening'][$this_lang]; ?>" >
-						<span class="txt"><?php echo $lang_text['ft_opening'][$this_lang]; ?></span>	
+						<span class="txt"><?php echo $lang_text['ft_opening'][$this_lang]; ?></span>
 						<span class="txt">週一至週五 09:00 - 18:00 </span>
 					</a>
 					<a class="ftInfoList__item --phone" href="tel:0225779281" title="<?php echo $lang_text['ft_tel'][$this_lang]; ?>" >
@@ -43,7 +43,6 @@
 		</div>
 	</div>
 
-
 	<div class="ftMenu">
 		<a class="ftMenu__item" href="<?php echo $lang_text['p1']['p1_page']; ?>" title="<?php echo $lang_text['p1'][$this_lang]['p1']; ?>"><span class="txt"><?php echo $lang_text['p1'][$this_lang]['p1']; ?></span></a>
 		<a class="ftMenu__item" href="<?php echo $lang_text['p2']['p2_page']; ?>" title="<?php echo $lang_text['p2'][$this_lang]['p2']; ?>"><span class="txt"><?php echo $lang_text['p2'][$this_lang]['p2']; ?></span></a>
@@ -51,7 +50,6 @@
 		<a class="ftMenu__item" href="<?php echo $lang_text['p4']['p4_page']; ?>" title="<?php echo $lang_text['p4'][$this_lang]['p4']; ?>"><span class="txt"><?php echo $lang_text['p4'][$this_lang]['p4']; ?></span></a>
 		<a class="ftMenu__item" href="<?php echo $lang_text['p5']['p5_page']; ?>" title="<?php echo $lang_text['p5'][$this_lang]['p5']; ?>"><span class="txt"><?php echo $lang_text['p5'][$this_lang]['p5']; ?></span></a>
 	</div>
-
 
 	<div class="copyright">
 		<span class="txt">© 2026 Endeavor Global Advisory. All Rights Reserved. &nbsp; <a href="https://www.tsg.com.tw/" target="_blank" rel="noopener noreferrer" title="TSG 網頁設計">TSG 網頁設計</a></span>

@@ -7,6 +7,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('manage_lang_count')) {
+    /** 後台語系數量（$array_lang 長度，預設 6） */
     function manage_lang_count(): int
     {
         global $array_lang;
@@ -16,6 +17,7 @@ if (!function_exists('manage_lang_count')) {
 }
 
 if (!function_exists('manage_lang_filter_key')) {
+    /** 多語表單欄位鍵名（如 strName1、Title2） */
     function manage_lang_filter_key(string $fieldPrefix, int $lang): string
     {
         return $fieldPrefix . $lang;

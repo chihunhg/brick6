@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 前台問卷調查頁（questionnaire.htm）
+ *
+ * 載入問卷主檔／分類／題目，POST 送出寫入 question_report_*。
+ * 內嵌 helper：questionnaire_*（區塊名稱、題目、必填判斷）。
+ */
+
 $pageName = 'p11';
 $subPageName = 'p11_1';
 require('_inc.php');
@@ -110,6 +117,7 @@ if (!$rsImg->eof) {
 $rsImg->close();
 
 if (!function_exists('questionnaire_resolve_class_name')) {
+    /** 問卷分類顯示名稱（主檔 → lang 表 → view 回落） */
     function questionnaire_resolve_class_name(int $classPKey, int $lang, string $masterName, int $sort): string
     {
         $name = trim($masterName);
@@ -144,6 +152,7 @@ if (!function_exists('questionnaire_resolve_class_name')) {
 }
 
 if (!function_exists('questionnaire_resolve_item_name')) {
+    /** 問卷題目顯示名稱（主檔 → question_itme_lang 回落） */
     function questionnaire_resolve_item_name(int $itemPKey, int $lang, string $masterName, int $sort): string
     {
         $name = trim($masterName);
@@ -166,6 +175,7 @@ if (!function_exists('questionnaire_resolve_item_name')) {
 }
 
 if (!function_exists('questionnaire_class_rows')) {
+    /** @return list<array{PKey:int,Sort:int,strName:string}> 問卷分類列 */
     function questionnaire_class_rows(int $questionPKey, int $lang): array
     {
         $rows = [];
@@ -217,6 +227,7 @@ if (!function_exists('questionnaire_class_rows')) {
 }
 
 if (!function_exists('questionnaire_item_recordset')) {
+    /** 分類下題目 recordset（Question_D_PKey / Sort 回落） */
     function questionnaire_item_recordset(int $questionPKey, int $classPKey, int $lang, int $classSort = 0): recordset
     {
         unset($questionPKey, $lang);
@@ -239,7 +250,7 @@ if (!function_exists('questionnaire_item_recordset')) {
 }
 
 if (!function_exists('questionnaire_item_required_row')) {
-    /** @param array<string,mixed> $item */
+    /** 題目列是否必填（Must=Yes） */
     function questionnaire_item_required_row(array $item): bool
     {
         return ((string)($item['Must'] ?? '')) === 'Yes';
@@ -247,7 +258,10 @@ if (!function_exists('questionnaire_item_required_row')) {
 }
 
 if (!function_exists('questionnaire_load_sections')) {
-    /** @return list<array{PKey:int,Sort:int,strName:string,items:list<array<string,mixed>>}> */
+    /**
+     * 載入問卷分類與題目結構（含 items 陣列）
+     * @return list<array{PKey:int,Sort:int,strName:string,items:list<array<string,mixed>>}>
+     */
     function questionnaire_load_sections(int $questionPKey, int $lang): array
     {
         $sections = [];
@@ -306,6 +320,7 @@ if (!function_exists('questionnaire_load_sections')) {
 }
 
 if (!function_exists('questionnaire_item_required')) {
+    /** recordset 列是否必填（Must 或 Required=Yes） */
     function questionnaire_item_required(recordset $rs): bool
     {
         $must = (string)$rs->field('Must');

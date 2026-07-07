@@ -12,6 +12,7 @@ if (!function_exists('album_d_form_skip_global')) {
 }
 
 if (!function_exists('album_d_form_init')) {
+    /** 初始化相簿明細表單 bag 預設值 */
     function album_d_form_init(): void
     {
         manage_form_bag_init('album_d_form', [
@@ -29,6 +30,7 @@ if (!function_exists('album_d_form_init')) {
 }
 
 if (!function_exists('album_d_form_export')) {
+    /** 將相簿明細表單 bag 匯出至 $GLOBALS */
     function album_d_form_export(): void
     {
         manage_form_bag_export('album_d_form', album_d_form_skip_global());
@@ -36,6 +38,7 @@ if (!function_exists('album_d_form_export')) {
 }
 
 if (!function_exists('album_d_form_apply_parent')) {
+    /** 寫入相簿父層資訊至表單 bag */
     function album_d_form_apply_parent(int $albumPKey, string $albumName): void
     {
         if (!isset($GLOBALS['album_d_form']) || !is_array($GLOBALS['album_d_form'])) {
@@ -50,6 +53,7 @@ if (!function_exists('album_d_form_apply_parent')) {
 }
 
 if (!function_exists('album_d_form_load')) {
+    /** 自 DB 載入相簿圖片至表單 bag */
     function album_d_form_load(int $pkey, int $albumPKey): bool
     {
         $row = album_d_fetch_row_for_edit($pkey, $albumPKey);
@@ -77,6 +81,7 @@ if (!function_exists('album_d_form_load')) {
 }
 
 if (!function_exists('album_d_addin_validate')) {
+    /** 驗證相簿明細新增／編輯表單（順序、圖片） */
     function album_d_addin_validate(
         array $parent,
         array $filter,

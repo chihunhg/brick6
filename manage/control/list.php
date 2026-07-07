@@ -73,7 +73,7 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                             <div class="filterWrap__content">
                                 <div class="filterWrap__grid">
                                     <div class="inputGroup">
-                                        <label class="inputLabel" for="Keywords">關鍵字搜尋</label>
+                                        <label class="inputLabel" for="Keywords">智慧語意搜尋</label>
                                         <div class="inputWrapper">
                                             <input type="text" name="Keywords" id="Keywords"
                                                 value="<?php echo e($Keywords); ?>"

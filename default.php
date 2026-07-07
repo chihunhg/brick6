@@ -2,22 +2,22 @@
 require("_inc.php");
 
 if ( $_REQUEST["Send"] == "OK" ){
-	
+
 	if ( $_POST["pass"] == "89904080" ){
-		
+
 		$_SESSION["isPass"] = 'Y';
 		//echo '$_SESSION["isPass"]='.$_SESSION["isPass"];exit;
-		
+
 		//setcookie("isPass",'Y',time()+86400);
 		if ( isset($_REQUEST["redirect"]) ){
 			location_href($_REQUEST["redirect"]);
 		}
-		
+
 		//echo '$_SESSION["isPass"]='.$_SESSION["isPass"].'<br>';
 		//exit;
-		
+
 		location_href("index.htm");
-		
+
 	} else {
 		// CSP 安全：使用 data 屬性傳遞錯誤訊息
 		$error_msg = '驗證通行碼不正確';

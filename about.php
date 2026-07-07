@@ -92,7 +92,7 @@ $ldjson = [
                 <span class="ixAboutWrap__en wow fadeInUp"><?php echo $lang_text["index"][$this_lang]["ixAbout_en"]; ?></span>
                 <span class="ixAboutWrap__mj ixAboutWrap__mj--important wow fadeInUp"><?php echo $lang_text["index"][$this_lang]["ixAbout_title1"]; ?></span>
                 <span class="ixAboutWrap__mj wow fadeInUp"><?php echo $lang_text["index"][$this_lang]["ixAbout_title2"]; ?></span>
-            </h2>            
+            </h2>
         </div>
      </section>
 </main>

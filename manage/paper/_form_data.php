@@ -110,6 +110,7 @@ if (!function_exists('class1_detail_export_vars')) {
 }
 
 if (!function_exists('class1_detail_apply_master')) {
+    /** 將主檔列資料寫入 class1_form_vars */
     /** @param array<string,mixed> $row */
     function class1_detail_apply_master(array $row): void {
         $v = &$GLOBALS['class1_form_vars'];
@@ -166,6 +167,7 @@ if (!function_exists('class1_detail_apply_master')) {
 }
 
 if (!function_exists('class1_detail_load_children')) {
+    /** 載入子表資料（語系、圖片、內容、連結等） */
     function class1_detail_load_children(int $pkey): void {
         global $array_lang;
 
@@ -280,6 +282,7 @@ if (!function_exists('class1_detail_resolve_module_pkey')) {
 }
 
 if (!function_exists('class1_recordset_row_to_array')) {
+    /** 將 recordset 目前列轉成關聯陣列 */
     function class1_recordset_row_to_array(recordset $rs): array {
         $cols = [
             'PKey', 'Module_PKey', 'Class1_PKey', 'Class2_PKey', 'Class3_PKey',
@@ -298,6 +301,7 @@ if (!function_exists('class1_recordset_row_to_array')) {
 }
 
 if (!function_exists('class1_detail_debug_load')) {
+    /** 除錯輸出 class1_detail_load 載入過程（需 debug_load=1） */
     function class1_detail_debug_load(string $step, array $ctx = []): void {
         if (!isset($_GET['debug_load']) || (string)$_GET['debug_load'] !== '1') {
             return;

@@ -161,7 +161,7 @@ $google_chk_key = "6Lf6TY0qAAAAAPxJDW-l5RW71XDfloLHBGH44mPD";//密鑰(檢核用)
 $lang_text["no_data_str"] = array(
 	1=>"資料建置中",
 	2=>"Under Construction",
-); 
+);
 
 $lang_text["no_data_str2"] = array(
 	1=>"資料建置中",
@@ -406,7 +406,7 @@ $lang_text["data_mjNeed"] = array(//欄位
 		'Risk Diversification',
 		'No Intention of Relocating Abroad Long-term',
 		'Seeking Residency',
-		'Seeking Passport/Citizenship',	
+		'Seeking Passport/Citizenship',
 	],
 );
 $lang_text["chooseMult"] = array(//欄位

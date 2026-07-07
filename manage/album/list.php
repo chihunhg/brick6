@@ -44,7 +44,8 @@ $Keywords = crud_list_apply_keyword_search(
     $Cond_Array,
     $filter_array ?? [],
     'strName',
-    $kwPlaceholder
+    $kwPlaceholder,
+    ['table' => $table_name, 'pk' => $PKName],
 );
 if ($Keywords === '') {
     $Keywords = $kwPlaceholder;
@@ -91,7 +92,7 @@ $layout_container_class = 'container container--full';
                                 <div class="filterWrap__grid">
                                     <?php $searchAutoSubmit = true; require_once '../_search.php'; ?>
                                     <div class="inputGroup">
-                                        <label class="inputLabel" for="Keywords">關鍵字搜尋</label>
+                                        <label class="inputLabel" for="Keywords">智慧語意搜尋</label>
                                         <div class="inputWrapper">
                                             <input type="text" name="Keywords" id="Keywords"
                                                 value="<?php echo e($Keywords); ?>"

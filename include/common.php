@@ -1,11 +1,6 @@
 <?php
-/**
- * 共用刪除模組
- * 需求：已載入 _inc.php 讓 chkTable/recordset/manage_history/sql_error 等可用
- * 依你的 dbPDO 介面：delete($table, $key_column, $value)
- */
-
 if (!function_exists('join_path')) {
+    /** 以 DIRECTORY_SEPARATOR 串接路徑片段，並去除各段首尾斜線 */
     function join_path(...$parts) {
         $parts = array_map(function($p){ return trim((string)$p, "/\\"); }, $parts);
         $path = implode(DIRECTORY_SEPARATOR, $parts);
@@ -14,8 +9,8 @@ if (!function_exists('join_path')) {
     }
 }
 
-/** 刪單一檔案 + 對應 webp / 縮圖；回傳 ['deleted'=>[], 'miss'=>[]] */
 if (!function_exists('delete_physical_files')) {
+/** 刪單一檔案 + 對應 webp / 縮圖；回傳 ['deleted'=>[], 'miss'=>[]] */
     function delete_physical_files(string $baseDir, string $folder, string $filename, array $opt = []): array {
         $res = ['deleted'=>[], 'miss'=>[]];
 
@@ -46,6 +41,7 @@ if (!function_exists('delete_physical_files')) {
     }
 }
 
+if (!function_exists('delete_cascade_by_ids')) {
 /**
  * 依主鍵 IDs 刪除主表 + 關聯子表 + 檔案
  *
@@ -67,7 +63,6 @@ if (!function_exists('delete_physical_files')) {
  *
  * @return array 結果：['ok'=>bool, 'deleted'=>int, 'miss_files'=>[], 'errors'=>[]]
  */
-if (!function_exists('delete_cascade_by_ids')) {
 function delete_cascade_by_ids(array $ids, array $cfg): array {
     $ids = array_values(array_unique(array_map('intval', $ids)));
     $ids = array_filter($ids, fn($x) => $x > 0);
@@ -230,6 +225,7 @@ function delete_cascade_by_ids(array $ids, array $cfg): array {
  *  基礎：安全檢查資料表是否存在
  * ======================================================= */
 if (!function_exists('tableExists')) {
+    /** 查詢 information_schema / sqlite_master，判斷資料表是否存在 */
     function tableExists(string $table): bool {
         try {
             $pdo = sql_conn();
@@ -270,7 +266,7 @@ if (!function_exists('tableExists')) {
 }
 
 if (!function_exists('chkTableCompat')) {
-    // 先嘗試專案既有的 chkTable()；失敗或拋例外時，回落到 tableExists()
+    /** 優先呼叫 chkTable()，失敗時回落 tableExists() */
     function chkTableCompat(string $table): bool {
         if (function_exists('chkTable')) {
             try { return (bool)chkTable($table); } catch (Throwable $e) { /* fallthrough */ }
@@ -379,6 +375,7 @@ function UpdateSortBatch(string $tableName, array $items, string $PKName = 'PKey
 /* =========================================================
  *  單筆刪除圖片 row（含實體檔）
  * ======================================================= */
+/** 刪除圖片表單筆紀錄及其實體檔（含 webp／縮圖） */
 function DeleteImageRow(string $tableName, ?int $pkey = null, string $pkName = 'PKey'): bool {
     if ($pkey === null && isset($GLOBALS['filter_array'][$pkName]) && is_numeric($GLOBALS['filter_array'][$pkName])) {
         $pkey = (int)$GLOBALS['filter_array'][$pkName];
@@ -618,6 +615,7 @@ function update_upload_batch_by_table(
  * ======================================================= */
 require_once __DIR__ . '/crud_helpers.php';
 
+/** 驗證相對路徑，拒絕外部 URL，空值回傳預設檔名 */
 function _safeRelativePath(string $path, string $default = 'list.php'): string {
     $path = trim($path);
     if ($path === '') return $default;
@@ -709,6 +707,7 @@ function redirectWithAlert(string $message, string $url): void {
 /* =========================================================
  *  檔案刪除工具
  * ======================================================= */
+/** 安全刪檔：優先 DelFile()，否則 @unlink */
 function DelFileSafe(string $path): void {
     if ($path === '') return;
     if (function_exists('DelFile')) { DelFile($path); return; }
@@ -739,6 +738,7 @@ function deleteImageFiles(string $baseDir, string $filename): void {
     DelFileSafe($smallW);
 }
 
+if (!function_exists('hiddenNumeric')) {
 /**
  * 表單 Hidden 欄位 Helpers
  * - 維持 PHP 7.0 相容
@@ -746,7 +746,6 @@ function deleteImageFiles(string $baseDir, string $filename): void {
  * - 全面使用 htmlspecialchars 輸出
  */
 
-if (!function_exists('hiddenNumeric')) {
     function hiddenNumeric(string $name, $value = null, string $id = ''): string {
         $idFinal = $id !== '' ? $id : $name;
         $val     = is_numeric($value) ? (string)(int)$value : '';
@@ -760,6 +759,7 @@ if (!function_exists('hiddenNumeric')) {
 }
 
 if (!function_exists('hiddenText')) {
+    /** 輸出文字型 hidden input（XSS 轉義） */
     function hiddenText(string $name, $value = '', string $id = ''): string {
         $idFinal = $id !== '' ? $id : $name;
         $val     = (string)$value;
@@ -773,6 +773,7 @@ if (!function_exists('hiddenText')) {
 }
 
 if (!function_exists('hiddenYesNo')) {
+    /** 輸出 Yes/No 型 hidden input，非 Yes/No 值輸出空字串 */
     function hiddenYesNo(string $name, $value = '', string $id = ''): string {
         $idFinal = $id !== '' ? $id : $name;
         $v       = ($value === 'Yes' || $value === 'No') ? (string)$value : '';
@@ -785,13 +786,13 @@ if (!function_exists('hiddenYesNo')) {
     }
 }
 
+if (!function_exists('hiddenNumericArray')) {
 /**
  * 建立 hidden input (數值陣列型)
  * @param string   $name   欄位名稱 (會輸出成 name="{$name}[]")
  * @param int[]    $values 數值陣列
  * @param string   $idBase 基底 id，會加上索引，例如 id="{$idBase}_0"
  */
-if (!function_exists('hiddenNumericArray')) {
     function hiddenNumericArray(string $name, array $values, string $idBase = ''): string {
         $out = '';
         foreach (array_values($values) as $i => $v) {
@@ -808,13 +809,13 @@ if (!function_exists('hiddenNumericArray')) {
     }
 }
 
+if (!function_exists('hiddenIfSet')) {
 /**
  * 建立 hidden input (僅當值存在時才輸出)
  * @param string $name 欄位名稱
  * @param mixed  $value 輸出值；若空字串/空陣列/null 則不輸出
  * @param string $id
  */
-if (!function_exists('hiddenIfSet')) {
     function hiddenIfSet(string $name, $value, string $id = ''): string {
         if ($value === null || $value === '' || (is_array($value) && count($value) === 0)) {
             return '';
@@ -829,12 +830,12 @@ if (!function_exists('hiddenIfSet')) {
     }
 }
 
+if (!function_exists('hiddenToken')) {
 /**
  * 建立 hidden input (CSRF Token)
  * - 會自動產生並儲存到 $_SESSION['csrf_token']
  * - 可指定 $name（預設 "csrf_token"）
  */
-if (!function_exists('hiddenToken')) {
     function hiddenToken(string $name = 'csrf_token', string $id = ''): string {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             @session_start();
@@ -852,6 +853,7 @@ if (!function_exists('hiddenToken')) {
     }
 }
 if (!function_exists('getStatusBadge')) {
+	/** 依狀態字串回傳 Bootstrap badge HTML（published／scheduled／archived） */
 	function getStatusBadge($status)
 	{
 		switch($status){

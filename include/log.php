@@ -25,6 +25,7 @@ if (!defined('LOG_MANAGE_FULL_SQL')) {
 }
 
 if (!function_exists('manage_history_file_sql_enabled')) {
+    /** 是否將完整 SqlCommand 寫入 manage_history 檔案日誌 */
     function manage_history_file_sql_enabled(): bool
     {
         return defined('LOG_MANAGE_FULL_SQL') && LOG_MANAGE_FULL_SQL;
@@ -36,19 +37,23 @@ if (!defined('LOG_CALLER_SKIP_REGEX')) {
 }
 
 /* =========================== 共用工具 =========================== */
+/** 取得使用者 IP（優先 UserIP()） */
 function _log_ip(): string {
     return function_exists('UserIP') ? UserIP() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
 }
 
+/** 清理日誌字串：換行轉義、移除控制字元 */
 function _log_sanitize(string $s): string {
     $s = str_replace(["\r", "\n"], ['\r', '\n'], $s);
     return (string)preg_replace('/[\x00-\x1F\x7F]/', '', $s);
 }
 
+/** 將多行字串壓成單行（換行改 tab） */
 function _oneline(string $s): string {
     return str_replace(["\r\n", "\n", "\r"], "\t", $s);
 }
 
+/** 偵測網站根目錄（APP_WEB_ROOT / web_root / RootForder） */
 function _detect_web_root(?string $fallbackWorkFile = null): string {
     if (defined('APP_WEB_ROOT')) return (string)APP_WEB_ROOT;
     if (!empty($GLOBALS['web_root'])) return (string)$GLOBALS['web_root'];
@@ -99,6 +104,7 @@ function _detect_project_root(): string {
     return rtrim(str_replace('\\', '/', __DIR__), '/');
 }
 
+/** 以正斜線正規化後串接路徑，回傳 OS 分隔符格式 */
 function _join_path(string ...$parts): string {
     $norm = array();
 
@@ -118,6 +124,7 @@ function _join_path(string ...$parts): string {
     return str_replace('/', DIRECTORY_SEPARATOR, $path);
 }
 
+/** 將絕對路徑轉為相對於 baseDir 的路徑 */
 function _rel_from_base(string $abs, string $baseDir): string {
     $abs = str_replace('\\', '/', $abs);
     $baseDir = rtrim(str_replace('\\', '/', $baseDir), '/');
@@ -166,6 +173,7 @@ function _find_caller_location(array $extraSkipFunctions = array()): array {
 }
 
 /* ========================= DB 連線存取 ========================= */
+/** 取得 dbPDO 實例供日誌寫入使用，無類別時回傳 null */
 function _log_mysql_pdo(): ?object {
     if (class_exists('dbPDO')) {
         return new dbPDO();
@@ -174,6 +182,7 @@ function _log_mysql_pdo(): ?object {
 }
 
 /* ========================= 資料表寫入 API ========================= */
+/** 寫入 product_h 商品操作紀錄 */
 function product_history($Product_PKey, string $Product_Name, string $SqlCommand, string $strLink, string $UserID): void {
     $ip = _log_ip();
     $data_array = array(
@@ -205,6 +214,7 @@ function product_history($Product_PKey, string $Product_Name, string $SqlCommand
     }
 }
 
+/** 寫入 member_h 會員操作紀錄 */
 function member_history($Member_PKey, string $Member_Name, string $SqlCommand, string $strLink, string $UserID): void {
     $ip = _log_ip();
     $data_array = array(
@@ -236,6 +246,7 @@ function member_history($Member_PKey, string $Member_Name, string $SqlCommand, s
     }
 }
 
+/** 寫入 managelog 並同步輸出文字／JSON 檔案日誌 */
 function manage_history(
     $Module_PKey,
     string $Module_Name,
@@ -320,6 +331,7 @@ function manage_history(
     }
 }
 
+/** 記錄 SQL 錯誤至 error_log 表與檔案，並寫入 manage_history */
 function sql_error(string $SqlCommand, string $ErrorMessage, string $strLink, string $UserID, ?string $srcFile = null, ?int $srcLine = null): array {
     $SqlCommand   = trim($SqlCommand);
     $ErrorMessage = trim($ErrorMessage);
@@ -414,6 +426,7 @@ function sql_error(string $SqlCommand, string $ErrorMessage, string $strLink, st
 }
 
 /* =========================== 檔案寫入（文字） =========================== */
+/** 以管道分隔格式追加寫入文字日誌，回傳日誌檔完整路徑 */
 function write_log(
     string $Module_Name = '',
     string $MSG = '',
@@ -485,6 +498,7 @@ function write_log(
 }
 
 /* =========================== 檔案寫入（JSON） =========================== */
+/** 以 JSON Lines 格式追加寫入日誌，回傳日誌檔完整路徑 */
 function write_log_json(
     string $Module_Name = '',
     string $MSG = '',

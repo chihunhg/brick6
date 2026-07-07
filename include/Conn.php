@@ -1,6 +1,14 @@
 <?php
-// Conn.php — DB連線設定 + HSTS（強化版）
-// 需搭配前面提供的 host.php（含 is_trusted_proxy() / current_scheme() / TRUSTED_DOMAINS 等）
+/**
+ * PDO 資料庫連線與 HSTS 標頭（production + HTTPS）
+ *
+ * 環境變數：DB_*、APP_ENABLE_HSTS、APP_HSTS_*、MYSQL_SSL_*
+ * 需先載入 host.php（TRUSTED_DOMAINS、current_scheme 等）
+ *
+ * 使用方式：
+ *   require_once __DIR__ . '/Conn.php';
+ *   $pdo = sql_conn();
+ */
 
 // ===== HSTS（僅 APP_ENABLE_HSTS=1 且 production + HTTPS；Plesk/nginx 已送時請設 0 避免重複標頭）=====
 (function () {
@@ -46,6 +54,7 @@
 })();
 
 // ===== 安全化的 PDO 連線（支援 Unix Socket 與完整 TLS 選項）=====
+/** 建立 PDO 連線（含 TLS / Unix Socket）；失敗回傳 null */
 function sql_conn(): ?PDO {
     // 基本連線參數
     $host   = getenv('DB_HOST')   ?: ($_ENV['DB_HOST']   ?? 'localhost');

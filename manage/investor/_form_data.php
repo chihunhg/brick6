@@ -6,12 +6,14 @@ declare(strict_types=1);
  */
 
 if (!function_exists('class1_detail_tables')) {
+    /** 讀取 investor/_config.php 子表設定 */
     function class1_detail_tables(): array {
         return manage_detail_tables();
     }
 }
 
 if (!function_exists('investor_lang_count')) {
+    /** 後台語系數量 */
     function investor_lang_count(): int {
         global $array_lang;
         return !empty($array_lang) && is_array($array_lang) ? count($array_lang) : 6;
@@ -44,6 +46,7 @@ if (!function_exists('investor_file_slot_for_lang')) {
 }
 
 if (!function_exists('investor_resolve_show_year')) {
+    /** 依 Class2 設定解析是否顯示年度欄位 */
     function investor_resolve_show_year(): void {
         $v = &$GLOBALS['class1_form_vars'];
         $class2 = (int)($v['Class2'] ?? 0);
@@ -60,6 +63,7 @@ if (!function_exists('investor_resolve_show_year')) {
 }
 
 if (!function_exists('class1_detail_init_defaults')) {
+    /** 初始化 investor 表單預設變數 */
     function class1_detail_init_defaults(): void {
         global $array_lang;
 
@@ -114,6 +118,7 @@ if (!function_exists('class1_detail_init_defaults')) {
 }
 
 if (!function_exists('class1_lang_is_show_on')) {
+    /** 語系 isShow 是否視為開啟 */
     function class1_lang_is_show_on($value): bool {
         $v = strtolower(trim((string)$value));
         return in_array($v, ['y', 'yes', '1', 'true', 'on'], true);
@@ -121,6 +126,7 @@ if (!function_exists('class1_lang_is_show_on')) {
 }
 
 if (!function_exists('class1_detail_export_vars')) {
+    /** 將 class1_form_vars 匯出至 $GLOBALS */
     function class1_detail_export_vars(): void {
         foreach ($GLOBALS['class1_form_vars'] as $key => $val) {
             $GLOBALS[$key] = $val;
@@ -169,6 +175,7 @@ if (!function_exists('class1_detail_apply_master')) {
 }
 
 if (!function_exists('class1_detail_load_children')) {
+    /** 載入語系、內文區塊與圖檔子表 */
     function class1_detail_load_children(int $pkey): void {
         global $array_lang;
 
@@ -259,6 +266,7 @@ if (!function_exists('class1_detail_load_children')) {
 }
 
 if (!function_exists('class1_detail_resolve_module_pkey')) {
+    /** 解析目前單元 Module_PKey（manNo） */
     function class1_detail_resolve_module_pkey(): int {
         $mpk = (int)($GLOBALS['Module_PKey'] ?? 0);
         if ($mpk > 0) {
@@ -270,6 +278,7 @@ if (!function_exists('class1_detail_resolve_module_pkey')) {
 }
 
 if (!function_exists('class1_recordset_row_to_array')) {
+    /** 將 recordset 列轉為關聯陣列 */
     function class1_recordset_row_to_array(recordset $rs): array {
         $cols = [
             'PKey', 'Module_PKey', 'Class1_PKey', 'Class2_PKey', 'Class3_PKey',
@@ -288,6 +297,7 @@ if (!function_exists('class1_recordset_row_to_array')) {
 }
 
 if (!function_exists('class1_detail_load')) {
+    /** 自 DB 載入一筆 investor 主檔與子表 */
     function class1_detail_load(int $pkey, ?int $modulePKey = null): bool {
         if ($pkey <= 0) {
             return false;
@@ -333,6 +343,7 @@ if (!function_exists('class1_detail_load')) {
 }
 
 if (!function_exists('investor_validate_by_show_type')) {
+    /** 依 show_type 驗證連結或檔案欄位 */
     function investor_validate_by_show_type(array $filter, array $file_array, int $formPKey, string $tableImg, string $fk): string {
         global $array_lang;
 
@@ -387,6 +398,7 @@ if (!function_exists('investor_validate_by_show_type')) {
 }
 
 if (!function_exists('investor_validate_year')) {
+    /** 驗證年度欄位（4 位數字） */
     function investor_validate_year(array $filter): string {
         $showYear = (int)($filter['show_year'] ?? 0);
         if ($showYear !== 1) {

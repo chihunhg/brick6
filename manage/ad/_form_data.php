@@ -5,6 +5,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('ad_detail_tables')) {
+    /** 讀取 ad/_config.php 子表設定 */
     function ad_detail_tables(): array
     {
         return manage_detail_tables();
@@ -12,6 +13,7 @@ if (!function_exists('ad_detail_tables')) {
 }
 
 if (!function_exists('ad_lang_is_show_on')) {
+    /** 語系 isShow 是否視為開啟 */
     function ad_lang_is_show_on($value): bool
     {
         if (function_exists('class1_lang_is_show_on')) {
@@ -59,6 +61,7 @@ if (!function_exists('ad_detail_defaults')) {
 }
 
 if (!function_exists('ad_detail_init_defaults')) {
+    /** 初始化廣告表單預設變數 */
     function ad_detail_init_defaults(): void
     {
         $GLOBALS['ad_form_vars'] = ad_detail_defaults();
@@ -67,6 +70,7 @@ if (!function_exists('ad_detail_init_defaults')) {
 }
 
 if (!function_exists('ad_detail_export_vars')) {
+    /** 將 ad_form_vars 匯出至 $GLOBALS */
     function ad_detail_export_vars(): void
     {
         foreach ((array)($GLOBALS['ad_form_vars'] ?? ad_detail_defaults()) as $key => $val) {
@@ -100,6 +104,7 @@ if (!function_exists('ad_detail_apply_master')) {
 }
 
 if (!function_exists('ad_detail_load_lang')) {
+    /** 載入廣告語系列 */
     function ad_detail_load_lang(int $pkey): void
     {
         global $array_lang;
@@ -139,6 +144,7 @@ if (!function_exists('ad_detail_load_lang')) {
 }
 
 if (!function_exists('ad_detail_resolve_module_pkey')) {
+    /** 解析目前單元 Module_PKey（manNo） */
     function ad_detail_resolve_module_pkey(): int
     {
         $mpk = (int)($GLOBALS['Module_PKey'] ?? 0);

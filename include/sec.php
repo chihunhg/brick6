@@ -19,15 +19,15 @@ declare(strict_types=1);
  * 常用輸出編碼
  * -----------------------------------------------------*/
 
-/** 純文字節點（含標題/內文等） */
 if (!function_exists('e')) {
+/** 純文字節點（含標題/內文等） */
     function e(?string $s): string {
         return htmlspecialchars($s ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
 
-/** 從 Movielink 欄位解析 YouTube 影片 ID（11 碼或常見網址格式） */
 if (!function_exists('youtube_extract_id')) {
+/** 從 Movielink 欄位解析 YouTube 影片 ID（11 碼或常見網址格式） */
     function youtube_extract_id(string $input): ?string {
         $input = trim($input);
         if ($input === '') {
@@ -52,24 +52,24 @@ if (!function_exists('youtube_extract_id')) {
     }
 }
 
-/** 前台影音區 iframe 用 embed URL；無效 Movielink 回傳 null */
 if (!function_exists('youtube_embed_src')) {
+/** 前台影音區 iframe 用 embed URL；無效 Movielink 回傳 null */
     function youtube_embed_src(string $movielink): ?string {
         $id = youtube_extract_id($movielink);
         return $id !== null ? ('https://www.youtube-nocookie.com/embed/' . $id) : null;
     }
 }
 
-/** YouTube 外連網址（watch?v=）；無效 Movielink 回傳 null */
 if (!function_exists('youtube_watch_url')) {
+/** YouTube 外連網址（watch?v=）；無效 Movielink 回傳 null */
     function youtube_watch_url(string $movielink): ?string {
         $id = youtube_extract_id($movielink);
         return $id !== null ? ('https://www.youtube.com/watch?v=' . $id) : null;
     }
 }
 
-/** YouTube 縮圖 URL；$quality 常用 hqdefault、mqdefault、sddefault */
 if (!function_exists('youtube_thumbnail_url')) {
+/** YouTube 縮圖 URL；$quality 常用 hqdefault、mqdefault、sddefault */
     function youtube_thumbnail_url(string $movielink, string $quality = 'hqdefault'): ?string {
         $id = youtube_extract_id($movielink);
         if ($id === null) {
@@ -81,10 +81,10 @@ if (!function_exists('youtube_thumbnail_url')) {
     }
 }
 
+if (!function_exists('editor_html_decode_stored')) {
 /**
  * 還原曾 htmlspecialchars 存入 DB 的 CKEditor 內容（僅在無真實標籤、含 &lt; 時解一次）
  */
-if (!function_exists('editor_html_decode_stored')) {
     function editor_html_decode_stored(string $html): string {
         $html = (string)$html;
         if ($html === '') {
@@ -107,11 +107,11 @@ if (!function_exists('editor_html_decode_stored')) {
     }
 }
 
+if (!function_exists('e_editor_html')) {
 /**
  * CKEditor textarea 初值：輸出 HTML（勿用 e()，否則編輯器會顯示 &lt;p&gt; 等實體）
  * 會移除 script、防止 </textarea> 跳出標籤；若舊資料曾整段 escape 則嘗試還原一次
  */
-if (!function_exists('e_editor_html')) {
     function e_editor_html(?string $html): string {
         $html = editor_html_decode_stored((string)($html ?? ''));
         if ($html === '') {
@@ -122,15 +122,15 @@ if (!function_exists('e_editor_html')) {
     }
 }
 
-/** HTML 屬性值（href/src/content 等） */
 if (!function_exists('e_attr')) {
+/** HTML 屬性值（href/src/content 等） */
     function e_attr(?string $s): string {
         return htmlspecialchars($s ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
 
-/** 內嵌 JS 字串：用 json_encode 生成合法字面值 */
 if (!function_exists('js_str')) {
+/** 內嵌 JS 字串：用 json_encode 生成合法字面值 */
     function js_str($v): string {
         return json_encode(
             (string)$v,
@@ -143,8 +143,8 @@ if (!function_exists('js_str')) {
  * 內部工具
  * -----------------------------------------------------*/
 
-/** 是否為 HTTPS（含常見反代 header） */
 if (!function_exists('_is_https')) {
+/** 是否為 HTTPS（含常見反代 header） */
     function _is_https(): bool {
         if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
         if (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443) return true;
@@ -154,23 +154,23 @@ if (!function_exists('_is_https')) {
     }
 }
 
+if (!function_exists('request_transport_https')) {
 /**
  * 目前請求是否以 HTTPS 傳輸（_inc.php CSP：是否加上 upgrade-insecure-requests）
  * 以實際連線／可信反代為準，與 _is_https() 一致。
  */
-if (!function_exists('request_transport_https')) {
     function request_transport_https(): bool {
         return _is_https();
     }
 }
 
+if (!function_exists('is_trustworthy_origin')) {
 /**
  * 是否為「可信來源」（COOP / COEP 等僅在此時由瀏覽器採用）
  * HTTPS，或 HTTP 的 localhost / 127.0.0.1 / [::1]
  *
  * @see https://www.w3.org/TR/powerful-features/#potentially-trustworthy-origin
  */
-if (!function_exists('is_trustworthy_origin')) {
     function is_trustworthy_origin(): bool {
         if (_is_https()) {
             return true;
@@ -192,8 +192,8 @@ if (!function_exists('is_trustworthy_origin')) {
     }
 }
 
-/** COOP / COEP / CORP：僅在可信來源送出，避免 HTTP 非 localhost 時主控台警告 */
 if (!function_exists('security_cross_origin_headers')) {
+/** COOP / COEP / CORP：僅在可信來源送出，避免 HTTP 非 localhost 時主控台警告 */
     function security_cross_origin_headers(bool $includeCoep = false): array {
         if (!is_trustworthy_origin()) {
             return [];
@@ -209,8 +209,8 @@ if (!function_exists('security_cross_origin_headers')) {
     }
 }
 
-/** 移除 CR/LF（避免 header 注入） */
 if (!function_exists('_strip_crlf')) {
+/** 移除 CR/LF（避免 header 注入） */
     function _strip_crlf(string $s): string {
         return str_replace(["\r", "\n"], '', $s);
     }
@@ -220,12 +220,12 @@ if (!function_exists('_strip_crlf')) {
  * URL 驗證 / 安全導向
  * -----------------------------------------------------*/
 
+if (!function_exists('safe_url')) {
 /**
  * 驗證並回傳安全 URL（允許相對路徑 & 白名單絕對網址）
  * - 允許：/..., ./..., ../..., 或純路徑/檔名（英數、_-.?/&=%）
  * - 阻擋：空字串、CRLF、scheme-relative(//)、非 http/https 的絕對網址、javascript:
  */
-if (!function_exists('safe_url')) {
     function safe_url(string $url, array $allowedHosts = []): ?string {
         $url = trim($url);
         if ($url === '') return null;
@@ -283,22 +283,22 @@ if (!function_exists('safe_url')) {
     }
 }
 
-/** 視圖層 href 用：失敗回傳 '#' */
 if (!function_exists('safe_href')) {
+/** 視圖層 href 用：失敗回傳 '#' */
     function safe_href(string $url, array $allowedHosts = []): string {
         return safe_url($url, $allowedHosts) ?? '#';
     }
 }
 
-/** 直接輸出到 HTML 屬性（= safe_href + 屬性轉義） */
 if (!function_exists('href_attr')) {
+/** 直接輸出到 HTML 屬性（= safe_href + 屬性轉義） */
     function href_attr(string $url, array $allowedHosts = []): string {
         return e_attr(safe_href($url, $allowedHosts));
     }
 }
 
-/** 安全重新導向（避免 Open Redirect / header split） */
 if (!function_exists('safe_redirect')) {
+/** 安全重新導向（避免 Open Redirect / header split） */
     function safe_redirect(string $url, array $allowedHosts = [], int $code = 302): void {
         $safe = safe_url($url, $allowedHosts) ?? '/';
         if (!headers_sent()) {
@@ -312,6 +312,7 @@ if (!function_exists('safe_redirect')) {
  * JSON 安全輸出（<script type="application/ld+json">）
  * -----------------------------------------------------*/
 if (!function_exists('json_script')) {
+    /** JSON 安全嵌入 script 用字串（hex 跳脫防 XSS） */
     function json_script($data): string {
         $json = json_encode(
             $data,
@@ -322,8 +323,8 @@ if (!function_exists('json_script')) {
     }
 }
 
-/** JSON-LD 結構化資料（帶 nonce，符合 script-src CSP） */
 if (!function_exists('json_ld_script_tag')) {
+    /** JSON-LD 結構化資料（帶 nonce，符合 script-src CSP） */
     function json_ld_script_tag($data): string {
         return '<script type="application/ld+json"' . csp_script_nonce_attr() . '>'
             . json_script($data) . '</script>';
@@ -334,6 +335,7 @@ if (!function_exists('json_ld_script_tag')) {
  * Session / Cookie
  * -----------------------------------------------------*/
 if (!function_exists('start_secure_session')) {
+    /** 啟動安全 session cookie（httponly、secure、SameSite） */
     function start_secure_session(?string $domain = null, string $sameSite = 'Lax'): void {
         if (session_status() === PHP_SESSION_NONE) {
             $p = session_get_cookie_params();
@@ -359,6 +361,7 @@ if (!function_exists('start_secure_session')) {
 }
 
 if (!function_exists('set_secure_cookie')) {
+    /** 設定安全 cookie（預設 httponly + secure + SameSite=Lax） */
     function set_secure_cookie(string $name, string $value, array $opts = []): void {
         $d = [
             'expires'  => 0,
@@ -376,6 +379,7 @@ if (!function_exists('set_secure_cookie')) {
 }
 
 if (!function_exists('clear_cookie')) {
+    /** 清除 cookie（expires 設為過去） */
     function clear_cookie(string $name, array $opts = []): void {
         $opts['expires'] = time() - 42000;
         set_secure_cookie($name, '', $opts);
@@ -386,6 +390,7 @@ if (!function_exists('clear_cookie')) {
  * CSRF
  * -----------------------------------------------------*/
 if (!function_exists('csrf_seed')) {
+    /** 確保 $_SESSION['csrf'] 種子存在 */
     function csrf_seed(): void {
         if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
         if (empty($_SESSION['csrf'])) {
@@ -395,6 +400,7 @@ if (!function_exists('csrf_seed')) {
 }
 
 if (!function_exists('csrf_token')) {
+    /** 取得 CSRF token 字串 */
     function csrf_token(): string {
         csrf_seed();
         return (string)($_SESSION['csrf'] ?? '');
@@ -402,12 +408,14 @@ if (!function_exists('csrf_token')) {
 }
 
 if (!function_exists('csrf_input')) {
+    /** 輸出 hidden csrf 欄位 HTML */
     function csrf_input(): string {
         return '<input type="hidden" name="csrf" value="' . e_attr(csrf_token()) . '">';
     }
 }
 
 if (!function_exists('require_post')) {
+    /** 非 POST 請求回 405 並 exit */
     function require_post(): void {
         if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             http_response_code(405);
@@ -418,6 +426,7 @@ if (!function_exists('require_post')) {
 }
 
 if (!function_exists('csrf_check')) {
+    /** 驗證 POST csrf（通過或失敗皆消耗 token） */
     function csrf_check(): void {
         if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
         if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -440,6 +449,7 @@ if (!function_exists('csrf_check')) {
  * 同源檢查
  * -----------------------------------------------------*/
 if (!function_exists('check_same_origin')) {
+    /** Origin/Referer 主機須在白名單內，否則 403 */
     function check_same_origin(array $allowedHosts = []): void {
         $origin = $_SERVER['HTTP_ORIGIN']  ?? ($_SERVER['HTTP_REFERER'] ?? '');
         if ($origin === '') return;
@@ -459,6 +469,7 @@ if (!function_exists('check_same_origin')) {
  * CSP with nonce / 常用安全標頭
  * -----------------------------------------------------*/
 if (!function_exists('csp_nonce')) {
+    /** 本請求 CSP script nonce（$GLOBALS['csp_nonce']） */
     function csp_nonce(): string {
         if (empty($GLOBALS['csp_nonce'])) {
             $GLOBALS['csp_nonce'] = bin2hex(random_bytes(16));
@@ -467,8 +478,8 @@ if (!function_exists('csp_nonce')) {
     }
 }
 
-/** 防點擊劫持：X-Frame-Options（舊版瀏覽器）；請與 CSP frame-ancestors 政策一致 */
 if (!function_exists('send_frame_options_header')) {
+    /** 防點擊劫持：X-Frame-Options（舊版瀏覽器）；請與 CSP frame-ancestors 政策一致 */
     function send_frame_options_header(string $policy = 'SAMEORIGIN'): void {
         $policy = strtoupper(trim($policy));
         if (!in_array($policy, ['DENY', 'SAMEORIGIN'], true)) {
@@ -522,8 +533,8 @@ if (!function_exists('csp_policy_string')) {
     }
 }
 
-/** reCAPTCHA：Google 建議路徑 + Web Worker（blob / gstatic）— 後台沿用 */
 if (!function_exists('csp_recaptcha_extra_directives')) {
+/** reCAPTCHA：Google 建議路徑 + Web Worker（blob / gstatic）— 後台沿用 */
     function csp_recaptcha_extra_directives(string $nonce, array $scriptHosts): string {
         $hosts = static function (array $list): string {
             $out = [];
@@ -541,12 +552,12 @@ if (!function_exists('csp_recaptcha_extra_directives')) {
     }
 }
 
+if (!function_exists('csp_frontend_script_elem_directives')) {
 /**
  * 前台 script-src-elem：nonce + strict-dynamic，不列第三方網域（避免 CSP Evaluator 繞過警告）。
  * 初始腳本須帶 nonce（script_src_tag / recaptcha_script_tag）；後續由 strict-dynamic 信任鏈載入。
  * unsafe-inline / https: 僅供不支援 CSP3 的舊瀏覽器後備，現代瀏覽器會忽略。
  */
-if (!function_exists('csp_frontend_script_elem_directives')) {
     function csp_frontend_script_elem_directives(string $nonce): string {
         return "script-src-elem 'nonce-{$nonce}' 'strict-dynamic' 'unsafe-inline' https:; "
             . "worker-src 'self' blob: https://www.gstatic.com https://www.google.com https://www.recaptcha.net; ";
@@ -799,30 +810,32 @@ if (!function_exists('send_manage_security_headers')) {
 }
 
 if (!function_exists('script_open')) {
+    /** 開啟帶 nonce 的 script 標籤 */
     function script_open(): string {
         return '<script nonce="' . e_attr(csp_nonce()) . '">';
     }
 }
 if (!function_exists('script_close')) {
+    /** 關閉 script 標籤 */
     function script_close(): string { return '</script>'; }
 }
 
-/** 外連或同源帶 src 的 script 標籤須輸出此屬性，否則 strict-dynamic 下會被擋 */
 if (!function_exists('csp_script_nonce_attr')) {
+    /** 外連或同源帶 src 的 script 標籤須輸出此屬性，否則 strict-dynamic 下會被擋 */
     function csp_script_nonce_attr(): string {
         return ' nonce="' . e_attr(csp_nonce()) . '"';
     }
 }
 
-/** 內嵌 JS 片段（帶 nonce），供 echo 後符合 script-src nonce CSP */
 if (!function_exists('manage_inline_script')) {
+    /** 內嵌 JS 片段（帶 nonce），供 echo 後符合 script-src nonce CSP */
     function manage_inline_script(string $js): string {
         return script_open() . $js . script_close();
     }
 }
 
-/** Google reCAPTCHA 等會頻繁更新的腳本不適用 SRI（hash 失效會導致整段 script 被瀏覽器封鎖） */
 if (!function_exists('sri_is_skipped_url')) {
+    /** Google reCAPTCHA 等會頻繁更新的腳本不適用 SRI（hash 失效會導致整段 script 被瀏覽器封鎖） */
     function sri_is_skipped_url(string $src): bool {
         $parts = parse_url(trim($src));
         if (empty($parts['host']) || empty($parts['path'])) {
@@ -838,8 +851,8 @@ if (!function_exists('sri_is_skipped_url')) {
     }
 }
 
-/** 外連 script 的 SRI integrity（見 include/sri_manifest.php） */
 if (!function_exists('sri_integrity_for_url')) {
+/** 外連 script 的 SRI integrity（見 include/sri_manifest.php） */
     function sri_integrity_for_url(string $src): ?string {
         static $manifest = null;
         if ($manifest === null) {
@@ -870,8 +883,8 @@ if (!function_exists('sri_integrity_for_url')) {
     }
 }
 
-/** 僅表單頁載入 reCAPTCHA（不加 SRI：Google 會不定期更新 api.js） */
 if (!function_exists('recaptcha_script_tag')) {
+/** 僅表單頁載入 reCAPTCHA（不加 SRI：Google 會不定期更新 api.js） */
     function recaptcha_script_tag(?string $hl = null): string {
         if (!function_exists('recaptcha_site_key') || recaptcha_site_key() === '') {
             return '';
@@ -885,8 +898,8 @@ if (!function_exists('recaptcha_script_tag')) {
     }
 }
 
-/** 外連 script 標籤（含 nonce，供 strict-dynamic 信任鏈） */
 if (!function_exists('script_src_tag')) {
+/** 外連 script 標籤（含 nonce，供 strict-dynamic 信任鏈） */
     function script_src_tag(string $src, array $attrs = []): string {
         if (!isset($attrs['integrity'])) {
             $autoSri = sri_integrity_for_url($src);
@@ -912,8 +925,8 @@ if (!function_exists('script_src_tag')) {
     }
 }
 
-/** 後台 alert / 導向（CSP nonce 腳本，取代 echo "<script>alert...") */
 if (!function_exists('manage_alert_script')) {
+/** 後台 alert / 導向（CSP nonce 腳本，取代 echo "<script>alert...") */
     function manage_alert_script(string $message, ?string $redirect = null, bool $historyBack = false): never {
         $js = 'alert(' . json_encode($message, JSON_UNESCAPED_UNICODE) . ');';
         if ($redirect !== null && $redirect !== '') {
@@ -930,18 +943,21 @@ if (!function_exists('manage_alert_script')) {
  * 視圖輔助
  * -----------------------------------------------------*/
 if (!function_exists('safe_tel')) {
+    /** 電話號碼清理（僅保留數字與 +） */
     function safe_tel(string $tel): string {
         $clean = preg_replace('/[^0-9+]/', '', (string)$tel);
         return $clean === null ? '' : $clean;
     }
 }
 if (!function_exists('tel_href')) {
+    /** tel: 連結（無有效號碼回 null） */
     function tel_href(string $tel): ?string {
         $clean = safe_tel($tel);
         return $clean === '' ? null : ('tel:' . $clean);
     }
 }
 if (!function_exists('is_external_link')) {
+    /** href 是否為外站（有 host 且與 $web_host 不同） */
     function is_external_link(string $href, ?string $web_host = null): bool {
         $href = trim($href);
         if ($href === '') return false;
@@ -952,11 +968,11 @@ if (!function_exists('is_external_link')) {
     }
 }
 
-/**
- * 前台輸出 CKEditor 富文本：移除 script／行內事件，並正規化 Upload 路徑
- * （允許 HTML 標籤，Fortify 若仍告警屬 stored HTML 政策，可再加 HTMLPurifier）
- */
 if (!function_exists('frontend_render_html')) {
+    /**
+     * 前台輸出 CKEditor 富文本：移除 script／行內事件，並正規化 Upload 路徑
+     * （允許 HTML 標籤，Fortify 若仍告警屬 stored HTML 政策，可再加 HTMLPurifier）
+     */
     function frontend_render_html(string $html): string {
         $html = trim(editor_html_decode_stored($html));
         if ($html === '') {
@@ -980,10 +996,10 @@ if (!function_exists('frontend_render_html')) {
     }
 }
 
+if (!function_exists('safe_inline_html')) {
 /**
  * 保留少量行內排版標籤，移除屬性與危險標籤，避免 XSS。預設允許：p, span, br
  */
-if (!function_exists('safe_inline_html')) {
     function safe_inline_html(string $html, array $allowedTags = ['p','span','br']): string {
         $html = (string)$html;
         if (!class_exists('DOMDocument')) {

@@ -357,21 +357,24 @@
             lang_label: langPayload.lang_label
         };
 
-        $.ajax({
-            type: 'POST',
-            url: resolveApiUrl(),
-            dataType: 'text',
-            contentType: 'application/json; charset=utf-8',
-            data: JSON.stringify(payload)
-        })
-            .done(function (raw) {
-                var res;
-                try {
-                    res = parseJsonResponse(raw);
-                } catch (parseErr) {
-                    window.alert(resolveAjaxErrorMessage({ status: 200, responseText: raw }, 'parsererror', raw));
-                    return;
+        if (typeof window.manageGeminiStreamPost !== 'function') {
+            window.alert('缺少 gemini-sse-client.js，請重新整理頁面或確認 manage/js 已部署。');
+            setAiBusyState($btn, editorId, false);
+            return;
+        }
+
+        window.manageGeminiStreamPost(resolveApiUrl(), payload, {
+            onStart: function () {
+                setLoadingOverlay(true, 'AI 正在串流產生內容…');
+            },
+            onDelta: function (delta, accumulated) {
+                var partialHtml = window.manageGeminiTryPartialHtml(accumulated);
+                if (partialHtml !== null && partialHtml !== '') {
+                    setEditorHtml(editorId, partialHtml);
                 }
+                setLoadingOverlay(true, 'AI 產文中…（已接收 ' + accumulated.length + ' 字元）');
+            },
+            onDone: function (res) {
                 if (!res || typeof res !== 'object') {
                     window.alert('產生失敗：回應格式錯誤');
                     return;
@@ -385,11 +388,12 @@
                     return;
                 }
                 setEditorHtml(editorId, String(res.html_content));
+            }
+        })
+            .catch(function (err) {
+                window.alert(err && err.message ? err.message : '產生失敗，請稍後再試');
             })
-            .fail(function (xhr, textStatus) {
-                window.alert(resolveAjaxErrorMessage(xhr, textStatus, xhr.responseText));
-            })
-            .always(function () {
+            .finally(function () {
                 setAiBusyState($btn, editorId, false);
             });
     }

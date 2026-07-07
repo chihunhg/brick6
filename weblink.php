@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-
-
 $pageName = '';
 
 $subPageName = '';
 
 require('_inc.php');
-
-
 
 $Module_PKey = frontend_module_pkey('weblink');
 
@@ -36,21 +32,13 @@ frontend_module_set_config(array_merge(
 
 ));
 
-
-
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
-
-
 frontend_init_breadcrumb($Module_Name, $Module_Link);
 
-
-
 [$PDO_Cond, $Cond_Array] = frontend_list_where($Module_PKey);
-
-
 
 $Total = frontend_list_total($PDO_Cond, $Cond_Array);
 
@@ -68,13 +56,9 @@ $listRows = frontend_fetch_list($PDO_Cond, $Cond_Array, $offset, (int)frontend_m
 
 unset($Cond_Array);
 
-
-
 $listTitle = (string)($Module_Name !== '' ? $Module_Name : '相關網站');
 
 ?>
-
-
 
 <!DOCTYPE html>
 
@@ -88,15 +72,11 @@ $listTitle = (string)($Module_Name !== '' ? $Module_Name : '相關網站');
 
 </head>
 
-
-
 <body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
 
 <?php require('_header.php'); ?>
 
 <?php require('_banner.php'); ?>
-
-
 
 <main class="pgContent">
 
@@ -192,8 +172,6 @@ $listTitle = (string)($Module_Name !== '' ? $Module_Name : '相關網站');
 
 </main>
 
-
-
 <?php require('_footer.php'); ?>
 
 <?php require('_in_code_bottom.php'); ?>
@@ -201,5 +179,3 @@ $listTitle = (string)($Module_Name !== '' ? $Module_Name : '相關網站');
 </body>
 
 </html>
-
-

@@ -53,6 +53,7 @@ if (!function_exists('gemini_fetch_active_language_labels')) {
 }
 
 if (!function_exists('gemini_normalize_output_locale')) {
+    /** 後台語系標籤 → en / zh-tw / zh-cn / ja */
     function gemini_normalize_output_locale(string $langLabel, int $langSlot = 0): string {
         $label = mb_strtolower(trim($langLabel), 'UTF-8');
 
@@ -81,6 +82,7 @@ if (!function_exists('gemini_normalize_output_locale')) {
 }
 
 if (!function_exists('gemini_output_language_display_name')) {
+    /** locale 對應的顯示語言名稱 */
     function gemini_output_language_display_name(string $locale, string $langLabel = ''): string {
         return match ($locale) {
             'en' => 'English',
@@ -92,6 +94,7 @@ if (!function_exists('gemini_output_language_display_name')) {
 }
 
 if (!function_exists('gemini_output_language_rules')) {
+    /** 產文 prompt 的輸出語言規則區塊 */
     function gemini_output_language_rules(string $locale, string $langLabel = ''): string {
         $display = gemini_output_language_display_name($locale, $langLabel);
         $adminLabel = $langLabel !== '' ? $langLabel : $display;

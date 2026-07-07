@@ -75,12 +75,11 @@ if ( empty($filter_array['email']) or !is_string($filter_array['email']) ){
 } else {
 	if ( !CheckMail($filter_array['email']) ){
 		$MSG .= $lang_text["chk_email_rule"][$this_lang]."\\n";//請輸入正確的【電子信箱】
-	
+
 	} else {
 		$email = SqlFilter($filter_array['email'],"str");
 	}
 }
-
 
 //洽詢內容
 if ( empty($filter_array['description']) or !is_string($filter_array['description']) ){
@@ -94,7 +93,7 @@ if ( $MSG == "" ){
 
 	$mail_subject = $m_title."-".$lang_text["mail_subject_contact"][$this_lang];
 	$mailTitle = $lang_text["mail_subject_contact"][$this_lang];
-	
+
 	//郵件內容
 	$BODY = "<html><head>";
 	$BODY .= "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">";
@@ -108,7 +107,7 @@ if ( $MSG == "" ){
 	$BODY .= "<td colspan=\"2\" bgcolor=\"#3F5768\" align=\"center\">";
 	$BODY .= "<font color=\"#ffffff\" font size=\"5\"  font-weight: bold ><b>".$mailTitle."</b></font></td>";
 	$BODY .= "</tr>";
-	
+
 	/////需要工程師調整↓↓↓
 	$BODY .= "<tr>";
 	$BODY .= "<td class=\"font1\" width=\"30%\">活動名稱</td>";
@@ -129,22 +128,21 @@ if ( $MSG == "" ){
 	$BODY .= "<tr>";
 	$BODY .= "<td class=\"font1\">".$lang_text["field_num"][$this_lang]."</td>";
 	$BODY .= "<td>".$num."</td>";
-	$BODY .= "</tr>";	
+	$BODY .= "</tr>";
 
 	$BODY .= "<tr>";
 	$BODY .= "<td class=\"font1\">".$lang_text["field_cellphone"][$this_lang]."</td>";
 	$BODY .= "<td>".$cellphone."</td>";
-	$BODY .= "</tr>";	
+	$BODY .= "</tr>";
 
 	$BODY .= "<tr>";
 	$BODY .= "<td class=\"font1\">".$lang_text["field_email"][$this_lang]."</td>";
 	$BODY .= "<td>".$email."</td>";
 	$BODY .= "</tr>";
 
-
 	$BODY .= "<tr>";
 	$BODY .= "<td class=\"font1\">".$lang_text["field_howevent"][$this_lang]."</td>";
-	$BODY .= "<td>".$howevent."</td>";	
+	$BODY .= "<td>".$howevent."</td>";
 	$BODY .= "</tr>";
 
 	$BODY .= "<tr>";
@@ -160,7 +158,7 @@ if ( $MSG == "" ){
 	$mg_from_mail  = $m_from_mail;//來自-後台-SEO基本設定
 	$mg_to_title   = $m_title;//來自-後台-SEO基本設定
 	$mg_to_mail    = $m_to_mail;//來自-後台-SEO基本設定
-		
+
 	/*echo "mg_from_title=".$mg_from_title."<br>";
 	echo "mg_from_mail=".$mg_from_mail."<br>";
 	echo "mg_to_title=".$mg_to_title."<br>";
@@ -170,7 +168,7 @@ if ( $MSG == "" ){
 
 	SendMail($mg_to_title,$mg_to_mail,$mg_from_title,$mg_from_mail,$mail_subject,$BODY);
 	      //(收件者,收件信箱,寄件者,寄件信箱,主旨,內文)
-	
+
 	manage_alert_script(
 		(string)$lang_text['mail_send_ok'][$this_lang],
 		$web_url . $lang_text['folder_str'][$this_lang]

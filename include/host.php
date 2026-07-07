@@ -1,14 +1,28 @@
 <?php
-// host.php — hardened bootstrap for env, host/scheme detection, and path utilities
-// ------------------------------------------------------------
-// 強化點：
-// - env 載入 (php 陣列/env 檔)
-// - Proxy / Host 安全
-// - 路徑與 URL 處理 (safe_request_path, RootURL, RootForder)
-// - 密碼 Pepper
-// ------------------------------------------------------------
+
+/**
+ * 站台 Bootstrap：.env、Host/HTTPS、路徑、密碼 Pepper
+ *
+ * 載入順序（檔案 include 時自動執行）：
+ *   1. config/env.path.php → private/.env（正式機）
+ *   2. brick6/.env（本機 WAMP）
+ *   3. 往上找 .env / private/.env
+ *   4. 上層 .env 合併補齊（onlyIfMissing）
+ *
+ * 常用環境變數：APP_ENV、TRUSTED_DOMAINS、APP_DOMAIN、FORCE_HTTPS、
+ *   TRUSTED_PROXIES、PASSWORD_PEPPER、DB_*
+ *
+ * 使用方式：
+ *   require_once __DIR__ . '/host.php';
+ *   $val = host_env_string('GEMINI_API_KEY');
+ *   $url = RootURL($WorkFile);
+ *
+ * 載入後全域：$web_root、$web_url、$WorkFile、常數 APP_WEB_URL 等
+ */
+
 /* ========== 共用路徑／環境 helper ========== */
 if (!function_exists('host_normalize_slash')) {
+    /** 路徑反斜線統一為 / */
     function host_normalize_slash(string $path): string
     {
         return str_replace('\\', '/', $path);
@@ -16,6 +30,7 @@ if (!function_exists('host_normalize_slash')) {
 }
 
 if (!function_exists('host_normalize_dir')) {
+    /** 目錄路徑正規化：斜線統一、去掉尾端 / */
     function host_normalize_dir(string $dir): string
     {
         return rtrim(host_normalize_slash($dir), '/');
@@ -69,6 +84,11 @@ if (!function_exists('host_env_raw')) {
 }
 
 if (!function_exists('host_env_assign')) {
+    /**
+     * 寫入環境變數至 $_ENV 與 putenv
+     *
+     * @param bool $onlyIfMissing true 時已有值則不覆寫（load_env_supplement_dir 用）
+     */
     function host_env_assign(string $name, string $value, bool $onlyIfMissing = false): void
     {
         if ($onlyIfMissing) {
@@ -85,6 +105,7 @@ if (!function_exists('host_env_assign')) {
 }
 
 if (!function_exists('host_env_string')) {
+    /** 讀取字串環境變數，未設定回 $default */
     function host_env_string(string $name, string $default = ''): string
     {
         return host_env_raw($name) ?? $default;
@@ -92,6 +113,7 @@ if (!function_exists('host_env_string')) {
 }
 
 if (!function_exists('host_env_bool')) {
+    /** 讀取布林環境變數（1/true/yes/on 為 true） */
     function host_env_bool(string $name, string $default = '1'): bool
     {
         $raw = host_env_raw($name);
@@ -187,7 +209,9 @@ if (!function_exists('find_project_root')) {
 /* ========== .env 載入 ========== */
 if (!function_exists('load_env_text')) {
     /**
-     * @param bool $onlyIfMissing true 時僅補齊尚未設定或為空值的變數（供上層 .env 合併）
+     * 解析 KEY=VALUE 格式 .env 並寫入環境
+     *
+     * @param bool $onlyIfMissing true 時僅補齊尚未設定的變數
      */
     function load_env_text(string $file, bool $onlyIfMissing = false): bool {
         if (!is_file($file)) return false;
@@ -229,13 +253,16 @@ if (!function_exists('load_env_text')) {
                 continue;
             }
 
-            host_env_assign($name, $value, false);
+            // 同一 .env 重複 key：後者覆蓋前者（避免 PINECONE_API_KEY=pcsk_... 占位符蓋掉真實金鑰）
+            $_ENV[$name] = $value;
+            putenv($name . '=' . $value);
         }
         return true;
     }
 }
 
 if (!function_exists('load_env_php')) {
+    /** 載入回傳關聯陣列的 config/env.local.php */
     function load_env_php(string $file): bool {
         if (!is_file($file)) return false;
         /** @noinspection PhpIncludeInspection */
@@ -250,6 +277,7 @@ if (!function_exists('load_env_php')) {
 }
 
 if (!function_exists('load_env_any')) {
+    /** 依副檔名選擇 load_env_php 或 load_env_text */
     function load_env_any(string $file): bool {
         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
         if ($ext === 'php')  return load_env_php($file);
@@ -287,6 +315,7 @@ if (!function_exists('find_env_config_dir')) {
 }
 
 if (!function_exists('load_env_from_dir')) {
+    /** 載入目錄內 .env 或 config/env.local(.php) */
     function load_env_from_dir(string $dir): bool {
         $dir = host_normalize_dir($dir);
         return load_env_any($dir . '/.env')
@@ -384,6 +413,7 @@ if (!defined('APP_PROJECT_ROOT')) {
 $GLOBALS['__env_loaded'] = $__loaded;
 
 if (!function_exists('app_env_bootstrap_ok')) {
+    /** .env 是否已成功載入任一來源 */
     function app_env_bootstrap_ok(): bool {
         return !empty($GLOBALS['__env_loaded']);
     }
@@ -391,16 +421,19 @@ if (!function_exists('app_env_bootstrap_ok')) {
 
 /* ========== 依 APP_ENV 設定 PHP 錯誤顯示 ========== */
 if (!function_exists('app_env')) {
+    /** 目前 APP_ENV（預設 production） */
     function app_env(): string {
         return strtolower(host_env_string('APP_ENV', 'production'));
     }
 }
 if (!function_exists('app_is_production')) {
+    /** APP_ENV 是否為 production / prod */
     function app_is_production(): bool {
         return in_array(app_env(), ['production', 'prod'], true);
     }
 }
 if (!function_exists('app_configure_error_display')) {
+    /** 依 APP_ENV 設定 error_reporting 與 display_errors */
     function app_configure_error_display(): void {
         if (app_is_production()) {
             error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED);
@@ -435,6 +468,7 @@ if (!function_exists('app_show_bootstrap_error')) {
 
 /* ========== Host utilities ========== */
 if (!function_exists('env_list')) {
+    /** 將逗號/空白分隔的 env 字串拆成陣列（TRUSTED_DOMAINS 等） */
     function env_list(string $key): array {
         $raw = host_env_string($key);
         if ($raw === '') return [];
@@ -444,6 +478,7 @@ if (!function_exists('env_list')) {
 }
 
 if (!function_exists('normalize_hostlist')) {
+    /** 正規化網域/IP 清單（小寫、IDNA、去協定） */
     function normalize_hostlist(array $hosts): array {
         $ok = [];
         foreach ($hosts as $h) {
@@ -471,6 +506,7 @@ if (!function_exists('normalize_hostlist')) {
 
 /* ========== Trusted proxies ========== */
 if (!function_exists('cidr_match')) {
+    /** 判斷 IP 是否在 CIDR 或單一 IP 範圍內（IPv4/IPv6） */
     function cidr_match(string $ip, string $cidr): bool {
         if (strpos($cidr, '/') === false) return $ip === $cidr;
         [$subnet, $mask] = explode('/', $cidr, 2);
@@ -499,6 +535,7 @@ if (!function_exists('cidr_match')) {
 }
 
 if (!function_exists('is_trusted_proxy')) {
+    /** REMOTE_ADDR 是否在 TRUSTED_PROXIES 清單（決定是否信任 X-Forwarded-*） */
     function is_trusted_proxy(): bool {
         $remote = $_SERVER['REMOTE_ADDR'] ?? '';
         if ($remote === '') return false;
@@ -531,6 +568,11 @@ if (!defined('FORCE_HTTPS'))     define('FORCE_HTTPS',     $FORCE_HTTPS);
 
 /* ========== Path: 強化版 safe_request_path() ========== */
 if (!function_exists('safe_request_path')) {
+    /**
+     * 正規化 REQUEST_URI path（防 ..、XSS/SQLi 片段、重複斜線）
+     *
+     * 載入 host.php 後可用全域 $REQUEST_URI_PATH
+     */
     function safe_request_path(): string {
         $raw = filter_input(INPUT_SERVER, 'REQUEST_URI', FILTER_UNSAFE_RAW);
         if ($raw === null || $raw === false) $raw = $_SERVER['SCRIPT_NAME'] ?? '/';
@@ -600,6 +642,7 @@ if (!function_exists('safe_request_path')) {
 }
 
 if (!function_exists('current_host')) {
+    /** 目前請求 Host（须在 TRUSTED_DOMAINS 內，否則 fallback APP_DOMAIN） */
     function current_host(array $trusted = TRUSTED_DOMAINS): string {
         $reqHost = strtolower(parse_url('//' . ($_SERVER['HTTP_HOST'] ?? ''), PHP_URL_HOST) ?? '');
         return in_array($reqHost, $trusted, true) ? $reqHost : APP_DOMAIN;
@@ -607,6 +650,7 @@ if (!function_exists('current_host')) {
 }
 
 if (!function_exists('current_scheme')) {
+    /** http 或 https（FORCE_HTTPS、NO_HTTPS_DOMAINS、反向代理 X-Forwarded-Proto） */
     function current_scheme(): string {
         $reqHost   = current_host();
         $noHttps   = normalize_hostlist(env_list('NO_HTTPS_DOMAINS'));
@@ -631,6 +675,7 @@ if (!function_exists('current_scheme')) {
 
 /* ========== 路徑工具 ========== */
 if (!function_exists('WorkForder')) {
+    /** 自 URL path 取目錄部分（含尾端 /） */
     function WorkForder(string $path): string {
         $parts = explode('/', $path);
         array_pop($parts);
@@ -642,6 +687,7 @@ if (!function_exists('WorkForder')) {
 }
 
 if (!function_exists('RootForder')) {
+    /** 網站 URL 根前綴路徑（例 /brick6/），略過 manage、語系段 */
     function RootForder(string $str): string {
         $out = host_root_path_segments($str, host_root_folder_stop_words());
         $res = '/' . implode('/', $out);
@@ -651,6 +697,7 @@ if (!function_exists('RootForder')) {
 }
 
 if (!function_exists('RootURL')) {
+    /** 組合含 scheme+host 的網站根 URL（例 https://example.com/brick6/） */
     function RootURL(string $relativePath = '/'): string {
         $pathIn = parse_url($relativePath, PHP_URL_SCHEME)
             ? (parse_url($relativePath, PHP_URL_PATH) ?? '/')
@@ -763,6 +810,7 @@ if (!defined('APP_WEB_PATH')) define('APP_WEB_PATH', $tmpRoot === '' ? '/' : '/'
 
 /* ========== Cookie domain 建議值 ========== */
 if (!function_exists('cookie_domain_from_env')) {
+    /** Session/Cookie domain 建議值（须在 TRUSTED_DOMAINS） */
     function cookie_domain_from_env(): ?string {
         $host = current_host();
         return in_array($host, TRUSTED_DOMAINS, true) ? $host : null;
@@ -779,6 +827,7 @@ if (!defined('UPLOAD_BASE')) {
 
 /* ========== 密碼 Pepper ========== */
 if (!function_exists('get_password_pepper')) {
+    /** 讀取 PASSWORD_PEPPER（未設定拋 RuntimeException） */
     function get_password_pepper(): string {
         $pepper = host_env_string('PASSWORD_PEPPER');
         if ($pepper === '') throw new RuntimeException('PASSWORD_PEPPER is not set');
@@ -787,6 +836,7 @@ if (!function_exists('get_password_pepper')) {
 }
 
 if (!function_exists('hash_password')) {
+    /** HMAC-SHA256 + password_hash 儲存密碼 */
     function hash_password(string $plain): string {
         $peppered = hash_hmac('sha256', $plain, get_password_pepper());
         return password_hash($peppered, PASSWORD_DEFAULT);
@@ -794,6 +844,11 @@ if (!function_exists('hash_password')) {
 }
 
 if (!function_exists('verify_password')) {
+    /**
+     * 驗證密碼；必要時透過 $rehashSaver 更新 hash
+     *
+     * @param callable(string): void|null $rehashSaver
+     */
     function verify_password(string $plain, string $currentHash, ?callable $rehashSaver = null): bool {
         $peppered = hash_hmac('sha256', $plain, get_password_pepper());
         $ok = password_verify($peppered, $currentHash);

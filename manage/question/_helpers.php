@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 
 if (!function_exists('question_display_strname')) {
+    /** 問卷顯示名稱（主檔 strName，空則取 question_lang 首筆） */
     function question_display_strname(int $questionPKey): string
     {
         if ($questionPKey <= 0) {

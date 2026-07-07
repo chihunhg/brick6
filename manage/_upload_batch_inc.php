@@ -6,6 +6,9 @@ declare(strict_types=1);
  * 由各模組 _upload.php 在定義 $table_name 後 require。
  */
 if (!function_exists('manage_handle_upload_batch_request')) {
+    /**
+     * 處理列表批次上下架 POST（Batch=1）；命中則 echo 後 exit，未命中回傳 false
+     */
     function manage_handle_upload_batch_request(string $tableName, string $pkName = 'PKey'): bool {
         global $filter_array, $WorkFile, $Login_ID, $Module_PKey, $Module_Name;
 

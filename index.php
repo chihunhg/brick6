@@ -169,7 +169,7 @@ require("_inc.php");
 					<span class="mainTitle__en wow fadeInUp"><?php echo $lang_text["p4"][$this_lang]["p4_en"]; ?></span>
 					<span class="mainTitle__mj wow fadeInUp"><?php echo $lang_text["p4"][$this_lang]["p4"]; ?></span>
 				</h2>
-				
+
 				<div class="swiper ixNews imgCardList wow fadeInUp">
 					<div class="swiper-wrapper">
 						<?php
@@ -252,7 +252,7 @@ require("_inc.php");
 								</div>
 							</a>
 						</div>
-						<?php						
+						<?php
 						$rs->movenext();
 						}
 						$rs->close();
@@ -271,13 +271,11 @@ require("_inc.php");
 			</div>
 		</section>
 
-
 	</main>
 	<?php require("_footer.php"); ?>
 	<?php require("_in_code_bottom.php"); ?>
 
 	<?php echo script_src_tag($web_url . 'js/index-page.js?ver=' . filemtime('js/index-page.js')); ?>
-
 
 </body>
 

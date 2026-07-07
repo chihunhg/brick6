@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-
-
 $pageName = '03';
 
 $subPageName = '';
 
 require('_inc.php');
-
-
 
 $Module_PKey = frontend_module_pkey('album');
 
@@ -38,29 +34,19 @@ frontend_module_set_config(array_merge(
 
 ));
 
-
-
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
-
-
 frontend_init_breadcrumb($Module_Name, $Module_Link);
-
-
 
 $class1ItemCount = frontend_class1_count($Module_PKey);
 
 $Class1 = frontend_filter_class1($filter_array ?? []);
 
-
-
 [$PDO_Cond, $Cond_Array] = frontend_list_where($Module_PKey);
 
 $Class1_Name = frontend_apply_class1_filter($PDO_Cond, $Cond_Array, $Class1, $class1ItemCount);
-
-
 
 $Total = frontend_list_total($PDO_Cond, $Cond_Array);
 
@@ -78,15 +64,11 @@ $listRows = frontend_fetch_list($PDO_Cond, $Cond_Array, $offset, (int)frontend_m
 
 unset($Cond_Array);
 
-
-
 $listTitleAll = (string)($Module_Name !== '' ? $Module_Name : '相簿');
 
 $class1_name = frontend_class1_display_name($Class1, $listTitleAll);
 
 ?>
-
-
 
 <!DOCTYPE html>
 
@@ -100,15 +82,11 @@ $class1_name = frontend_class1_display_name($Class1, $listTitleAll);
 
 </head>
 
-
-
 <body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
 
 <?php require('_header.php'); ?>
 
 <?php require('_banner.php'); ?>
-
-
 
 <main class="pgContent">
 
@@ -176,8 +154,6 @@ $class1_name = frontend_class1_display_name($Class1, $listTitleAll);
 
 </main>
 
-
-
 <?php require('_footer.php'); ?>
 
 <?php require('_in_code_bottom.php'); ?>
@@ -185,5 +161,3 @@ $class1_name = frontend_class1_display_name($Class1, $listTitleAll);
 </body>
 
 </html>
-
-

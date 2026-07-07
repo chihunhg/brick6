@@ -21,9 +21,12 @@ if (!$manageSeoTdkAiAssetsLoaded) {
     }
     $__seoTdkJs = __DIR__ . '/js/seo-tdk-ai.js';
     $__seoTdkJsVer = is_file($__seoTdkJs) ? (string)filemtime($__seoTdkJs) : '1';
-    echo script_src_tag('../js/seo-tdk-ai.js?ver=' . $__seoTdkJsVer);
     $__contentTdkJs = __DIR__ . '/js/content-tdk-ai.js';
     $__contentTdkJsVer = is_file($__contentTdkJs) ? (string)filemtime($__contentTdkJs) : '1';
+    $__geminiSseJs = __DIR__ . '/js/gemini-sse-client.js';
+    $__geminiSseJsVer = is_file($__geminiSseJs) ? (string)filemtime($__geminiSseJs) : '1';
+    echo script_src_tag('../js/gemini-sse-client.js?ver=' . $__geminiSseJsVer);
+    echo script_src_tag('../js/seo-tdk-ai.js?ver=' . $__seoTdkJsVer);
     echo script_src_tag('../js/content-tdk-ai.js?ver=' . $__contentTdkJsVer);
 }
 

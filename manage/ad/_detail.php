@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 if (!function_exists('ad_lang_is_show_on')) {
+    /** 廣告語系「顯示」勾選值是否為開啟（y/yes/1/true/on） */
     function ad_lang_is_show_on($value): bool {
         $v = strtolower(trim((string)$value));
         return in_array($v, ['y', 'yes', '1', 'true', 'on'], true);

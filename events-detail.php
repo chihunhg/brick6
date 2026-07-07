@@ -136,11 +136,11 @@ if (!$rs->eof) {
             $Photo[$i] = (string)($web_root . ltrim($useRel, '/'));
 			$PhotoM[$i] = e_attr((string)$rs1->field('PhotoM'));
         }
-		
+
         $rs1->movenext();
     }
     $rs1->close();
-	
+
     $links = [];
 	if (function_exists('chkTable') && chkTable('paper_link')) {
 		$sql = 'SELECT * FROM paper_link WHERE Paper_PKey = :Paper_PKey and intLang = :intLang ORDER BY Sort';
@@ -161,7 +161,6 @@ if (!$rs->eof) {
 		}
 		$rs1->close();
 	}
-
 
 } else {
     // 找不到資料：alert 後導回列表頁
@@ -204,7 +203,7 @@ for($i=0;$i<count($bread_name);$i++){
 		'item' => safe_url($web_root.$break_link[$i]),
 		// e() 確保麵包屑名稱的內容被逸出
 		'name' => e($bread_name[$i])
-	];	
+	];
 	$Elements[$n] = $array;
 }
 
@@ -229,7 +228,7 @@ $(function(){
 		loading(1);
 		var array = new Array();
 		var flag = true;
-	
+
 		if ($('#name').val() == ""){
 			$("#name").addClass('errorLine')
 			$("#name_txt").text(<?php echo js_str($lang_text['chk_name'][$this_lang] ?? ''); ?>);
@@ -259,8 +258,7 @@ $(function(){
 			$("#cellphone").removeClass("errorLine");
 			$("#cellphone_txt").text("");
 		}
-			
-	
+
 		if ($('#email').val() == "") {
 			$("#email").addClass('errorLine')
 			$("#email_txt").text(<?php echo js_str($lang_text['chk_email'][$this_lang] ?? ''); ?>);
@@ -297,7 +295,7 @@ $(function(){
 			$("#description").removeClass("errorLine");
 			$("#description_txt").text("");
 		}
-		
+
 		var response = grecaptcha.getResponse();
 		if (response.length == 0) {
 			$("#g-recaptcha_txt").text(<?php echo js_str($lang_text['chk_google_code'][$this_lang] ?? ''); ?>);
@@ -305,19 +303,19 @@ $(function(){
 		} else {
 			$("#g-recaptcha_txt").text("");
 		}
-	
+
 		if ( flag == false ){
 			loading(0);
 			var field = array[0];
 			//alert('發生錯誤，請填寫下列欄位');
 			$('#' + field).focus();
-			
+
 		} else {
 			$("#Send").val("ok");
 			$("#form1").submit();
 			$("#Send").val("");
 		}
-	
+
 	});
 });
 <?php echo script_close(); ?>
@@ -342,11 +340,11 @@ $(function(){
                     <div class="applyBtn">
                         <a href="#applyZone" class="applyBtn__item">馬上報名</a>
                     </div>
-					<?php 
+					<?php
 					}
 					?>
-					<?php 
-					for($i=1;$i<7;$i++){						
+					<?php
+					for($i=1;$i<7;$i++){
 						if(! empty($Contents[$i]) || !empty($Photo[$i])){
 							switch($i){
 								case 2:
@@ -363,13 +361,13 @@ $(function(){
 							}
 					?>
 					<article class="<?php echo $css?>">
-						<?php 
+						<?php
 						if(!empty($Photo[$i])){
 						?>
 						<figure>
 							<img src="<?php echo e_attr((string)$Photo[$i]); ?>" class="img-fluid" loading="lazy" alt="<?php echo e_attr($strName)?>">
 						</figure>
-						<?php 
+						<?php
 						}
 						if(!empty($Contents[$i])){
 						?>
@@ -380,7 +378,7 @@ $(function(){
 						}
 						?>
 					</article>
-					<?php	
+					<?php
 						}
 					}
 					?>
@@ -399,7 +397,7 @@ $(function(){
 						<?php endforeach; ?>
 				</div>
 				<?php endif; ?>
-				<?php 
+				<?php
 				if($JoinForm=='Yes'):
 				?>
                 <div class="applyWrap porDotZone">
@@ -441,7 +439,7 @@ $(function(){
                                 </div>
                                 <small id="num_txt" class="errorTxt"></small>
                             </div>
-                            
+
                             <div class="formGroup__item formGroup__item--half">
                                 <label for="cellphone"><?php echo $lang_text["field_cellphone"][$this_lang]; //cellphone ?><span class="red">*</span></label>
                                 <input name="cellphone" id="cellphone" type="text" class="form-control" size="20">
@@ -459,7 +457,7 @@ $(function(){
                                     <?php echo $lang_text["field_howevent"][$this_lang]; //如何得知本活動？ ?>
                                     <span class="red">*</span>
                                 </label>
-                                
+
                                 <div class="formMode" id="howevent">
                                     <?php foreach ($lang_text["data_howevent"][$this_lang] as $num => $item){?>
                                         <div class="form-check">
@@ -480,7 +478,7 @@ $(function(){
                                 <div class="g-recaptcha" data-sitekey="<?php echo e_attr((string)($google_web_key ?? '')); ?>"></div>
                                 <small id="g-recaptcha_txt" class="errorTxt"></small>
                             </div>
-                            
+
                         </div>
                         <div class="btnWrap btnWrap--center">
                             <button type="button" name="btn_submit" id="btn_submit" class="btnStyle">

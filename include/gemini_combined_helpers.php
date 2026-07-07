@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+if (!function_exists('gemini_combined_system_instruction')) {
 /**
  * Gemini 同步產生 CKEditor HTML 與 SEO TDK（單次 API 複合 Prompt）
  */
 
-if (!function_exists('gemini_combined_system_instruction')) {
     function gemini_combined_system_instruction(
         string $industry = 'general',
         string $sourceUrl = '',
@@ -60,6 +60,7 @@ TEXT;
 }
 
 if (!function_exists('gemini_build_combined_user_prompt')) {
+    /** 組裝 HTML + TDK 複合 user prompt */
     function gemini_build_combined_user_prompt(
         string $userPrompt,
         string $sourceUrl,

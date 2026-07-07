@@ -5,6 +5,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('member_detail_tables')) {
+    /** 讀取 member/_config.php 子表設定 */
     function member_detail_tables(): array
     {
         return manage_detail_tables();
@@ -41,6 +42,7 @@ if (!function_exists('member_detail_defaults')) {
 }
 
 if (!function_exists('member_detail_init_defaults')) {
+    /** 初始化會員表單預設變數 */
     function member_detail_init_defaults(): void
     {
         $GLOBALS['member_form_vars'] = member_detail_defaults();
@@ -49,6 +51,7 @@ if (!function_exists('member_detail_init_defaults')) {
 }
 
 if (!function_exists('member_detail_export_vars')) {
+    /** 將 member_form_vars 匯出至 $GLOBALS */
     function member_detail_export_vars(): void
     {
         foreach ((array)($GLOBALS['member_form_vars'] ?? member_detail_defaults()) as $key => $val) {
@@ -79,6 +82,7 @@ if (!function_exists('member_detail_apply_master')) {
 }
 
 if (!function_exists('member_detail_resolve_module_pkey')) {
+    /** 解析目前單元 Module_PKey（manNo） */
     function member_detail_resolve_module_pkey(): int
     {
         $mpk = (int)($GLOBALS['Module_PKey'] ?? 0);
@@ -91,6 +95,7 @@ if (!function_exists('member_detail_resolve_module_pkey')) {
 }
 
 if (!function_exists('member_detail_load')) {
+    /** 自 DB 載入一筆會員主檔 */
     function member_detail_load(int $pkey, ?int $modulePKey = null): bool
     {
         if ($pkey <= 0) {
@@ -229,29 +234,41 @@ if (!function_exists('member_build_master_data')) {
 }
 
 if (!function_exists('member_list_apply_keyword_search')) {
+    /** 會員列表關鍵字／語意搜尋條件 */
     function member_list_apply_keyword_search(
         string &$where,
         array &$params,
         array $filter,
         string $placeholder = '請輸入姓名或帳號搜尋'
     ): string {
+        $kw = trim(manage_list_search_filter_value($filter, 'Keywords'));
+        $kw = mb_substr($kw, 0, 50);
+
         $submitted = (isset($filter['Submit']) && $filter['Submit'] === '搜尋')
             || (isset($filter['Send']) && $filter['Send'] === '搜尋');
-        if (!$submitted || !isset($filter['Keywords'])) {
+        $hasKeyword = $kw !== '' && $kw !== $placeholder;
+
+        if ((!$submitted && !$hasKeyword) || !$hasKeyword) {
             return $placeholder;
         }
-        $kw = trim((string)$filter['Keywords']);
-        $kw = mb_substr($kw, 0, 50);
-        if ($kw === '' || $kw === $placeholder) {
-            return $placeholder;
+
+        if (!function_exists('manage_semantic_apply_keyword_filter')) {
+            require_once dirname(__DIR__, 2) . '/include/manage_semantic_search_helpers.php';
         }
-        $kwCompact = str_replace(' ', '', $kw);
-        $params['KeywordSN'] = $kwCompact;
-        $params['KeywordEM'] = $kwCompact;
-        $params['KeywordMO'] = $kwCompact;
-        $where .= ' AND (LOCATE(:KeywordSN, REPLACE(strName, \' \', \'\')) > 0'
-            . ' OR LOCATE(:KeywordEM, REPLACE(EMail, \' \', \'\')) > 0'
-            . ' OR LOCATE(:KeywordMO, REPLACE(Mobile, \' \', \'\')) > 0)';
+
+        manage_semantic_apply_keyword_filter(
+            $where,
+            $params,
+            $kw,
+            ['strName', 'EMail', 'Mobile'],
+            [
+                'table' => 'member',
+                'pk' => 'PKey',
+                'base_where' => $where,
+                'base_params' => $params,
+            ]
+        );
+
         return $kw;
     }
 }

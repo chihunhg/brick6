@@ -75,6 +75,12 @@ if (!$manageEditorAiAssetsLoaded) {
 
     $__editorAiJsVer = is_file($__editorAiJs) ? (string)filemtime($__editorAiJs) : '1';
 
+    $__geminiSseJs = __DIR__ . '/js/gemini-sse-client.js';
+
+    $__geminiSseJsVer = is_file($__geminiSseJs) ? (string)filemtime($__geminiSseJs) : '1';
+
+    echo script_src_tag('../js/gemini-sse-client.js?ver=' . $__geminiSseJsVer);
+
     echo script_src_tag('../js/editor-ai.js?ver=' . $__editorAiJsVer);
 
 }

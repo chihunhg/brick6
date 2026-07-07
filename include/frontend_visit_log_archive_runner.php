@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 if (!function_exists('frontend_visit_log_archive_token')) {
+    /** 讀取 .env FRONTEND_VISIT_LOG_ARCHIVE_TOKEN */
     function frontend_visit_log_archive_token(): string
     {
         $raw = $_ENV['FRONTEND_VISIT_LOG_ARCHIVE_TOKEN'] ?? null;
@@ -15,6 +16,7 @@ if (!function_exists('frontend_visit_log_archive_token')) {
 }
 
 if (!function_exists('frontend_visit_log_archive_verify_token')) {
+    /** 以 hash_equals 驗證排程 token */
     function frontend_visit_log_archive_verify_token(string $token): bool
     {
         $expected = frontend_visit_log_archive_token();
@@ -27,6 +29,7 @@ if (!function_exists('frontend_visit_log_archive_verify_token')) {
 }
 
 if (!function_exists('frontend_visit_log_archive_bootstrap')) {
+    /** 載入 archive 腳本所需 include */
     function frontend_visit_log_archive_bootstrap(string $projectRoot): void
     {
         require_once $projectRoot . '/include/host.php';

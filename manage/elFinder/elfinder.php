@@ -1,6 +1,15 @@
 <?php
-// elfinder_connector.php — PHP 8.x compatible, CKEditor 4.x friendly
 declare(strict_types=1);
+
+/**
+ * CKEditor 4 elFinder JSON 連接器（PHP 8.x，elFinder API 2.1）。
+ *
+ * 用途：後台媒體庫檔案瀏覽、上傳、刪除、重新命名、複製貼上等操作。
+ * 驗證：須已登入且 $_SESSION['Manage']=Yes，否則回傳 403 JSON。
+ * ROOT_VPATH：實體根目錄（預設 ../../Upload/images/），含 .trash 回收桶子磁碟。
+ * 支援指令：init、open、upload、rm、rename、mkdir、mkfile、paste、duplicate、
+ *           size、empty、info、tree、parents、ls、ping、tmb（空回應）。
+ */
 
 // 避免 Warning/Notice 輸出破壞 JSON
 if (ob_get_level() === 0) {
@@ -29,6 +38,7 @@ elfinder_require_auth();
 
 // ---- Polyfill: PHP 7 也可用 ----
 if (!function_exists('_starts_with')) {
+    /** 字串前綴比對（PHP 7 polyfill） */
     function _starts_with($haystack, $needle) {
         $haystack = (string)$haystack;
         $needle   = (string)$needle;
@@ -81,6 +91,7 @@ try {
 }
 
 // ====== open / init ======
+/** 處理 init/open：回傳 cwd、檔案清單與 volume 選項 */
 function handle_open(bool $isInit): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $trashPhysical = elfinder_trash_physical($rootPhysical);
@@ -146,6 +157,7 @@ function handle_open(bool $isInit): void {
 }
 
 // ====== upload（含資料夾） ======
+/** 處理 upload：驗證副檔名與大小後寫入目標目錄 */
 function handle_upload(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
 
@@ -240,6 +252,7 @@ function handle_upload(): void {
 }
 
 // ====== rm ======
+/** 處理 rm：刪除指定 hash 的檔案或目錄 */
 function handle_rm(): void {
     [$rootPhysical] = ensure_root();
     $targets = get_param_values(['targets', 'targets[]']);
@@ -263,6 +276,7 @@ function handle_rm(): void {
 }
 
 // ====== rename ======
+/** 處理 rename：重新命名檔案或資料夾 */
 function handle_rename(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $target = $_REQUEST['target'] ?? '';
@@ -319,6 +333,7 @@ function handle_rename(): void {
 }
 
 // ====== mkdir ======
+/** 處理 mkdir：在 target 下建立單一或巢狀資料夾 */
 function handle_mkdir(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
 
@@ -384,6 +399,7 @@ function handle_mkdir(): void {
 }
 
 // ====== mkfile ======
+/** 處理 mkfile：在 target 目錄建立空檔案 */
 function handle_mkfile(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $target = $_REQUEST['target'] ?? '';
@@ -421,6 +437,7 @@ function handle_mkfile(): void {
 }
 
 // ====== paste (copy / move) ======
+/** 處理 paste：複製或剪下貼上至 dst */
 function handle_paste(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $targets = get_param_values(['targets', 'targets[]']);
@@ -481,6 +498,7 @@ function handle_paste(): void {
 }
 
 // ====== duplicate ======
+/** 處理 duplicate：在同目錄複製檔案或資料夾 */
 function handle_duplicate(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $targets = get_param_values(['targets', 'targets[]']);
@@ -513,6 +531,7 @@ function handle_duplicate(): void {
 }
 
 // ====== ls（列出目錄） ======
+/** 處理 ls：回傳目錄下檔名與 hash 對照表 */
 function handle_ls(): void {
     [$rootPhysical] = ensure_root();
 
@@ -547,6 +566,7 @@ function handle_ls(): void {
 }
 
 // ====== elFinder 節點輸出 ======
+/** 建構主 volume 根節點資訊 */
 function as_root_info(string $rootPhysical): array {
     return [
         'name'     => 'files',
@@ -564,6 +584,7 @@ function as_root_info(string $rootPhysical): array {
     ];
 }
 
+/** 建構目錄節點資訊 */
 function as_dir_info(string $physical, string $relFromRoot, string $rootPhysical, string $volPrefix = VOL_PREFIX, ?string $volBase = null): array {
     $volBase = $volBase ?? $rootPhysical;
     $name = $relFromRoot === '' ? 'files' : basename($physical);
@@ -588,6 +609,7 @@ function as_dir_info(string $physical, string $relFromRoot, string $rootPhysical
     ];
 }
 
+/** 建構檔案節點資訊（含 URL 與縮圖） */
 function as_file_info(string $physical, string $relFromRoot, string $baseUrl, string $volPrefix = VOL_PREFIX, ?string $volBase = null): array {
     $name = basename($physical);
     $dirRel = str_replace('\\', '/', dirname($relFromRoot));
@@ -622,6 +644,7 @@ function as_file_info(string $physical, string $relFromRoot, string $baseUrl, st
     return $info;
 }
 
+/** 依實體路徑建構單一檔案或目錄節點 */
 function build_single_info(string $physical, string $rootPhysical, string $baseUrl, string $volPrefix = VOL_PREFIX, ?string $volBase = null): array {
     $volBase = $volBase ?? $rootPhysical;
     $rel = trim(str_replace('\\', '/', to_rel($physical, $volBase)), '/');
@@ -631,6 +654,7 @@ function build_single_info(string $physical, string $rootPhysical, string $baseU
 }
 
 // ====== 小工具 ======
+/** 確保 ROOT_VPATH 存在並回傳 [實體路徑, 公開 URL] */
 function ensure_root(): array {
     $rootV = (string)ROOT_VPATH;
 
@@ -651,6 +675,7 @@ function ensure_root(): array {
     return [$rootPhysical, $baseUrl];
 }
 
+/** 安全列舉目錄內子資料夾 */
 function safe_enum_dirs(string $p): array {
     try { $it = @scandir($p); if ($it === false) return []; $out = [];
         foreach ($it as $name) { if ($name === '.' || $name === '..') continue; $full = $p . DIRECTORY_SEPARATOR . $name; if (is_dir($full)) $out[] = $full; }
@@ -658,6 +683,7 @@ function safe_enum_dirs(string $p): array {
     } catch (Throwable) { return []; }
 }
 
+/** 安全列舉目錄內檔案 */
 function safe_enum_files(string $p): array {
     try { $it = @scandir($p); if ($it === false) return []; $out = [];
         foreach ($it as $name) { if ($name === '.' || $name === '..') continue; $full = $p . DIRECTORY_SEPARATOR . $name; if (is_file($full)) $out[] = $full; }
@@ -665,6 +691,7 @@ function safe_enum_files(string $p): array {
     } catch (Throwable) { return []; }
 }
 
+/** 將絕對路徑轉成相對於 root 的路徑 */
 function to_rel(string $full, string $rootPhysical): string {
     $root  = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $rootPhysical), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     $fullN = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $full), DIRECTORY_SEPARATOR);
@@ -672,12 +699,14 @@ function to_rel(string $full, string $rootPhysical): string {
     return ltrim(substr($fullN, strlen($root)), DIRECTORY_SEPARATOR);
 }
 
+/** 安全拼接 root 與相對路徑 */
 function combine_safe(string $root, string $rel): string {
     $path = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
     $real = realpath($path);
     return $real !== false ? $real : normalize_path($path);
 }
 
+/** 正規化路徑（去除 . 與 ..） */
 function normalize_path(string $p): string {
     $parts = [];
     foreach (explode(DIRECTORY_SEPARATOR, str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $p)) as $seg) {
@@ -689,16 +718,19 @@ function normalize_path(string $p): string {
     return $prefix . implode(DIRECTORY_SEPARATOR, $parts);
 }
 
+/** 確保 path 在 root 下，否則拋 HttpException */
 function ensure_under_root(string $root, string $path): void {
     if (!is_under_root($root, $path)) throw new HttpException(403, 'Forbidden');
 }
 
+/** 判斷 path 是否在 root 目錄樹內 */
 function is_under_root(string $root, string $path): bool {
     $r = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $root), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     $p = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     return _starts_with(strtolower($p), strtolower($r));
 }
 
+/** 若路徑已存在則產生唯一檔名或資料夾名 */
 function ensure_unique(string $fullPath, bool $isDir): string {
     if ($isDir) {
         if (!is_dir($fullPath)) return $fullPath;
@@ -715,6 +747,7 @@ function ensure_unique(string $fullPath, bool $isDir): string {
     }
 }
 
+/** 依副檔名回傳 MIME 類型 */
 function get_mime_by_ext(string $ext): string {
     switch ($ext) {
         case 'jpg':
@@ -730,6 +763,7 @@ function get_mime_by_ext(string $ext): string {
     }
 }
 
+/** 清理檔名並過濾非法與保留字元 */
 function sanitize_filename(string $input, bool $isDir): ?string {
     $name = trim(basename($input));
     if ($name === '') return null;
@@ -745,12 +779,14 @@ function sanitize_filename(string $input, bool $isDir): ?string {
     return $name;
 }
 
+/** 將相對路徑編碼為 elFinder hash */
 function hash_path(?string $rel, string $prefix = VOL_PREFIX): string {
     $rel = trim(str_replace('\\', '/', (string)$rel), '/');
     $b64 = rtrim(strtr(base64_encode($rel), '+/', '-_'), '=');
     return $prefix . $b64;
 }
 
+/** 將 elFinder hash 解碼為相對路徑 */
 function unhash_path(?string $hash): string {
     if ($hash === null || $hash === '') {
         return '';
@@ -769,6 +805,7 @@ function unhash_path(?string $hash): string {
     return $raw === false ? '' : $raw;
 }
 
+/** 從 hash 判斷 volume 前綴（主磁碟或回收桶） */
 function hash_volume(?string $hash): string {
     if ($hash !== null && _starts_with((string)$hash, TRASH_VOL_PREFIX)) {
         return TRASH_VOL_PREFIX;
@@ -776,6 +813,7 @@ function hash_volume(?string $hash): string {
     return VOL_PREFIX;
 }
 
+/** 取得或建立 .trash 實體目錄路徑 */
 function elfinder_trash_physical(string $rootPhysical): string {
     $path = $rootPhysical . DIRECTORY_SEPARATOR . TRASH_DIR_NAME;
     if (!is_dir($path)) {
@@ -784,7 +822,7 @@ function elfinder_trash_physical(string $rootPhysical): string {
     return $path;
 }
 
-/** @return array{main_root:string,trash_root:string,vol_base:string,rel:string,prefix:string,is_trash:bool,base_url:string} */
+/** 由 hash 解析 volume 脈絡（主根/回收桶、rel、prefix 等） @return array{main_root:string,trash_root:string,vol_base:string,rel:string,prefix:string,is_trash:bool,base_url:string} */
 function elfinder_context_from_hash(?string $hash): array {
     [$rootPhysical, $baseUrl] = ensure_root();
     $trashPhysical = elfinder_trash_physical($rootPhysical);
@@ -802,12 +840,14 @@ function elfinder_context_from_hash(?string $hash): array {
     ];
 }
 
+/** 依脈絡與 rel 取得實體路徑並驗證根目錄邊界 */
 function elfinder_physical_path(array $ctx, string $rel): string {
     $path = combine_safe($ctx['vol_base'], $rel);
     elfinder_ensure_under_main_root($ctx['main_root'], $path);
     return $path;
 }
 
+/** 確保路徑在主根或回收桶目錄樹內 */
 function elfinder_ensure_under_main_root(string $mainRoot, string $path): void {
     $trashRoot = elfinder_trash_physical($mainRoot);
     if (is_under_root($mainRoot, $path) || is_under_root($trashRoot, $path)) {
@@ -816,6 +856,7 @@ function elfinder_ensure_under_main_root(string $mainRoot, string $path): void {
     throw new HttpException(403, 'Forbidden');
 }
 
+/** 建構回收桶根節點資訊 */
 function elfinder_trash_root_info(string $trashPhysical): array {
     return [
         'name'     => TRASH_DIR_NAME,
@@ -846,7 +887,7 @@ function elfinder_append_trash_root_file(array &$files, string $trashPhysical): 
     $files[] = elfinder_trash_root_info($trashPhysical);
 }
 
-/** @param list<array<string,mixed>> $files */
+/** 檢查 files 清單是否已含指定 hash @param list<array<string,mixed>> $files */
 function elfinder_files_has_hash(array $files, string $hash): bool {
     if ($hash === '') {
         return false;
@@ -859,7 +900,7 @@ function elfinder_files_has_hash(array $files, string $hash): bool {
     return false;
 }
 
-/** @param list<array<string,mixed>> $files */
+/** 從 files 擷取側欄 tree 用的根目錄節點 @param list<array<string,mixed>> $files */
 function elfinder_collect_tree_entries(array $files): array {
     $tree = [];
     $mainHash = hash_path('');
@@ -877,6 +918,7 @@ function elfinder_collect_tree_entries(array $files): array {
 }
 
 // ====== info ======
+/** 處理 info：回傳多個 target 的節點詳情 */
 function handle_info(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $targets = get_param_values(['targets', 'targets[]']);
@@ -903,6 +945,7 @@ function handle_info(): void {
 }
 
 // ====== tree ======
+/** 處理 tree：回傳 target 及其子目錄樹狀節點 */
 function handle_tree(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $trashPhysical = elfinder_trash_physical($rootPhysical);
@@ -935,6 +978,7 @@ function handle_tree(): void {
 }
 
 // ====== parents ======
+/** 處理 parents：回傳 target 至根的路徑節點鏈 */
 function handle_parents(): void {
     [$rootPhysical, $baseUrl] = ensure_root();
     $trashPhysical = elfinder_trash_physical($rootPhysical);
@@ -961,6 +1005,7 @@ function handle_parents(): void {
     json_out(['tree' => $tree]);
 }
 
+/** 遞迴統計目錄下檔案與子目錄數量 */
 function elfinder_count_tree(string $dir, int &$fileCnt, int &$dirCnt): void {
     if (!is_dir($dir)) {
         return;
@@ -984,6 +1029,7 @@ function elfinder_count_tree(string $dir, int &$fileCnt, int &$dirCnt): void {
 }
 
 // ====== size ======
+/** 處理 size：統計 targets 的檔案數、目錄數與總大小 */
 function handle_size(): void {
     [$rootPhysical] = ensure_root();
     $targets = get_param_values(['targets', 'targets[]']);
@@ -1012,6 +1058,7 @@ function handle_size(): void {
 }
 
 // ====== empty（清空回收桶） ======
+/** 處理 empty：清空回收桶目錄內容 */
 function handle_empty(): void {
     [$rootPhysical] = ensure_root();
     $target = $_REQUEST['target'] ?? '';
@@ -1030,6 +1077,7 @@ function handle_empty(): void {
     json_out(['changed' => [elfinder_trash_root_info($ctx['trash_root'])]]);
 }
 
+/** 輸出 JSON 並結束執行 */
 function json_out($data): void {
     while (ob_get_level() > 0) {
         ob_end_clean();
@@ -1041,10 +1089,12 @@ function json_out($data): void {
     exit;
 }
 
+/** 輸出 elFinder 錯誤 JSON 並結束 */
 function error_out(string $msg): void {
     json_out(['error' => [$msg]]);
 }
 
+/** 從 $_REQUEST 依 key 列表取得陣列參數 */
 function get_param_values(array $keys): array {
     foreach ($keys as $k) {
         if (isset($_REQUEST[$k])) {
@@ -1055,6 +1105,7 @@ function get_param_values(array $keys): array {
     return [];
 }
 
+/** 判斷目錄是否含子資料夾 */
 function has_child_dir(string $dir): bool {
     $h = @opendir($dir); if (!$h) return false;
     while (($e = readdir($h)) !== false) {
@@ -1064,6 +1115,7 @@ function has_child_dir(string $dir): bool {
     closedir($h); return false;
 }
 
+/** 遞迴刪除目錄及其內容 */
 function rrmdir(string $dir): void {
     if (!is_dir($dir)) return;
     $items = scandir($dir); if (!$items) return;
@@ -1075,6 +1127,7 @@ function rrmdir(string $dir): void {
     @rmdir($dir);
 }
 
+/** 遞迴複製目錄樹 */
 function copydir_recursive(string $src, string $dst): void {
     if (!is_dir($src)) return;
     if (!is_dir($dst)) @mkdir($dst, 0775, true);
@@ -1088,6 +1141,7 @@ function copydir_recursive(string $src, string $dst): void {
     }
 }
 
+/** 依 ROOT_VPATH 推算公開存取 URL 前綴 */
 function get_base_url(): string {
     $rootV = (string)ROOT_VPATH;
     if (_starts_with($rootV, '/')) return rtrim($rootV, '/');
@@ -1102,6 +1156,7 @@ function get_base_url(): string {
     return '/' . implode('/', $parts);
 }
 
+/** 拼接 base URL 與相對路徑（含 URL 編碼） */
 function url_combine(string $baseUrl, string $relativePath): string {
     $baseUrl = rtrim($baseUrl, '/');
     $rel = trim(str_replace('\\','/', $relativePath), '/');
@@ -1111,6 +1166,7 @@ function url_combine(string $baseUrl, string $relativePath): string {
     return $baseUrl . '/' . implode('/', $encoded);
 }
 
+/** 將 $_FILES 多維陣列攤平為單一檔案列表 */
 function flatten_files_array(array $files): array {
     $out = [];
     $normalize = function($name, $type, $tmp_name, $error, $size) use (&$out, &$normalize) {
@@ -1135,8 +1191,10 @@ function flatten_files_array(array $files): array {
 }
 
 // ====== 例外類型 ======
+/** HTTP 狀態碼例外（路徑越界等） */
 class HttpException extends Exception {
     public $statusCode;
+    /** @param int|string $statusCode HTTP 狀態碼 */
     public function __construct($statusCode, $message) {
         $this->statusCode = (int)$statusCode;
         parent::__construct($message, (int)$statusCode);

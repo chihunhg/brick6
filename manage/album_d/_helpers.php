@@ -1,7 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * album_d 相簿明細：父層解析、列表、暫存上傳等 helper
+ */
+
 if (!function_exists('album_d_resolve_album_pkey')) {
+    /** 自 GET／filter 解析相簿 PKey */
     function album_d_resolve_album_pkey(): int
     {
         global $filter_array;
@@ -53,6 +58,7 @@ if (!function_exists('album_d_resolve_album_pkey')) {
 }
 
 if (!function_exists('album_d_resolve_parent_strname')) {
+    /** 解析相簿顯示名稱（主檔或語系 fallback） */
     function album_d_resolve_parent_strname(int $albumPKey, ?array $masterRow = null): string
     {
         $name = '';
@@ -156,6 +162,7 @@ if (!function_exists('album_d_build_debug_info')) {
 }
 
 if (!function_exists('album_d_child_return_url')) {
+    /** 相簿明細列表返回 URL */
     function album_d_child_return_url(int $albumPKey, string $listFile = 'list.php'): string
     {
         return manage_child_return_url($albumPKey, $listFile, 'Album_PKey');
@@ -177,6 +184,7 @@ if (!function_exists('album_d_list_where')) {
 }
 
 if (!function_exists('album_d_next_sort')) {
+    /** 同相簿下下一個 Sort 值 */
     function album_d_next_sort(int $albumPKey): int
     {
         if ($albumPKey <= 0) {
@@ -219,6 +227,7 @@ if (!function_exists('album_d_delete_row_files')) {
 }
 
 if (!function_exists('album_d_thumb_url')) {
+    /** 列表縮圖 URL（thumb_／s_／原圖 fallback） */
     function album_d_thumb_url(array $row): string
     {
         $forder = (string)($row['Forder'] ?? '');
@@ -280,6 +289,7 @@ if (!function_exists('album_d_fetch_row_for_edit')) {
 }
 
 if (!function_exists('album_d_ajax_csrf_verify')) {
+    /** AJAX 請求 CSRF token 驗證 */
     function album_d_ajax_csrf_verify(string $csrfKey = 'album_d_addin'): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -294,6 +304,7 @@ if (!function_exists('album_d_ajax_csrf_verify')) {
 }
 
 if (!function_exists('album_d_staged_preview_url')) {
+    /** 暫存上傳圖片預覽 URL */
     function album_d_staged_preview_url(string $forder, string $photo): string
     {
         $forder = trim($forder);
@@ -315,6 +326,7 @@ if (!function_exists('album_d_staged_preview_url')) {
 }
 
 if (!function_exists('album_d_staging_count')) {
+    /** 目前 session 暫存上傳張數 */
     function album_d_staging_count(int $albumPKey): int
     {
         if ($albumPKey <= 0 || !isset($_SESSION['album_d_staged'][$albumPKey])) {
@@ -438,6 +450,7 @@ if (!function_exists('album_d_staging_consume')) {
 }
 
 if (!function_exists('album_d_staging_remove')) {
+    /** 移除單筆暫存上傳（可選刪除實體檔） */
     function album_d_staging_remove(int $albumPKey, string $id, bool $deleteFiles = true): bool
     {
         $id = trim($id);

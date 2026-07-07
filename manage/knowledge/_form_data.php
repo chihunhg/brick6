@@ -5,6 +5,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('knowledge_detail_tables')) {
+    /** 讀取 knowledge/_config.php 子表設定 */
     function knowledge_detail_tables(): array
     {
         return manage_detail_tables();
@@ -41,6 +42,7 @@ if (!function_exists('knowledge_detail_defaults')) {
 }
 
 if (!function_exists('knowledge_detail_init_defaults')) {
+    /** 初始化知識庫表單預設變數 */
     function knowledge_detail_init_defaults(): void
     {
         $GLOBALS['knowledge_form_vars'] = knowledge_detail_defaults();
@@ -49,6 +51,7 @@ if (!function_exists('knowledge_detail_init_defaults')) {
 }
 
 if (!function_exists('knowledge_detail_export_vars')) {
+    /** 將 knowledge_form_vars 匯出至 $GLOBALS */
     function knowledge_detail_export_vars(): void
     {
         foreach ((array)($GLOBALS['knowledge_form_vars'] ?? knowledge_detail_defaults()) as $key => $val) {
@@ -100,6 +103,7 @@ if (!function_exists('knowledge_detail_apply_master')) {
 }
 
 if (!function_exists('knowledge_detail_load_children')) {
+    /** 載入知識庫內文區塊與圖檔子表 */
     function knowledge_detail_load_children(int $pkey): void
     {
         $tables = knowledge_detail_tables();
@@ -127,6 +131,7 @@ if (!function_exists('knowledge_detail_load_children')) {
 }
 
 if (!function_exists('knowledge_detail_resolve_module_pkey')) {
+    /** 解析目前單元 Module_PKey（manNo） */
     function knowledge_detail_resolve_module_pkey(): int
     {
         $mpk = (int)($GLOBALS['Module_PKey'] ?? 0);

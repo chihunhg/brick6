@@ -5,6 +5,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('language_require_admin')) {
+    /** 僅 Admin 可進入語系設定 */
     function language_require_admin(): void {
         global $Login_ID, $s3;
         if (($Login_ID ?? '') !== 'Admin') {
@@ -15,12 +16,14 @@ if (!function_exists('language_require_admin')) {
 }
 
 if (!function_exists('language_next_sort')) {
+    /** 語系新增下一個 Sort 值 */
     function language_next_sort(): int {
         return crud_next_sort('language', [], 'Sort');
     }
 }
 
 if (!function_exists('language_detail_init_defaults')) {
+    /** 初始化語系表單預設變數 */
     function language_detail_init_defaults(): void {
         $GLOBALS['language_form_vars'] = [
             'Update_PKey' => 0,
@@ -35,6 +38,7 @@ if (!function_exists('language_detail_init_defaults')) {
 }
 
 if (!function_exists('language_detail_export_vars')) {
+    /** 將 language_form_vars 匯出至 $GLOBALS */
     function language_detail_export_vars(): void {
         foreach ($GLOBALS['language_form_vars'] as $key => $val) {
             $GLOBALS[$key] = $val;
@@ -43,6 +47,7 @@ if (!function_exists('language_detail_export_vars')) {
 }
 
 if (!function_exists('language_detail_load')) {
+    /** 自 DB 載入一筆語系主檔 */
     function language_detail_load(int $pkey): bool {
         if ($pkey <= 0) {
             return false;

@@ -1,6 +1,10 @@
 <?php
 
 /**
+ * 圖片處理模組：WebP 轉檔、GD 縮圖（ImageResizer）、上傳與縮圖工具
+ */
+
+/**
  * 穩健判斷指定檔案是否為 WebP：
  * 1) finfo MIME 檢查
  * 2) 檔頭 "RIFF....WEBP" 簽名
@@ -43,6 +47,14 @@ function is_really_webp(string $path): bool
     return false;
 }
 
+/**
+ * 將上傳檔／路徑／檔名轉為 WebP（Imagick 優先，其次 GD）
+ *
+ * @param array|string $input   $_FILES 欄位、路徑或檔名
+ * @param string       $destDir 輸出目錄
+ * @param int          $quality WebP 品質 0–100
+ * @return string|false 成功回傳 .webp 完整路徑，失敗回傳 false
+ */
 function convert_uploaded_to_webp($input, string $destDir, int $quality = 85): string|false
 {
     // 正規化輸出資料夾
@@ -219,7 +231,7 @@ class ImageResizer
     private $w = 0;
     private $h = 0;
 
-    /** 讀檔 + 自動旋轉 (JPEG EXIF) */
+    /** 載入圖片並依 JPEG EXIF 自動旋轉 */
     public function load(string $filename): void
     {
         if (!is_file($filename)) {
@@ -258,11 +270,12 @@ class ImageResizer
         $this->h   = imagesy($this->img);
     }
 
-    /** 取得寬高 */
+    /** @return int 目前圖片寬度（px） */
     public function width(): int  { return $this->w; }
+    /** @return int 目前圖片高度（px） */
     public function height(): int { return $this->h; }
 
-    /** 按寬度等比，避免放大（原圖寬<=目標寬則不變） */
+    /** 等比縮至目標寬度；$noUpscale 為 true 時不放大 */
     public function resizeToWidth(int $targetW, bool $noUpscale = true): void
     {
         if ($noUpscale && $this->w <= $targetW) return;
@@ -270,7 +283,7 @@ class ImageResizer
         $this->resize((int)round($targetW), (int)round($this->h * $ratio));
     }
 
-    /** 按高度等比，避免放大 */
+    /** 等比縮至目標高度；$noUpscale 為 true 時不放大 */
     public function resizeToHeight(int $targetH, bool $noUpscale = true): void
     {
         if ($noUpscale && $this->h <= $targetH) return;
@@ -278,7 +291,7 @@ class ImageResizer
         $this->resize((int)round($this->w * $ratio), (int)round($targetH));
     }
 
-    /** 最長邊等比縮到不超過 max（避免放大） */
+    /** 最長邊不超過 maxW×maxH，等比縮放；$noUpscale 為 true 時不放大 */
     public function resizeMax(int $maxW, int $maxH, bool $noUpscale = true): void
     {
         $nw = $this->w;
@@ -295,7 +308,7 @@ class ImageResizer
         $this->resize($nw, $nh);
     }
 
-    /** contain：塞進框內，維持比例，留透明底（PNG/WebP）或白底（JPEG） */
+    /** contain：等比塞入框內並置中，可選透明或白底 */
     public function resizeContain(int $boxW, int $boxH, bool $transparent = true): void
     {
         $ratio = min($boxW / $this->w, $boxH / $this->h);
@@ -321,7 +334,7 @@ class ImageResizer
         $this->img = $canvas; $this->w = $boxW; $this->h = $boxH;
     }
 
-    /** cover：填滿框並裁切 */
+    /** cover：等比放大後居中裁切以填滿框 */
     public function resizeCover(int $boxW, int $boxH): void
     {
         $srcRatio = $this->w / $this->h;
@@ -348,7 +361,7 @@ class ImageResizer
         $this->img = $crop; $this->w = $boxW; $this->h = $boxH;
     }
 
-    /** 低階 resize */
+    /** 低階縮放至指定寬高（px） */
     public function resize(int $nw, int $nh): void
     {
         $nw = max(1, (int)$nw);
@@ -363,7 +376,11 @@ class ImageResizer
         $this->img = $dst; $this->w = $nw; $this->h = $nh;
     }
 
-    /** 儲存為 JPEG/PNG/GIF/WebP（自動依副檔名或指定 type） */
+    /**
+     * 儲存圖片（依副檔名或 $imageType 決定格式）
+     *
+     * @param int $quality JPEG/WebP 0–100；PNG 壓縮等級反向映射
+     */
     public function save(string $filename, int $imageType = 0, int $quality = 85): void
     {
         if ($imageType === 0) {
@@ -392,20 +409,20 @@ class ImageResizer
         @chmod($filename, 0755);
     }
 
-    /** 快捷：存 WebP */
+    /** 快捷儲存為 WebP */
     public function saveWebp(string $filename, int $quality = 85): void
     {
         $this->save($filename, defined('IMAGETYPE_WEBP')?IMAGETYPE_WEBP:18, $quality);
     }
 
-    /** 釋放 */
+    /** 釋放 GD 圖片資源 */
     public function destroy(): void
     {
         if ($this->img) { gd_image_free($this->img); }
         $this->img = null;
     }
 
-    /** 轉 TrueColor 並保留透明 */
+    /** 轉為 TrueColor 並保留 alpha 透明通道 */
     private function ensureTrueColor($img)
     {
         if (function_exists('imagepalettetotruecolor')) {
@@ -420,7 +437,7 @@ class ImageResizer
         return $dst;
     }
 
-    /** JPEG EXIF 自動旋轉（無 EXIF 時不影響） */
+    /** 依 JPEG EXIF Orientation 自動旋轉（無 EXIF 時原樣回傳） */
     private function autoRotateFromExif($img, string $path)
     {
         if (!function_exists('exif_read_data') || !$img) return $img;
@@ -886,4 +903,32 @@ function upload_files(array $file_array, string $upload_root, array $options = [
         'messages' => $messages,
         'details'  => $details,
     ];
+}
+
+/** 產生列表縮圖 thumb_（委派 create_image_list_thumb） */
+function ReSizeImg($Forder = '', $Photo = '', $Width = 150)
+{
+    if (function_exists('create_image_list_thumb')) {
+        return create_image_list_thumb((string)$Forder, (string)$Photo, (int)$Width, 'thumb_');
+    }
+    return false;
+}
+
+/** 依目標寬高計算等比縮圖尺寸 [w, h] */
+function ReSize($PhotoUrl,$PhotoW,$PhotoH){
+    $PhotoW = (int)$PhotoW; $PhotoH = (int)$PhotoH;
+    if (!is_file($PhotoUrl)) return [max(0,$PhotoW), max(0,$PhotoH)];
+    $src = getimagesize($PhotoUrl); $imgW = $src[0]; $imgH = $src[1];
+    $cropW = $PhotoW ?: $imgW; $cropH = $PhotoH ?: $imgH;
+
+    if ($imgW >= $imgH){
+        $cropW = min($imgW, $cropW);
+        $cropH = (int)ceil($imgH / ($imgW / max(1,$cropW)));
+    } else {
+        $cropH = min($imgH, $cropH);
+        $cropW = (int)ceil($imgW / ($imgH / max(1,$cropH)));
+    }
+    if ($PhotoW && $cropW > $PhotoW) { $cropH = (int)ceil($cropH / ($cropW / $PhotoW)); $cropW = $PhotoW; }
+    if ($PhotoH && $cropH > $PhotoH) { $cropW = (int)ceil($cropW / ($cropH / $PhotoH)); $cropH = $PhotoH; }
+    return [$cropW, $cropH];
 }

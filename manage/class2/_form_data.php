@@ -104,6 +104,7 @@ if (!function_exists('class1_detail_export_vars')) {
 }
 
 if (!function_exists('class1_detail_apply_master')) {
+    /** 將主檔列資料寫入 class1_form_vars */
     /** @param array<string,mixed> $row */
     function class1_detail_apply_master(array $row): void {
         $v = &$GLOBALS['class1_form_vars'];
@@ -155,6 +156,7 @@ if (!function_exists('class1_detail_apply_master')) {
 }
 
 if (!function_exists('class1_detail_load_children')) {
+    /** 載入子表資料（語系、圖片、內容、連結等） */
     function class1_detail_load_children(int $pkey): void {
         global $array_lang;
 

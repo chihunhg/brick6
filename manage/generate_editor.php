@@ -2,19 +2,10 @@
 declare(strict_types=1);
 
 /**
- * CKEditor HTML 產生 API（供 manage detail 頁 AJAX 呼叫）
+ * CKEditor HTML 產生 API（SSE 串流）
  *
- * POST / JSON body 參數：
- * - prompt（必填）使用者提示詞
- * - source_url（選填）參考網址；有提供時後端先抓取網頁並萃取純文字，再傳給模型改寫或延伸
- * - industry（可選）medical | biotech | electronics | listed_company | japanese_client | general
- *   醫療／生技／上市櫃／金融等產業會啟用較嚴格的 Gemini Safety Settings
- * - format_mode（可選）auto | prose | table | list
- *
- * 環境變數：GEMINI_API_KEY 或 GOOGLE_API_KEY（.env）
- *
- * 成功回應（Content-Type: application/json）：
- * {"html_content":"<h2>...</h2><p>...</p>"}
+ * POST / JSON body：prompt, source_url, industry, format_mode, lang_slot, lang_label
+ * 回應：text/event-stream（event: start | delta | done | error）
  */
 $manage_binary_export = true;
 
@@ -27,6 +18,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
 require_once dirname(__DIR__) . '/include/gemini_lang_helpers.php';
 require_once dirname(__DIR__) . '/include/crud_helpers.php';
+require_once dirname(__DIR__) . '/include/gemini_stream_helpers.php';
 
 $input = gemini_editor_parse_request();
 
@@ -70,7 +62,7 @@ use Gemini\Enums\DataType;
 use Gemini\Enums\ResponseMimeType;
 
 try {
-    $client = gemini_create_client($apiKey);
+    $client = gemini_create_client($apiKey, 120);
     $normalizedIndustry = gemini_normalize_industry($industry);
     $normalizedFormatMode = gemini_normalize_format_mode($formatMode);
 
@@ -111,36 +103,33 @@ try {
     $model = $client
         ->generativeModel(model: 'gemini-2.5-flash')
         ->withSystemInstruction(Content::parse(
-            gemini_editor_system_instruction(
+            gemini_sanitize_utf8_text(gemini_editor_system_instruction(
                 industry: $normalizedIndustry,
                 sourceUrl: $sourceUrl,
                 formatMode: $normalizedFormatMode,
                 outputLocale: $langContext['locale'],
                 langLabel: $langContext['label'],
-            )
+            ))
         ))
         ->withGenerationConfig($generationConfig);
 
     $model = gemini_generative_model_with_safety_settings($model, $normalizedIndustry);
 
-    $result = $model->generateContent($finalPrompt);
+    gemini_stream_generate_content_sse(
+        $model,
+        $finalPrompt,
+        static function (array $data): array {
+            $htmlContent = gemini_sanitize_editor_html((string)($data['html_content'] ?? ''));
+            if ($htmlContent === '') {
+                throw new RuntimeException('Incomplete model response');
+            }
 
-    $safetyBlockedMessage = gemini_response_safety_blocked_message($result);
-    if ($safetyBlockedMessage !== null) {
-        json_out(['success' => false, 'error' => $safetyBlockedMessage], 422);
-    }
-
-    $data = $result->json(associative: true);
-    if (!is_array($data)) {
-        json_out(['success' => false, 'error' => 'Invalid model response'], 502);
-    }
-
-    $htmlContent = gemini_sanitize_editor_html((string)($data['html_content'] ?? ''));
-    if ($htmlContent === '') {
-        json_out(['success' => false, 'error' => 'Incomplete model response'], 502);
-    }
-
-    json_out(['success' => true, 'html_content' => $htmlContent]);
+            return [
+                'success' => true,
+                'html_content' => $htmlContent,
+            ];
+        }
+    );
 } catch (Throwable $e) {
     error_log('[generate_editor] ' . $e->getMessage());
     json_out(['success' => false, 'error' => gemini_api_error_message($e)], 500);

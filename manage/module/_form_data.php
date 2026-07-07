@@ -5,6 +5,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('module_lang_is_show_on')) {
+    /** 語系 isShow 是否視為開啟 */
     function module_lang_is_show_on($value): bool {
         if (function_exists('class1_lang_is_show_on')) {
             return class1_lang_is_show_on($value);
@@ -14,14 +15,15 @@ if (!function_exists('module_lang_is_show_on')) {
     }
 }
 
-/** module_p 新增預設 Sort：自動 +1，略過保留值 50（權限用） */
 if (!function_exists('module_next_sort')) {
+    /** module_p 新增預設 Sort：自動 +1，略過保留值 50（權限用） */
     function module_next_sort(): int {
         return crud_next_sort('module_p', [], 'Sort', [50]);
     }
 }
 
 if (!function_exists('module_require_admin')) {
+    /** 僅 Admin 可進入單元設定 */
     function module_require_admin(): void {
         global $Login_ID, $m98;
         if (($Login_ID ?? '') !== 'Admin') {
@@ -32,12 +34,14 @@ if (!function_exists('module_require_admin')) {
 }
 
 if (!function_exists('module_detail_tables')) {
+    /** 讀取 module/_config.php 子表設定 */
     function module_detail_tables(): array {
         return manage_detail_tables();
     }
 }
 
 if (!function_exists('module_detail_init_defaults')) {
+    /** 初始化單元表單預設變數 */
     function module_detail_init_defaults(): void {
         global $array_lang;
 
@@ -83,6 +87,7 @@ if (!function_exists('module_detail_init_defaults')) {
 }
 
 if (!function_exists('module_detail_export_vars')) {
+    /** 將 module_form_vars 匯出至 $GLOBALS */
     function module_detail_export_vars(): void {
         foreach ($GLOBALS['module_form_vars'] as $key => $val) {
             $GLOBALS[$key] = $val;
@@ -91,6 +96,7 @@ if (!function_exists('module_detail_export_vars')) {
 }
 
 if (!function_exists('module_detail_apply_program_meta')) {
+    /** 依功能模組帶入 MaxLayer、isColum 等程式 meta */
     function module_detail_apply_program_meta(int $intUse): void {
         $prog = crud_load_program_meta($intUse);
         $v    = &$GLOBALS['module_form_vars'];
@@ -101,7 +107,10 @@ if (!function_exists('module_detail_apply_program_meta')) {
 }
 
 if (!function_exists('module_detail_apply_master')) {
-    /** @param array<string,mixed> $row */
+    /**
+     * 將主檔列寫入 module_form_vars
+     * @param array<string,mixed> $row
+     */
     function module_detail_apply_master(array $row): void {
         $v = &$GLOBALS['module_form_vars'];
 
@@ -157,6 +166,7 @@ if (!function_exists('module_detail_apply_lang_fallback')) {
 }
 
 if (!function_exists('module_detail_load_children')) {
+    /** 載入子單元名稱與語系列 */
     function module_detail_load_children(int $modulePKey): void {
         global $array_lang;
 
@@ -203,6 +213,7 @@ if (!function_exists('module_detail_load_children')) {
 }
 
 if (!function_exists('module_detail_load')) {
+    /** 自 DB 載入一筆單元主檔與子表 */
     function module_detail_load(int $pkey): bool {
         if ($pkey <= 0) {
             return false;
@@ -297,6 +308,7 @@ if (!function_exists('module_resolve_master_strname')) {
 }
 
 if (!function_exists('module_layer_field_name')) {
+    /** 子單元名稱表單欄位名（subName{n}） */
     function module_layer_field_name(int $sort): string {
         return 'subName' . $sort;
     }

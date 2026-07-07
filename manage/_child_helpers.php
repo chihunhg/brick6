@@ -7,6 +7,9 @@ declare(strict_types=1);
  */
 
 if (!function_exists('manage_child_call')) {
+    /**
+     * 安全呼叫回呼（字串函式名或 callable）；無效則拋 InvalidArgumentException
+     */
     function manage_child_call(mixed $callable, mixed ...$args): mixed
     {
         if (is_string($callable) && $callable !== '' && function_exists($callable)) {

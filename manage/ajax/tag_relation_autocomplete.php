@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once dirname(__DIR__, 2) . '/include/tag_relation_helpers.php';
 
 if (!function_exists('tag_relation_json_resolve')) {
+    /** 輸出標籤關聯 JSON（pkey、name、error）並結束請求 */
     function tag_relation_json_resolve(int $pkey, string $name, string $error = ''): void {
         echo json_encode(
             ['pkey' => $pkey, 'name' => $name, 'error' => $error],

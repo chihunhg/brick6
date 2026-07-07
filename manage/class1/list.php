@@ -32,7 +32,7 @@ $csrf_token = crud_csrf_ensure($listCsrfKey);
 
 [$PDO_Cond, $Cond_Array] = crud_module_where();
 $kwPlaceholder = '搜尋類別名稱';
-$Keywords = crud_list_apply_keyword_search($PDO_Cond, $Cond_Array, $filter_array ?? [], 'strName', $kwPlaceholder);
+$Keywords = crud_list_apply_keyword_search($PDO_Cond, $Cond_Array, $filter_array ?? [], 'strName', $kwPlaceholder, ['table' => $table_name, 'pk' => $PKName]);
 if ($Keywords === '') {
     $Keywords = $kwPlaceholder;
 }
@@ -78,7 +78,7 @@ $listGridClass = manage_list_grid_with_lang($listGridClass, (bool)($listShowLang
 			<div class="filterWrap__content">
 				<div class="filterWrap__grid">
 					<div class="inputGroup">
-						<label class="inputLabel" for="Keywords">關鍵字搜尋</label>
+						<label class="inputLabel" for="Keywords">智慧語意搜尋</label>
 						<div class="inputWrapper">
 							<input type="text" name="Keywords" id="Keywords"
 								value="<?php echo e($Keywords); ?>"

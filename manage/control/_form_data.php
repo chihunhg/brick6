@@ -17,6 +17,7 @@ if (!function_exists('control_detail_defaults')) {
 }
 
 if (!function_exists('control_detail_init_defaults')) {
+    /** 初始化後台帳號表單預設變數 */
     function control_detail_init_defaults(): void {
         $GLOBALS['control_form_vars'] = control_detail_defaults();
         $GLOBALS['Update_PKey']       = 0;
@@ -24,6 +25,7 @@ if (!function_exists('control_detail_init_defaults')) {
 }
 
 if (!function_exists('control_detail_export_vars')) {
+    /** 將 control_form_vars 匯出至 $GLOBALS */
     function control_detail_export_vars(): void {
         $v = (array)($GLOBALS['control_form_vars'] ?? control_detail_defaults());
         foreach ($v as $key => $val) {
@@ -70,32 +72,47 @@ if (!function_exists('control_detail_load')) {
 }
 
 if (!function_exists('control_list_apply_keyword_search')) {
+    /** 帳號列表關鍵字／語意搜尋條件 */
     function control_list_apply_keyword_search(
         string &$where,
         array &$params,
         array $filter,
         string $placeholder = '請輸入名稱或帳號搜尋'
     ): string {
+        $kw = trim(manage_list_search_filter_value($filter, 'Keywords'));
+        $kw = mb_substr($kw, 0, 50);
+
         $submitted = (isset($filter['Submit']) && $filter['Submit'] === '搜尋')
             || (isset($filter['Send']) && $filter['Send'] === '搜尋');
-        if (!$submitted || !isset($filter['Keywords'])) {
+        $hasKeyword = $kw !== '' && $kw !== $placeholder;
+
+        if ((!$submitted && !$hasKeyword) || !$hasKeyword) {
             return $placeholder;
         }
-        $kw = trim((string)$filter['Keywords']);
-        $kw = mb_substr($kw, 0, 50);
-        if ($kw === '' || $kw === $placeholder) {
-            return $placeholder;
+
+        if (!function_exists('manage_semantic_apply_keyword_filter')) {
+            require_once dirname(__DIR__, 2) . '/include/manage_semantic_search_helpers.php';
         }
-        $kwCompact = str_replace(' ', '', $kw);
-        $params['KeywordSN'] = $kwCompact;
-        $params['KeywordID'] = $kwCompact;
-        $where .= ' AND (LOCATE(:KeywordSN, REPLACE(strName, \' \', \'\')) > 0'
-            . ' OR LOCATE(:KeywordID, REPLACE(strID, \' \', \'\')) > 0)';
+
+        manage_semantic_apply_keyword_filter(
+            $where,
+            $params,
+            $kw,
+            ['strName', 'strID'],
+            [
+                'table' => 'webcontrol',
+                'pk' => 'PKey',
+                'base_where' => $where,
+                'base_params' => $params,
+            ]
+        );
+
         return $kw;
     }
 }
 
 if (!function_exists('control_strid_exists')) {
+    /** 帳號 strID 是否已被使用 */
     function control_strid_exists(string $strId, int $excludePKey = 0): bool {
         $strId = strtolower(trim($strId));
         if ($strId === '') {

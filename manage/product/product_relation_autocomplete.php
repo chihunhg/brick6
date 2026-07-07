@@ -21,7 +21,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 
 if (!function_exists('product_relation_json_resolve')) {
-
+    /** 輸出品項關聯 JSON（pkey、name、error）並結束請求 */
     function product_relation_json_resolve(int $pkey, string $name, string $error = ''): void
 
     {
@@ -43,7 +43,7 @@ if (!function_exists('product_relation_json_resolve')) {
 
 
 if (!function_exists('product_relation_has_lang_table')) {
-
+    /** 是否可用 product_lang 多語子表 */
     function product_relation_has_lang_table(): bool
 
     {

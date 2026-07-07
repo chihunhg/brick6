@@ -110,6 +110,7 @@ if (!function_exists('frontend_nav_list_slug')) {
 }
 
 if (!function_exists('frontend_nav_href')) {
+    /** 主選單連結（$web_root + pageLink，外連經 safe_href） */
     function frontend_nav_href(string $pageLink): string
     {
         global $web_root;
@@ -189,6 +190,7 @@ if (!function_exists('frontend_nav_sub_items')) {
 }
 
 if (!function_exists('frontend_company_detail_href')) {
+    /** 關於我們內頁 company{pkey}.htm */
     function frontend_company_detail_href(int $pkey): string
     {
         global $web_root;
@@ -202,6 +204,7 @@ if (!function_exists('frontend_company_detail_href')) {
 }
 
 if (!function_exists('frontend_nav_sub_href')) {
+    /** 下拉子項連結（company 用 detail，其餘 class1） */
     function frontend_nav_sub_href(int $modulePKey, string $listPageLink, int $itemPKey): string
     {
         if ($modulePKey > 0 && $modulePKey === frontend_module_pkey('company')) {
@@ -213,6 +216,7 @@ if (!function_exists('frontend_nav_sub_href')) {
 }
 
 if (!function_exists('frontend_nav_class1_href')) {
+    /** 分類列表內頁 {slug}{class1PKey}.htm */
     function frontend_nav_class1_href(string $listPageLink, int $class1PKey): string
     {
         global $web_root;
@@ -224,6 +228,7 @@ if (!function_exists('frontend_nav_class1_href')) {
 }
 
 if (!function_exists('frontend_nav_is_active')) {
+    /** 主選單是否為目前單元（Module_PKey 或 page_link 比對） */
     function frontend_nav_is_active(int $modulePKey): bool
     {
         global $Module_PKey, $page_link, $Array_MU_Link;
@@ -337,6 +342,7 @@ if (!function_exists('frontend_module_config')) {
 }
 
 if (!function_exists('frontend_view_table')) {
+    /** 目前模組 view 表名（frontend_module_config） */
     function frontend_view_table(): string
     {
         $cfg = frontend_module_config();
@@ -346,6 +352,7 @@ if (!function_exists('frontend_view_table')) {
 }
 
 if (!function_exists('frontend_safe_order_by')) {
+    /** ORDER BY 白名單（僅英數逗號空白，否則 fallback） */
     function frontend_safe_order_by(string $orderBy, string $fallback = 'PKey DESC'): string
     {
         $orderBy = trim($orderBy);
@@ -358,6 +365,7 @@ if (!function_exists('frontend_safe_order_by')) {
 }
 
 if (!function_exists('frontend_init_breadcrumb')) {
+    /** 初始化麵包屑：首頁 + 模組名稱 */
     function frontend_init_breadcrumb(string $moduleName, string $moduleLink): void
     {
         global $bread_name, $break_link, $lang_text, $this_lang;
@@ -373,6 +381,7 @@ if (!function_exists('frontend_init_breadcrumb')) {
 }
 
 if (!function_exists('frontend_class1_count')) {
+    /** 模組上架 dbclass1 數量 */
     function frontend_class1_count(int $modulePKey, ?int $lang = null): int
     {
         global $this_lang;
@@ -402,6 +411,7 @@ if (!function_exists('frontend_filter_class1')) {
 }
 
 if (!function_exists('frontend_resolve_class1')) {
+    /** 解析 Class1：filter 有值用之，否則取第一個上架分類 */
     function frontend_resolve_class1(int $modulePKey, array $filter, ?int $lang = null): int
     {
         global $this_lang;
@@ -505,6 +515,7 @@ if (!function_exists('frontend_apply_class1_filter')) {
 }
 
 if (!function_exists('frontend_list_total')) {
+    /** 列表 COUNT(PKey)（view + where） */
     function frontend_list_total(string $where, array $params): int
     {
         $view = frontend_view_table();
@@ -569,6 +580,7 @@ if (!function_exists('frontend_breadcrumb_ldjson')) {
 }
 
 if (!function_exists('frontend_detail_href')) {
+    /** 內頁 friendly URL（detail_link + pkey.htm） */
     function frontend_detail_href(int $pkey, ?array $cfg = null): string
     {
         $cfg = $cfg ?? frontend_module_config();
@@ -579,6 +591,7 @@ if (!function_exists('frontend_detail_href')) {
 }
 
 if (!function_exists('frontend_cover_image_url')) {
+    /** 列表／OG 封面圖（webp 優先，無圖回預設） */
     function frontend_cover_image_url(int $parentPKey, ?array $cfg = null): string
     {
         global $web_root;
@@ -782,10 +795,16 @@ if (!function_exists('frontend_fetch_faq_items')) {
      *
      * @return list<array{pkey:int,question:string,answer:string,image:?string}>
      */
-    function frontend_fetch_faq_items(int $modulePKey, ?array $cfg = null): array
-    {
+    function frontend_fetch_faq_items(
+        int $modulePKey,
+        ?array $cfg = null,
+        ?string $where = null,
+        ?array $params = null
+    ): array {
         $cfg = $cfg ?? frontend_module_config();
-        [$where, $params] = frontend_list_where($modulePKey);
+        if ($where === null || $params === null) {
+            [$where, $params] = frontend_list_where($modulePKey);
+        }
         $view = frontend_view_table();
         $orderBy = frontend_safe_order_by((string)($cfg['order_by'] ?? 'Sort ASC'), 'Sort ASC');
         $rows = crud_fetch_all(
@@ -821,6 +840,7 @@ if (!function_exists('frontend_fetch_faq_items')) {
 }
 
 if (!function_exists('frontend_video_watch_href')) {
+    /** 影音外連 YouTube watch URL（safe_href） */
     function frontend_video_watch_href(string $movielink): ?string
     {
         $url = youtube_watch_url($movielink);
@@ -864,6 +884,7 @@ if (!function_exists('frontend_file_icon_class')) {
 }
 
 if (!function_exists('frontend_filedown_row_ext')) {
+    /** 檔案下載列副檔名（Ext / 連結 / 上傳檔推斷） */
     function frontend_filedown_row_ext(array $row, ?array $cfg = null): string
     {
         global $this_lang;
@@ -1118,6 +1139,7 @@ if (!function_exists('frontend_investor_file_href')) {
 }
 
 if (!function_exists('frontend_investor_row_ext')) {
+    /** 投資人專區列副檔名（同 filedown 邏輯） */
     function frontend_investor_row_ext(array $row, ?array $cfg = null): string
     {
         $ext = trim((string)crud_row_val($row, 'Ext'));
@@ -1410,6 +1432,7 @@ if (!function_exists('frontend_dbad_card_image_url')) {
 }
 
 if (!function_exists('frontend_request_pkey')) {
+    /** 前台內頁 PKey（filter 正整數，否則 0） */
     function frontend_request_pkey(array $filter): int
     {
         if (!isset($filter['PKey']) || $filter['PKey'] === false || $filter['PKey'] === null) {
@@ -1421,6 +1444,7 @@ if (!function_exists('frontend_request_pkey')) {
 }
 
 if (!function_exists('frontend_list_href')) {
+    /** 模組總列表頁 class_link.htm */
     function frontend_list_href(?array $cfg = null): string
     {
         $cfg = $cfg ?? frontend_module_config();
@@ -1524,6 +1548,7 @@ if (!function_exists('frontend_fetch_detail')) {
 }
 
 if (!function_exists('frontend_apply_detail_class1_breadcrumb')) {
+    /** 內頁追加 Class1 麵包屑（分類數達門檻時） */
     function frontend_apply_detail_class1_breadcrumb(int $class1, int $class1Count, ?array $cfg = null): void
     {
         global $bread_name, $break_link;
@@ -1552,6 +1577,7 @@ if (!function_exists('frontend_apply_detail_class1_breadcrumb')) {
 }
 
 if (!function_exists('frontend_append_detail_breadcrumb')) {
+    /** 內頁追加目前文章標題至麵包屑 */
     function frontend_append_detail_breadcrumb(string $title): void
     {
         global $bread_name, $break_link, $page_link;
@@ -1914,6 +1940,7 @@ if (!function_exists('frontend_fetch_product_msg_tabs')) {
 }
 
 if (!function_exists('frontend_not_found_exit')) {
+    /** 查無資料：alert + 導回列表並 exit */
     function frontend_not_found_exit(?string $listHref = null): never
     {
         global $lang_text, $this_lang;

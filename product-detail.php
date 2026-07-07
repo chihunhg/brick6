@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-
-
 $pageName = '02';
 
 $subPageName = '';
 
 require('_inc.php');
-
-
 
 $Module_PKey = frontend_module_pkey('product');
 
@@ -40,17 +36,11 @@ frontend_module_set_config(array_merge(
 
 ));
 
-
-
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
-
-
 frontend_init_breadcrumb($Module_Name, $Module_Link);
-
-
 
 $class1ItemCount = frontend_class1_count($Module_PKey);
 
@@ -58,15 +48,11 @@ $PKey = frontend_request_pkey($filter_array ?? []);
 
 $detailRow = frontend_fetch_detail($Module_PKey, $PKey);
 
-
-
 if ($detailRow === null) {
 
     frontend_not_found_exit(frontend_list_href());
 
 }
-
-
 
 $strName       = (string)crud_row_val($detailRow, 'strName');
 $seoTitle      = frontend_lang_seo_title($detailRow);
@@ -81,13 +67,9 @@ $m_description = (string)crud_row_val($detailRow, 'Description');
 
 $m_keywords    = (string)crud_row_val($detailRow, 'Keywords');
 
-
-
 frontend_apply_detail_class1_breadcrumb($Class1, $class1ItemCount);
 
 frontend_append_detail_breadcrumb($strName);
-
-
 
 $galleryImages = frontend_fetch_product_gallery_images($PKey);
 
@@ -97,13 +79,9 @@ $ldjson        = frontend_breadcrumb_ldjson();
 
 $backHref      = frontend_class1_list_href($Class1);
 
-
-
 $mainImage = $galleryImages[0] ?? null;
 
 ?>
-
-
 
 <!DOCTYPE html>
 
@@ -117,15 +95,11 @@ $mainImage = $galleryImages[0] ?? null;
 
 </head>
 
-
-
 <body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
 
 <?php require('_header.php'); ?>
 
 <?php require('_banner.php'); ?>
-
-
 
 <main class="pgContent">
 
@@ -150,8 +124,6 @@ $mainImage = $galleryImages[0] ?? null;
                 <p class="productD__intro"><?php echo e($interview); ?></p>
 
                 <?php } ?>
-
-
 
                 <?php if ($mainImage !== null) { ?>
 
@@ -202,8 +174,6 @@ $mainImage = $galleryImages[0] ?? null;
                 </div>
 
                 <?php } ?>
-
-
 
                 <?php if ($msgTabs !== []) { ?>
 
@@ -271,8 +241,6 @@ $mainImage = $galleryImages[0] ?? null;
 
             </div>
 
-
-
             <div class="btnWrap btnWrap--center">
 
                 <a href="<?php echo href_attr($backHref); ?>" class="btnStyle">
@@ -291,8 +259,6 @@ $mainImage = $galleryImages[0] ?? null;
 
 </main>
 
-
-
 <?php require('_footer.php'); ?>
 
 <?php echo script_src_tag($web_url . 'js/product-detail.js?ver=' . filemtime(__DIR__ . '/js/product-detail.js')); ?>
@@ -302,5 +268,3 @@ $mainImage = $galleryImages[0] ?? null;
 </body>
 
 </html>
-
-

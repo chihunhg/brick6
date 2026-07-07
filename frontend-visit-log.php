@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 前台瀏覽記錄 AJAX 寫入（POST JSON）
+ *
+ * 參數：Module_PKey、strLink（page_link）
+ * 回應：json_out success / skipped / error
+ */
+
 require_once __DIR__ . '/include/host.php';
 require_once __DIR__ . '/include/Conn.php';
 require_once __DIR__ . '/include/dbclass.php';

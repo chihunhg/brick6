@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+if (!function_exists('gemini_tdk_template_instruction')) {
 /**
  * Gemini SEO TDK 產生：產業範本與 prompt 組裝
  */
 
-if (!function_exists('gemini_tdk_template_instruction')) {
     function gemini_tdk_template_instruction(string $industry): string {
         require_once __DIR__ . '/TdkTemplates.php';
         require_once __DIR__ . '/gemini_editor_helpers.php';
@@ -15,6 +15,7 @@ if (!function_exists('gemini_tdk_template_instruction')) {
 }
 
 if (!function_exists('gemini_tdk_template_priority_block')) {
+    /** TDK 產業範本最高優先區塊（含 system instruction） */
     function gemini_tdk_template_priority_block(string $industry): string {
         $template = gemini_tdk_template_instruction($industry);
 
@@ -26,6 +27,7 @@ if (!function_exists('gemini_tdk_template_priority_block')) {
 }
 
 if (!function_exists('gemini_tdk_system_instruction')) {
+    /** 組裝 TDK 產生的 system instruction */
     function gemini_tdk_system_instruction(
         string $industry = 'general',
         string $outputLocale = 'zh-tw',
@@ -55,6 +57,7 @@ TEXT;
 }
 
 if (!function_exists('gemini_build_tdk_user_prompt')) {
+    /** 組裝 TDK user prompt（語系 + 產業 + 任務） */
     function gemini_build_tdk_user_prompt(
         string $userPrompt,
         string $industry = 'general',

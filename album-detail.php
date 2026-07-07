@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-
-
 $pageName = '03';
 
 $subPageName = '';
 
 require('_inc.php');
-
-
 
 $Module_PKey = frontend_module_pkey('album');
 
@@ -34,17 +30,11 @@ frontend_module_set_config(array_merge(
 
 ));
 
-
-
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
-
-
 frontend_init_breadcrumb($Module_Name, $Module_Link);
-
-
 
 $class1ItemCount = frontend_class1_count($Module_PKey);
 
@@ -52,15 +42,11 @@ $PKey = frontend_request_pkey($filter_array ?? []);
 
 $detailRow = frontend_fetch_detail($Module_PKey, $PKey);
 
-
-
 if ($detailRow === null) {
 
     frontend_not_found_exit(frontend_list_href());
 
 }
-
-
 
 $strName       = (string)crud_row_val($detailRow, 'strName');
 $seoTitle      = frontend_lang_seo_title($detailRow);
@@ -73,13 +59,9 @@ $m_description = (string)crud_row_val($detailRow, 'Description');
 
 $m_keywords    = (string)crud_row_val($detailRow, 'Keywords');
 
-
-
 frontend_apply_detail_class1_breadcrumb($Class1, $class1ItemCount);
 
 frontend_append_detail_breadcrumb($strName);
-
-
 
 $galleryItems = frontend_fetch_album_gallery_items($PKey);
 
@@ -88,8 +70,6 @@ $ldjson = frontend_breadcrumb_ldjson();
 $backHref = frontend_class1_list_href($Class1);
 
 ?>
-
-
 
 <!DOCTYPE html>
 
@@ -103,15 +83,11 @@ $backHref = frontend_class1_list_href($Class1);
 
 </head>
 
-
-
 <body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
 
 <?php require('_header.php'); ?>
 
 <?php require('_banner.php'); ?>
-
-
 
 <main class="pgContent">
 
@@ -185,8 +161,6 @@ $backHref = frontend_class1_list_href($Class1);
 
 </main>
 
-
-
 <?php if ($galleryItems !== []) { ?>
 
 <div class="albumViewer" id="albumViewer" aria-hidden="true" role="dialog" aria-modal="true"
@@ -245,8 +219,6 @@ $backHref = frontend_class1_list_href($Class1);
 
 <?php } ?>
 
-
-
 <?php require('_footer.php'); ?>
 
 <?php if ($galleryItems !== []) {
@@ -260,5 +232,3 @@ $backHref = frontend_class1_list_href($Class1);
 </body>
 
 </html>
-
-

@@ -1,5 +1,12 @@
 <?php
 declare(strict_types=1);
+
+/**
+ * 前台共用 bootstrap（session、host、PDO、模組選單、CSP、CSRF）
+ *
+ * 各前台 *.php 頁面以 require('_inc.php') 載入。
+ */
+
 session_start();  //啟動 session
 
 // ---- 時區與輸出編碼 / Cache ----
@@ -121,10 +128,10 @@ if ( !$rs->eof ){
 	$pageTitle = $rs->field("strName");
 	$pageTitle2 = $rs->field("strName");
 	$web_title = $rs->field("strName");
-	
+
 	$m_keywords = $rs->field("Keywords");
 	$m_description = $rs->field("Description");
-	
+
 	$Web_Name = $rs->field("strName");
 	$Web_Tel = $rs->field("Tel");
 	$Web_Fax = $rs->field("Fax");
@@ -132,7 +139,7 @@ if ( !$rs->eof ){
 	$Web_Address = $rs->field("Address");
 	//$Web_GoogleMap1 = $rs->field("GoogleMap1");
 	//$Web_GoogleMap2 = $rs->field("GoogleMap2");
-	
+
 	$Web_Facebook = $rs->field("Facebook");
 	$Web_LINE = $rs->field("LINE");
 	$Web_Twitter = $rs->field("Twitter");
@@ -140,13 +147,13 @@ if ( !$rs->eof ){
 	$Web_linkedin = $rs->field("linkedin");
 	$Web_Youtube = $rs->field("Youtube");
 	$Web_Wechat = $rs->field("Wechat");
-	
+
 	$Web_gaCode = $rs->field("gaCode");
 	//$Web_gtmCode = $rs->field("gtmCode");
-	
+
 	$ToMail = $rs->field("ToMail");
 	//$ToMail2 = $rs->field("ToMail2");
-	
+
 	//通知信
 	$m_title = $pageTitle2;
 	$m_from_mail = $rs->field("FromMail");

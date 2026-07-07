@@ -55,10 +55,10 @@ require('_in_gtm2.php');
 			<?php } ?>
 		</nav>
 		<div class="langBox">
-			<?php 
+			<?php
 			if ($this_lang == '1'){?>
 			<a href="<?php echo $web_url?>en/" class="langBox__item">EN</a>
-			<?php } else 
+			<?php } else
 			if ($this_lang == '2'){?>
 			<a href="<?php echo $web_url?>" class="langBox__item">中</a>
 			<?php }?>

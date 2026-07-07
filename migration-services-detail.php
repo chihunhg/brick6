@@ -7,7 +7,6 @@ $Module_PKey = frontend_module_pkey('knowledge');
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
-
 // 產生麵包屑
 $bread_name = $bread_name ?? [];
 $break_link = $break_link ?? [];
@@ -131,11 +130,11 @@ if (!$rs->eof) {
             $Photo[$i] = (string)($web_root . ltrim($useRel, '/'));
 			$PhotoM[$i] = e_attr((string)$rs1->field('PhotoM'));
         }
-		
+
         $rs1->movenext();
     }
     $rs1->close();
-	
+
     $links = [];
 	if (function_exists('chkTable') && chkTable('paper_link')) {
 		$sql = 'SELECT * FROM paper_link WHERE Paper_PKey = :Paper_PKey and intLang = :intLang ORDER BY Sort';
@@ -156,7 +155,6 @@ if (!$rs->eof) {
 		}
 		$rs1->close();
 	}
-
 
 } else {
     // 找不到資料：alert 後導回列表頁
@@ -199,7 +197,7 @@ for($i=0;$i<count($bread_name);$i++){
 		'item' => safe_url($web_root.$break_link[$i]),
 		// e() 確保麵包屑名稱的內容被逸出
 		'name' => e($bread_name[$i])
-	];	
+	];
 	$Elements[$n] = $array;
 }
 
@@ -231,8 +229,8 @@ $ldjson = [
                     <h2 class="articleTt"><?php echo e_attr($strName)?></h2>
                 </div>
                  <div class="articleMain">
-                    <?php 
-					for($i=1;$i<7;$i++){						
+                    <?php
+					for($i=1;$i<7;$i++){
 						if(! empty($Contents[$i]) || !empty($Photo[$i])){
 							switch($i){
 								case 2:
@@ -249,13 +247,13 @@ $ldjson = [
 							}
 					?>
 					<article class="<?php echo $css?>">
-						<?php 
+						<?php
 						if(!empty($Photo[$i])){
 						?>
 						<figure>
 							<img src="<?php echo e_attr((string)$Photo[$i]); ?>" class="img-fluid" loading="lazy" alt="<?php echo e_attr($strName)?>">
 						</figure>
-						<?php 
+						<?php
 						}
 						if(!empty($Contents[$i])){
 						?>
@@ -266,7 +264,7 @@ $ldjson = [
 						}
 						?>
 					</article>
-					<?php	
+					<?php
 						}
 					}
 					?>

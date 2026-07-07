@@ -5,12 +5,14 @@ declare(strict_types=1);
  */
 
 if (!function_exists('class1_detail_tables')) {
+    /** 讀取模組設定（委派 manage_detail_tables） */
     function class1_detail_tables(): array {
         return manage_detail_tables();
     }
 }
 
 if (!function_exists('class1_detail_init_defaults')) {
+    /** 初始化新增頁表單預設變數 */
     function class1_detail_init_defaults(): void {
         global $array_lang;
 
@@ -58,6 +60,7 @@ if (!function_exists('class1_detail_init_defaults')) {
 }
 
 if (!function_exists('class1_lang_is_show_on')) {
+    /** 判斷語系顯示是否為啟用狀態 */
     function class1_lang_is_show_on($value): bool {
         $v = strtolower(trim((string)$value));
         return in_array($v, ['y', 'yes', '1', 'true', 'on'], true);
@@ -65,6 +68,7 @@ if (!function_exists('class1_lang_is_show_on')) {
 }
 
 if (!function_exists('class1_detail_export_vars')) {
+    /** 將 class1_form_vars 匯出為全域變數 */
     function class1_detail_export_vars(): void {
         foreach ($GLOBALS['class1_form_vars'] as $key => $val) {
             $GLOBALS[$key] = $val;
@@ -73,6 +77,7 @@ if (!function_exists('class1_detail_export_vars')) {
 }
 
 if (!function_exists('class1_detail_apply_master')) {
+    /** 將主檔列資料寫入 class1_form_vars */
     /** @param array<string,mixed> $row */
     function class1_detail_apply_master(array $row): void {
         $v = &$GLOBALS['class1_form_vars'];
@@ -116,6 +121,7 @@ if (!function_exists('class1_detail_apply_master')) {
 }
 
 if (!function_exists('class1_detail_load_children')) {
+    /** 載入子表資料（語系、圖片等） */
     function class1_detail_load_children(int $pkey): void {
         global $array_lang;
 
@@ -172,6 +178,7 @@ if (!function_exists('class1_detail_load_children')) {
 }
 
 if (!function_exists('class1_detail_resolve_module_pkey')) {
+    /** 解析目前單元 Module_PKey（優先全域或 URL manNo） */
     function class1_detail_resolve_module_pkey(): int {
         $mpk = (int)($GLOBALS['Module_PKey'] ?? 0);
         if ($mpk > 0) {
@@ -183,6 +190,7 @@ if (!function_exists('class1_detail_resolve_module_pkey')) {
 }
 
 if (!function_exists('class1_recordset_row_to_array')) {
+    /** 將 recordset 目前列轉成關聯陣列 */
     function class1_recordset_row_to_array(recordset $rs): array {
         $cols = [
             'PKey', 'Module_PKey', 'Class1_PKey', 'Class2_PKey', 'Class3_PKey',
@@ -201,6 +209,7 @@ if (!function_exists('class1_recordset_row_to_array')) {
 }
 
 if (!function_exists('class1_detail_load')) {
+    /** 自 DB 載入一筆主檔及子表資料 */
     function class1_detail_load(int $pkey, ?int $modulePKey = null): bool {
         if ($pkey <= 0) {
             return false;

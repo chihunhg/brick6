@@ -18,6 +18,12 @@ function db_pdo_bind_one(PDOStatement $stmt, string|int $param, mixed $val): voi
     }
 }
 
+/**
+ * 批次綁定預備陳述式參數（具名 :key 或位置 ? 索引）
+ *
+ * @param PDOStatement $stmt  已 prepare 的陳述式
+ * @param array<int|string, mixed> $data  參數鍵值（整數鍵為 1-based 位置）
+ */
 function db_pdo_bind_values(PDOStatement $stmt, array $data): void {
     foreach ($data as $key => $val) {
         $param = is_int($key) ? ($key + 1) : (':' . ltrim((string)$key, ':'));
@@ -154,10 +160,23 @@ function db_pdo_show_tables_like(PDO $pdo, string $likePattern): array
  * 共用：型別安全的 bindOne / bindValuesWithType
  */
 trait PdoBindHelpers {
+    /**
+     * 綁定單一參數（依 PHP 型別選 PDO 參數型別）
+     *
+     * @param PDOStatement $stmt
+     * @param string|int $param  占位符（:name 或 1-based 索引）
+     * @param mixed $val
+     */
     private function bindOne(PDOStatement $stmt, string|int $param, mixed $val): void {
         db_pdo_bind_one($stmt, $param, $val);
     }
 
+    /**
+     * 批次綁定參數陣列
+     *
+     * @param PDOStatement $stmt
+     * @param array<int|string, mixed> $data
+     */
     private function bindValuesWithType(PDOStatement $stmt, array $data): void {
         db_pdo_bind_values($stmt, $data);
     }
@@ -183,6 +202,14 @@ class recordset {
     private array $field_cache_lower = [];
     private ?int $field_cache_position = null;
 
+    /**
+     * 執行 SQL 並載入結果集（可選分頁）
+     *
+     * @param string|null $sql         SELECT 等查詢語句
+     * @param array<int|string, mixed> $data_array  綁定參數
+     * @param int|null $page_size      每頁筆數；null 或 ≤0 表示不分頁
+     * @param int $page                 頁碼（1-based）
+     */
     public function __construct(?string $sql = null, array $data_array = [], ?int $page_size = null, int $page = 1) {
         try {
             $this->db = sql_conn();
@@ -247,10 +274,16 @@ class recordset {
         }
     }
 
+    /** 判斷是否為 SHOW 語句（需特殊 LIKE 處理） */
     private function isShowQuery(string $sql): bool {
         return (bool)preg_match('/^\s*SHOW\s+/i', $sql);
     }
 
+    /**
+     * 將 SHOW … LIKE 占位符改為 quote 內嵌
+     *
+     * @param array<int|string, mixed> $data  綁定參數（可能被移除已內嵌的鍵）
+     */
     private function expandShowLike(string $sql, array &$data): string {
         if ($this->db === null) {
             return $sql;
@@ -258,6 +291,7 @@ class recordset {
         return db_expand_show_like_sql($this->db, $sql, $data);
     }
 
+    /** 移除尾端 LIMIT/OFFSET 占位符並內嵌數值分頁子句 */
     private function inlineLimitOffset(string $sql, ?int $limit, ?int $offset): string {
         if ($limit === null || $limit < 0) return $sql;
         $offset = max(0, (int)($offset ?? 0));
@@ -267,6 +301,7 @@ class recordset {
         return $sql . " LIMIT {$limit} OFFSET {$offset}";
     }
 
+    /** 重設結果集、游標與欄位快取為空狀態 */
     private function resetState(): void {
         $this->field_cache_lower = [];
         $this->field_cache_position = null;
@@ -277,10 +312,12 @@ class recordset {
         $this->page_size = $this->page_size > 0 ? $this->page_size : -1;
     }
 
+    /** 設定每頁筆數（≤0 表示不分頁） */
     public function setPageSize(int $size): void {
         $this->page_size = $size > 0 ? $size : -1;
     }
 
+    /** 將游標移至指定頁首筆（需已啟用分頁） */
     public function absolutepage(int $page): void {
         if ($this->page_size <= 0) {
             $this->position = 0;
@@ -291,22 +328,26 @@ class recordset {
         $this->eof = ($this->position >= $this->record_count);
     }
 
+    /** 計算總頁數（未分頁時回傳 0） */
     public function page_count(): int {
         if ($this->page_size <= 0) return 0;
         $q = intdiv($this->record_count, $this->page_size);
         return ($this->record_count % $this->page_size > 0) ? $q + 1 : $q;
     }
 
+    /** 將游標移至指定列索引（0-based） */
     public function move(int $position): void {
         $this->position = max(0, $position);
         $this->eof = ($this->position >= $this->record_count);
     }
 
+    /** 游標移至下一列 */
     public function movenext(): void {
         $this->position++;
         $this->eof = ($this->position >= $this->record_count);
     }
 
+    /** 游標回到第一列 */
     public function movefirst(): void {
         $this->position = 0;
         $this->eof = ($this->record_count === 0);
@@ -329,6 +370,7 @@ class recordset {
         $this->field_cache_position = $this->position;
     }
 
+    /** 取得目前列欄位值（欄名不區分大小寫） */
     public function field(string $field_name): mixed {
         if ($this->eof || !isset($this->result[$this->position])) {
             return null;
@@ -338,18 +380,22 @@ class recordset {
         return $this->field_cache_lower[$target] ?? null;
     }
 
+    /** 取得最近一次錯誤訊息 */
     public function getErrorMessage(): string {
         return $this->error_message;
     }
 
+    /** 設定錯誤訊息 */
     private function setError(string $msg): void {
         $this->error_message = $msg;
     }
 
+    /** 釋放 PDO 連線參考 */
     public function __destruct() {
         $this->db = null;
     }
 
+    /** 手動關閉並釋放 PDO 連線參考 */
     public function close(): void {
         $this->db = null;
     }
@@ -376,6 +422,11 @@ class dbPDO {
     /** 若為 true，表示使用外部傳入的 PDO，重連時不可改換連線。 */
     private bool $pdoInjected = false;
 
+    /**
+     * 建立 dbPDO（可注入外部 PDO 或自動 sql_conn）
+     *
+     * @param PDO|null $pdo  外部連線；null 時自動建立
+     */
     public function __construct(?PDO $pdo = null) {
         try {
             if ($pdo instanceof PDO) {
@@ -397,6 +448,7 @@ class dbPDO {
        交易管理
     ========================= */
 
+    /** 是否處於交易中 */
     public function inTransaction(): bool {
         try {
             return ($this->db instanceof PDO) ? $this->db->inTransaction() : false;
@@ -406,6 +458,7 @@ class dbPDO {
         }
     }
 
+    /** 開始交易（已在交易中則略過） */
     public function begin(): bool {
         try {
             if (!($this->db instanceof PDO)) {
@@ -426,6 +479,7 @@ class dbPDO {
         }
     }
 
+    /** 提交交易 */
     public function commit(): bool {
         try {
             if (!($this->db instanceof PDO)) {
@@ -446,6 +500,7 @@ class dbPDO {
         }
     }
 
+    /** 回滾交易 */
     public function rollBack(): bool {
         try {
             if (!($this->db instanceof PDO)) {
@@ -466,6 +521,12 @@ class dbPDO {
         }
     }
 
+    /**
+     * 在交易中執行 callback（自動 begin/commit/rollBack）
+     *
+     * @param callable(dbPDO): mixed $callback
+     * @return mixed callback 回傳值
+     */
     public function transaction(callable $callback): mixed {
         $startedHere = false;
 
@@ -499,6 +560,7 @@ class dbPDO {
         }
     }
 
+    /** 操作失敗時拋出 RuntimeException */
     public function must(bool $ok, string $message = '資料庫操作失敗'): void {
         if ($ok) {
             return;
@@ -516,11 +578,13 @@ class dbPDO {
        輔助
     ========================= */
 
+    /** 驗證識別字是否為安全欄位/表名格式 */
     private function isSafeName(string $name): bool {
         $name = trim($name);
         return (bool)preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $name);
     }
 
+    /** 依 driver 加上引號（MySQL `、PostgreSQL "） */
     private function quoteIdent(string $name): string {
         if (!$this->isSafeName($name)) {
             throw new Exception("不合法識別字串：{$name}");
@@ -533,12 +597,14 @@ class dbPDO {
         return '`' . $name . '`';
     }
 
+    /** 讀取 DB_SCHEMA_CACHE_TTL（預設 300 秒） */
     private function getSchemaCacheTtl(): int {
         $raw = getenv('DB_SCHEMA_CACHE_TTL') ?: ($_ENV['DB_SCHEMA_CACHE_TTL'] ?? '300');
         $ttl = (int)$raw;
         return $ttl > 0 ? $ttl : 300;
     }
 
+    /** 取得目前資料庫名稱（MySQL / PostgreSQL） */
     private function dbNameOrEmpty(): string {
         if ($this->db === null) return '';
         try {
@@ -557,6 +623,11 @@ class dbPDO {
         }
     }
 
+    /**
+     * 取得資料表欄位集合（含 TTL 快取）
+     *
+     * @return array<string, int>  欄名 => 索引（供 isset 查詢）
+     */
     private function getTableColumns(string $table): array {
         $table = trim($table);
         if (!$this->isSafeName($table)) {
@@ -605,6 +676,7 @@ class dbPDO {
         return $set;
     }
 
+    /** 確認指定欄位存在於資料表 */
     private function assertColumnsExist(string $table, array $columns): void {
         if (empty($columns)) return;
         $tableCols = $this->getTableColumns($table);
@@ -616,6 +688,12 @@ class dbPDO {
         }
     }
 
+    /**
+     * 由條件陣列組 WHERE 子句與綁定參數
+     *
+     * @param array<string, mixed> $conds  欄位 => 值或 ['IN'=>[], 'LIKE'=>, 'BETWEEN'=>[], 'IS'=>null]
+     * @return array{sql: string, params: array<string, mixed>}
+     */
     private function buildWhere(array $conds): array {
         $Q = fn(string $id) => $this->quoteIdent($id);
         $parts  = [];
@@ -667,6 +745,11 @@ class dbPDO {
         return ['sql' => $sql, 'params' => $params];
     }
 
+    /**
+     * 組 ORDER BY 子句
+     *
+     * @param list<array{col: string, desc?: bool}> $orders
+     */
     public function buildOrderBy(array $orders, ?string $table = null): string {
         if (empty($orders)) return '';
         if ($table !== null) {
@@ -687,6 +770,7 @@ class dbPDO {
         return ' ORDER BY ' . implode(', ', $parts);
     }
 
+    /** 判斷 PDO 例外是否為連線中斷（可重試） */
     private function shouldRetry(PDOException $e): bool {
         $msg = strtolower($e->getMessage());
         if (str_contains($msg, 'server has gone away') || str_contains($msg, 'lost connection')) return true;
@@ -699,6 +783,7 @@ class dbPDO {
         return false;
     }
 
+    /** 嘗試重新建立連線（外部注入 PDO 時不重連） */
     private function tryReconnect(): bool {
         if ($this->pdoInjected) {
             return false;
@@ -712,6 +797,12 @@ class dbPDO {
         }
     }
 
+    /**
+     * 執行 DB 操作並在連線中斷時重試一次
+     *
+     * @param callable(PDO): mixed $runner
+     * @return mixed|false
+     */
     private function runWithRetry(callable $runner, string $context) {
         if ($this->db === null) {
             $this->error_message = '資料庫未連線。';
@@ -737,6 +828,11 @@ class dbPDO {
        CRUD
     ========================= */
 
+    /**
+     * INSERT 一筆資料
+     *
+     * @param array<string, mixed> $data
+     */
     public function insert(?string $table = null, array $data = []): bool {
         if ($this->db === null || !$table || empty($data)) return false;
         $table = trim($table);
@@ -763,6 +859,11 @@ class dbPDO {
         return $ret === false ? false : true;
     }
 
+    /**
+     * 依主鍵 UPDATE（$add 已停用，請用 updateWhere）
+     *
+     * @param array<string, mixed>|null $data
+     */
     public function update(?string $table = null, ?array $data = null, ?string $key_column = null, mixed $id = null, string $add = ""): bool {
         if ($this->db === null || !$table || !$data || !$key_column || $id === null) return false;
         if (trim($add) !== '') {
@@ -798,6 +899,12 @@ class dbPDO {
         return $ret === false ? false : true;
     }
 
+    /**
+     * 依 WHERE 條件 UPDATE
+     *
+     * @param array<string, mixed>|null $data
+     * @param array<string, mixed>|null $where
+     */
     public function updateWhere(?string $table = null, ?array $data = null, ?array $where = null): bool {
         if ($this->db === null || !$table || !$data || empty($where)) return false;
 
@@ -829,6 +936,7 @@ class dbPDO {
         return $ret === false ? false : true;
     }
 
+    /** 依主鍵 DELETE 一筆 */
     public function delete(?string $table = null, ?string $key_column = null, mixed $value = null): bool {
         if ($this->db === null || !$table || !$key_column || $value === null) return false;
 
@@ -853,6 +961,11 @@ class dbPDO {
         return $ret === false ? false : true;
     }
 
+    /**
+     * 依條件 DELETE（至少需一個條件）
+     *
+     * @param array<string, mixed> $conditions
+     */
     public function deleteWithConditions(?string $table = null, array $conditions = []): bool {
         if ($this->db === null || !$table || empty($conditions)) return false;
 
@@ -879,6 +992,12 @@ class dbPDO {
         return $ret === false ? false : true;
     }
 
+    /**
+     * 執行 SELECT 等查詢並回傳關聯陣列列
+     *
+     * @param array<int|string, mixed> $data
+     * @return list<array<string, mixed>>|false
+     */
     public function execute(?string $sql = null, array $data = []): array|false {
         if ($this->db === null) {
             $this->error_message = '資料庫未連線，execute 無法執行。';
@@ -900,6 +1019,7 @@ class dbPDO {
         return $ret === false ? false : $ret;
     }
 
+    /** execute 別名 */
     public function query(?string $sql = null, array $data = []): array|false {
         return $this->execute($sql, $data);
     }
@@ -908,22 +1028,31 @@ class dbPDO {
        狀態與錯誤
     ========================= */
 
+    /** 取得最近一次執行的 SQL */
     public function getLastSql(): string {
         return $this->last_sql;
     }
 
+    /** 取得最近一次 INSERT 的自增 ID */
     public function getLastId(): int|string|null {
         return $this->last_id;
     }
 
+    /** 取得最近一次操作影響列數 */
     public function getLastNumRows(): int {
         return $this->last_num_rows;
     }
 
+    /** 取得錯誤訊息字串 */
     public function getErrorMessage(): string {
         return $this->error_message;
     }
 
+    /**
+     * 取得完整錯誤資訊
+     *
+     * @return array{message: string, code: string|int|null, info: array|null, last_sql: string}
+     */
     public function getError(): array {
         return [
             'message' => $this->error_message,
@@ -933,6 +1062,7 @@ class dbPDO {
         ];
     }
 
+    /** 記錄 PDO 例外至內部狀態與 error_log */
     private function handlePdoException(PDOException $e, string $context): void {
         $this->error_message = "資料庫錯誤：{$e->getMessage()}";
         $this->error_info = $e->errorInfo ?? null;
@@ -940,17 +1070,22 @@ class dbPDO {
         error_log("[DB ERROR] {$context} 例外：" . $e->getMessage());
     }
 
+    /** 釋放 PDO 連線參考 */
     public function __destruct() {
         $this->db = null;
     }
 
+    /** 手動關閉並釋放 PDO 連線參考 */
     public function close(): void {
         $this->db = null;
     }
 }
 
 /**
- * 簡易執行函式
+ * 簡易執行 SQL 並回傳結果（獨立連線，無 dbPDO 狀態）
+ *
+ * @param array<int|string, mixed> $data  綁定參數
+ * @return list<array<string, mixed>>|false
  */
 function execute_sql(?string $sql = null, array $data = []): array|false {
     try {

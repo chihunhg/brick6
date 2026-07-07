@@ -1,11 +1,12 @@
 <?php
 declare(strict_types=1);
 
+if (!function_exists('tag_relation_table')) {
 /**
  * tag_d 關聯標籤：news / paper 等模組共用
  */
 
-if (!function_exists('tag_relation_table')) {
+    /** 回傳 tag_d 關聯表名 */
     function tag_relation_table(): string {
         return 'tag_d';
     }
@@ -45,6 +46,7 @@ if (!function_exists('tag_relation_resolve_module_pkey')) {
 }
 
 if (!function_exists('tag_relation_normalize_parent_col')) {
+    /** 驗證並正規化父表 PKey 欄位名（大小寫容錯） */
     function tag_relation_normalize_parent_col(string $col): string {
         $col = trim($col);
         if ($col === '' || !function_exists('crud_is_safe_sql_identifier') || !crud_is_safe_sql_identifier($col)) {
@@ -67,6 +69,7 @@ if (!function_exists('tag_relation_normalize_parent_col')) {
 }
 
 if (!function_exists('tag_relation_display_sql')) {
+    /** 標籤顯示名稱 SQL 片段（優先 tag_lang） */
     function tag_relation_display_sql(): string {
         if (function_exists('chkTable') && chkTable('tag_lang')) {
             return "TRIM(COALESCE(

@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-
-
 $pageName = '01';
 
 $subPageName = '';
 
 require('_inc.php');
-
-
 
 $Module_PKey = frontend_module_pkey('investor');
 
@@ -40,17 +36,11 @@ frontend_module_set_config(array_merge(
 
 ));
 
-
-
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
-
-
 frontend_init_breadcrumb($Module_Name, $Module_Link);
-
-
 
 $class1ItemCount = frontend_class1_count($Module_PKey);
 
@@ -58,15 +48,11 @@ $PKey = frontend_request_pkey($filter_array ?? []);
 
 $detailRow = frontend_fetch_detail($Module_PKey, $PKey);
 
-
-
 if ($detailRow === null) {
 
     frontend_not_found_exit(frontend_list_href());
 
 }
-
-
 
 $showType = crud_row_int($detailRow, 'show_type');
 
@@ -75,8 +61,6 @@ if ($showType > 0 && $showType !== 2) {
     frontend_not_found_exit(frontend_list_href());
 
 }
-
-
 
 $strName       = (string)crud_row_val($detailRow, 'strName');
 $seoTitle      = frontend_lang_seo_title($detailRow);
@@ -93,13 +77,9 @@ $m_description = (string)crud_row_val($detailRow, 'Description');
 
 $m_keywords    = (string)crud_row_val($detailRow, 'Keywords');
 
-
-
 frontend_apply_detail_class1_breadcrumb($Class1, $class1ItemCount);
 
 frontend_append_detail_breadcrumb($strName);
-
-
 
 $msgData  = frontend_fetch_msg_contents($PKey);
 
@@ -107,19 +87,13 @@ $Contents = $msgData['contents'];
 
 $Show     = $msgData['show'];
 
-
-
 $photoData = frontend_fetch_detail_photos($PKey);
 
 $Photo     = $photoData['photo'];
 
 $PhotoM    = $photoData['photoM'];
 
-
-
 $layouts = frontend_fetch_content_layouts($PKey);
-
-
 
 $ytSrc  = youtube_embed_src($Movielink);
 
@@ -128,8 +102,6 @@ $ldjson = frontend_breadcrumb_ldjson();
 $backHref = frontend_class1_list_href($Class1);
 
 ?>
-
-
 
 <!DOCTYPE html>
 
@@ -143,15 +115,11 @@ $backHref = frontend_class1_list_href($Class1);
 
 </head>
 
-
-
 <body <?php if (!empty($bodytxt)) { echo $bodytxt; } ?>>
 
 <?php require('_header.php'); ?>
 
 <?php require('_banner.php'); ?>
-
-
 
 <main class="pgContent">
 
@@ -261,8 +229,6 @@ $backHref = frontend_class1_list_href($Class1);
 
 </main>
 
-
-
 <?php require('_footer.php'); ?>
 
 <?php require('_in_code_bottom.php'); ?>
@@ -270,5 +236,3 @@ $backHref = frontend_class1_list_href($Class1);
 </body>
 
 </html>
-
-

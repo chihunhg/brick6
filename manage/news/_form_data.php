@@ -22,6 +22,7 @@ if (!function_exists('news_show_type_label')) {
 }
 
 if (!function_exists('news_validate_by_show_type')) {
+    /** 依 show_type 驗證連結模式語系 URL */
     function news_validate_by_show_type(array $filter): string
     {
         global $array_lang;
@@ -225,6 +226,7 @@ if (!function_exists('class1_detail_apply_master')) {
 }
 
 if (!function_exists('class1_detail_load_children')) {
+    /** 載入 news 語系、內文、連結、標籤等子表 */
     function class1_detail_load_children(int $pkey): void {
         global $array_lang;
 
@@ -332,6 +334,7 @@ if (!function_exists('class1_detail_load_children')) {
 }
 
 if (!function_exists('class1_detail_resolve_module_pkey')) {
+    /** 解析目前單元 Module_PKey（manNo） */
     function class1_detail_resolve_module_pkey(): int {
         $mpk = (int)($GLOBALS['Module_PKey'] ?? 0);
         if ($mpk > 0) {
@@ -343,6 +346,7 @@ if (!function_exists('class1_detail_resolve_module_pkey')) {
 }
 
 if (!function_exists('class1_recordset_row_to_array')) {
+    /** 將 recordset 列轉為關聯陣列 */
     function class1_recordset_row_to_array(recordset $rs): array {
         $cols = [
             'PKey', 'Module_PKey', 'Class1_PKey', 'Class2_PKey', 'Class3_PKey',
@@ -361,6 +365,7 @@ if (!function_exists('class1_recordset_row_to_array')) {
 }
 
 if (!function_exists('class1_detail_debug_load')) {
+    /** debug_load=1 時輸出載入步驟並結束（除錯用） */
     function class1_detail_debug_load(string $step, array $ctx = []): void {
         if (!isset($_GET['debug_load']) || (string)$_GET['debug_load'] !== '1') {
             return;

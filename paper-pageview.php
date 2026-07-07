@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 技術文件（paper）瀏覽次數 +1（POST JSON，PKey 必填）
+ */
+
 require_once __DIR__ . '/_inc.php';
 require_once __DIR__ . '/include/json_response.php';
 

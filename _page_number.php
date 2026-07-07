@@ -8,7 +8,7 @@ if(!empty($Total) && $Total > 0){
 
   <ul class="pagination">
 
-    <?php 	
+    <?php
 
 	//--------先算是哪一區間
 
@@ -16,7 +16,7 @@ if(!empty($Total) && $Total > 0){
 
 	$sPage = 1+ (5 * $AreaNo);
 
-	$ePage = 5 + (5 * $AreaNo);	
+	$ePage = 5 + (5 * $AreaNo);
 
 	?>
 
@@ -26,7 +26,7 @@ if(!empty($Total) && $Total > 0){
 
 		<a href="#" data-goto-page="1" data-goto-form="SearchF" class="no" title="第一頁"><i class="bi bi-chevron-double-left"></i></a>
 
-		<?php 
+		<?php
 
 		if ($tPage > 1){
 
@@ -34,7 +34,7 @@ if(!empty($Total) && $Total > 0){
 
 		<a href="#" data-goto-page="<?php echo (int)$tPage - 1; ?>" data-goto-form="SearchF" class="no" title="上一頁"><i class="bi bi-chevron-left"></i></a>
 
-		<?php 
+		<?php
 
 		}
 
@@ -64,11 +64,9 @@ if(!empty($Total) && $Total > 0){
 
 	<?php } ?>
 
-  
-
     <li class="arrow arrow--next">
 
-		<?php 
+		<?php
 
 		if ($tPage+1 <=$tPageTotal){
 
@@ -76,7 +74,7 @@ if(!empty($Total) && $Total > 0){
 
 		<a href="#" data-goto-page="<?php echo (int)$tPage + 1; ?>" data-goto-form="SearchF" title="下一頁"><i class="bi bi-chevron-right"></i></a>
 
-		<?php 
+		<?php
 
 		}
 
@@ -98,9 +96,8 @@ if(!empty($Total) && $Total > 0){
 
 </form>
 
-<?php 
+<?php
 
 }
 
 ?>
-

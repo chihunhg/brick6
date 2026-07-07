@@ -2,8 +2,19 @@
 declare(strict_types=1);
 
 /**
- * 後台 CRUD 共用函式（配合 recordset 讀取、dbPDO 寫入）
- * 需先載入 _inc.php（common.php、Function.php、log.php 等）
+ * 後台 CRUD 共用函式（配合 recordset 讀取、PDO 寫入）
+ *
+ * 需先載入 manage/_inc.php 或 common.php（含 host.php、Function.php、log.php）
+ *
+ * 常用入口：
+ *   crud_cfg($table, $fk)              — 列表/刪除設定
+ *   crud_fetch_all / crud_fetch_one    — PDO 查詢（含 SQL 表存在 guard）
+ *   crud_module_where()                — 列表 Module_PKey 條件
+ *   crud_list_apply_keyword_search()   — 關鍵字 + 語意搜尋
+ *   crud_process_list_actions()        — 列表 POST（刪除/排序/上下架）
+ *   vector_sync_after_*()              — 向量同步（crud_helpers 內掛點）
+ *
+ * SQL guard：$GLOBALS['crud_sql_table_guard']=false 可關閉表存在檢查
  */
 
 /* ── 設定與路徑 ───────────────────────────────────────── */
@@ -96,6 +107,7 @@ if (!function_exists('crud_fail_db')) {
 }
 
 if (!function_exists('crud_check_rs')) {
+    /** recordset 查詢後檢查錯誤，有錯誤則 crud_fail_db */
     function crud_check_rs(recordset $rs, string $sql, array $params = [], bool $exit = true): void {
         $err = $rs->getErrorMessage();
         if ($err !== '' && $err !== null) {
@@ -112,6 +124,7 @@ if (!function_exists('crud_is_safe_sql_identifier')) {
 }
 
 if (!function_exists('crud_sql_guard_enabled')) {
+    /** SQL 表存在 guard 是否啟用（預設 true） */
     function crud_sql_guard_enabled(): bool {
         return ($GLOBALS['crud_sql_table_guard'] ?? true) !== false;
     }
@@ -321,6 +334,7 @@ if (!function_exists('crud_trusted_module_tables')) {
 }
 
 if (!function_exists('crud_sql_validate_tables')) {
+    /** 檢查 SQL 涉及的所有表是否存在于 DB（白名單表略過 exists 查詢） */
     function crud_sql_validate_tables(string $sql): bool {
         $trusted = crud_trusted_module_tables();
         foreach (crud_extract_sql_tables($sql) as $table) {
@@ -378,12 +392,24 @@ if (!function_exists('crud_pdo_query')) {
 }
 
 if (!function_exists('crud_fetch_all')) {
+    /**
+     * PDO 查詢多筆（含 SQL guard）
+     *
+     * @param array<string, mixed> $params
+     * @return list<array<string, mixed>>
+     */
     function crud_fetch_all(string $sql, array $params = []): array {
         return crud_pdo_query($sql, $params);
     }
 }
 
 if (!function_exists('crud_fetch_one')) {
+    /**
+     * PDO 查詢單筆；$skipTableGuard=true 時用 crud_pdo_query_raw
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>|null
+     */
     function crud_fetch_one(string $sql, array $params = [], bool $skipTableGuard = false): ?array {
         $rows = $skipTableGuard
             ? crud_pdo_query_raw($sql, $params)
@@ -432,6 +458,7 @@ if (!function_exists('crud_row_val')) {
 }
 
 if (!function_exists('crud_row_int')) {
+    /** 從列讀整數欄位（經 crud_row_val，無值回 0） */
     function crud_row_int(array $row, string $col): int {
         $v = crud_row_val($row, $col);
         return safe_int(is_scalar($v) ? $v : 0);
@@ -520,6 +547,7 @@ if (!function_exists('crud_fetch_one_rs')) {
 }
 
 if (!function_exists('crud_fetch_scalar')) {
+    /** recordset 查詢單一數值欄（常用 COUNT AS Total） */
     function crud_fetch_scalar(string $sql, array $params, string $field = 'Total'): int {
         if (!crud_guard_sql_or_empty($sql, $params)) {
             return 0;
@@ -1108,6 +1136,7 @@ if (!function_exists('crud_save_ad_lang_slots')) {
 }
 
 if (!function_exists('crud_hash_password')) {
+    /** 後台密碼雜湊（優先 host.php hash_password + PASSWORD_PEPPER） */
     function crud_hash_password(string $plain): string {
         if (function_exists('hash_password')) {
             return hash_password($plain);
@@ -1454,6 +1483,7 @@ if (!function_exists('crud_module_where')) {
 }
 
 if (!function_exists('crud_list_page_size')) {
+    /** 列表每頁筆數（filter PageSize 或 $default） */
     function crud_list_page_size(array $filter, int $default = 15): int {
         if (!empty($filter['PageSize']) && is_numeric($filter['PageSize'])) {
             return max(1, (int)$filter['PageSize']);
@@ -1479,27 +1509,44 @@ if (!function_exists('manage_list_search_filter_value')) {
 
 if (!function_exists('crud_list_apply_keyword_search')) {
     /**
-     * 列表關鍵字搜尋（LOCATE + 去空白）；回傳供畫面顯示的字串（空則為 placeholder）
+     * 列表智慧語意搜尋（Gemini 擴詞 + 可選向量相似度；回傳供畫面顯示的字串）
+     *
+     * @param string|list<string> $column
+     * @param array<string, mixed>|null $semanticContext 可傳 table、pk；未傳 base_where 時自動以目前條件為候選範圍
      */
     function crud_list_apply_keyword_search(
         string &$where,
         array &$params,
         array $filter,
-        string $column = 'strName',
-        string $placeholder = '請輸入關鍵字搜尋'
+        string|array $column = 'strName',
+        string $placeholder = '請輸入關鍵字搜尋',
+        ?array $semanticContext = null,
     ): string {
+        $kw = trim(manage_list_search_filter_value($filter, 'Keywords'));
+        $kw = mb_substr($kw, 0, 50);
+
         $submitted = (isset($filter['Submit']) && $filter['Submit'] === '搜尋')
             || (isset($filter['Send']) && $filter['Send'] === '搜尋');
-        if (!$submitted || !isset($filter['Keywords'])) {
+        $hasKeyword = $kw !== '' && $kw !== $placeholder;
+
+        if ((!$submitted && !$hasKeyword) || !$hasKeyword) {
             return $placeholder;
         }
-        $kw = trim((string)$filter['Keywords']);
-        $kw = mb_substr($kw, 0, 50);
-        if ($kw === '' || $kw === $placeholder) {
-            return $placeholder;
+
+        if (!function_exists('manage_semantic_apply_keyword_filter')) {
+            require_once __DIR__ . '/manage_semantic_search_helpers.php';
         }
-        $params['Keyword'] = str_replace(' ', '', $kw);
-        $where .= " AND LOCATE(:Keyword, REPLACE({$column}, ' ', '')) > 0";
+
+        $context = is_array($semanticContext) ? $semanticContext : [];
+        if (!isset($context['base_where'])) {
+            $context['base_where'] = $where;
+        }
+        if (!isset($context['base_params'])) {
+            $context['base_params'] = $params;
+        }
+
+        manage_semantic_apply_keyword_filter($where, $params, $kw, $column, $context);
+
         return $kw;
     }
 }
@@ -2216,6 +2263,11 @@ if (!function_exists('manage_detail_init_img_slot_view')) {
 }
 
 if (!function_exists('manage_echo_detail_img_slot_delete_scripts')) {
+    /**
+     * 輸出詳情頁圖片/檔案槽位刪除的 jQuery init script
+     *
+     * @param array<int, string> $photoS 各槽 PhotoS 預覽路徑
+     */
     function manage_echo_detail_img_slot_delete_scripts(
         array $photoS,
         int $imageStart,
@@ -2357,6 +2409,7 @@ if (!function_exists('manage_render_photo_delete_button')) {
 }
 
 if (!function_exists('manage_file_ext_from_path')) {
+    /** 從路徑取小寫副檔名（basename + pathinfo，空路徑回 ''） */
     function manage_file_ext_from_path(string $path): string
     {
         $path = trim($path);
@@ -2794,12 +2847,14 @@ if (!function_exists('crud_list_lang_column_init')) {
 }
 
 if (!function_exists('manage_list_grid_with_lang')) {
+    /** 列表 tableGrid 加上語系欄時追加 tableGrid--has-lang */
     function manage_list_grid_with_lang(string $gridClass, bool $showLangColumn): string {
         return $showLangColumn ? (trim($gridClass) . ' tableGrid--has-lang') : trim($gridClass);
     }
 }
 
 if (!function_exists('manage_list_render_lang_header')) {
+    /** 列表表頭「語系」欄（$showLangColumn 為 false 不輸出） */
     function manage_list_render_lang_header(bool $showLangColumn): void {
         if (!$showLangColumn) {
             return;
@@ -2833,6 +2888,7 @@ if (!function_exists('manage_render_list_lang_tabs')) {
 }
 
 if (!function_exists('manage_list_render_lang_cell')) {
+    /** 列表列：語系色塊標籤儲存格（委派 manage_render_list_lang_tabs） */
     function manage_list_render_lang_cell(int $rowPKey, bool $showLangColumn, array $langMap): void {
         if (!$showLangColumn) {
             return;
@@ -3181,6 +3237,7 @@ if (!function_exists('crud_csrf_fail_redirect_url')) {
 }
 
 if (!function_exists('crud_csrf_ensure')) {
+    /** 確保 session 內指定 key 的 CSRF token 存在並回傳 */
     function crud_csrf_ensure(string $key): string {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             @session_start();
@@ -3367,6 +3424,11 @@ if (!function_exists('crud_upsert_master')) {
             );
         }
 
+        if (!function_exists('vector_sync_after_master_save')) {
+            require_once __DIR__ . '/vector_sync_helpers.php';
+        }
+        vector_sync_after_master_save($table, $realPk);
+
         return ['pkey' => $realPk, 'action' => $action, 'sql_log' => $sqlLog];
     }
 }
@@ -3374,6 +3436,11 @@ if (!function_exists('crud_upsert_master')) {
 /* ── list.php：刪除 / 排序 ───────────────────────────── */
 
 if (!function_exists('crud_collect_sort_items')) {
+    /**
+     * 從 list 表單 filter 收集 Sort 有變更的列
+     *
+     * @return array{items: list<array<string, int>>, skipped: list<string>}
+     */
     function crud_collect_sort_items(array $filter, string $pkName = 'PKey'): array {
         $total = (int)SqlFilter($filter['Total'] ?? 0, 'int');
         $items = [];
@@ -3420,6 +3487,13 @@ if (!function_exists('crud_handle_list_delete')) {
 
         $result = delete_cascade_by_ids($ids, $cfg);
 
+        if (!empty($ids)) {
+            if (!function_exists('vector_sync_after_master_delete')) {
+                require_once __DIR__ . '/vector_sync_helpers.php';
+            }
+            vector_sync_after_master_delete((string)($cfg['table'] ?? ''), $ids);
+        }
+
         $total   = count($ids);
         $success = (int)($result['deleted'] ?? 0);
         $fail    = max(0, $total - $success);
@@ -3455,6 +3529,7 @@ if (!function_exists('crud_handle_list_delete')) {
 }
 
 if (!function_exists('crud_handle_list_sort')) {
+    /** list.php「更新順序」：批次 UpdateSortBatch 後 alert 導回 */
     function crud_handle_list_sort(string $table, string $pkName = 'PKey', ?string $backUrl = null): void {
         global $filter_array;
 
@@ -3509,6 +3584,7 @@ if (!function_exists('crud_process_list_actions')) {
 }
 
 if (!function_exists('crud_validation_alert_back')) {
+    /** 驗證失敗：alert 訊息後 history.back() 並 exit */
     function crud_validation_alert_back(string $message): never {
         if (function_exists('manage_alert_script')) {
             manage_alert_script($message, null, true);
@@ -4573,6 +4649,11 @@ if (!function_exists('crud_save_msg_blocks')) {
 
             crud_upsert_by_fk_sort($tableMsg, $fkName, $parentPKey, $i, $row, '內文' . $i);
         }
+
+        if (!function_exists('vector_sync_after_msg_save')) {
+            require_once __DIR__ . '/vector_sync_helpers.php';
+        }
+        vector_sync_after_msg_save($tableMsg, $parentPKey);
     }
 }
 
@@ -4600,7 +4681,7 @@ if (!function_exists('crud_json_response')) {
             header('Content-Type: application/json; charset=UTF-8');
         }
         $payload = array_merge(['ok' => $ok ? 1 : 0, 'msg' => $msg], $extra);
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
     }
 }

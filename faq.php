@@ -12,8 +12,9 @@ frontend_module_set_config(array_merge(
         'view'           => 'view_faq',
         'class_link'     => 'faq',
         'detail_link'    => 'faq',
-        'publish_window' => false,
-        'order_by'       => 'Sort ASC',
+        'publish_window'          => false,
+        'order_by'                => 'Sort ASC',
+        'class1_filter_min_count' => 2,
     ]
 ));
 
@@ -22,7 +23,14 @@ $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
 frontend_init_breadcrumb($Module_Name, $Module_Link);
 
-$faqItems = frontend_fetch_faq_items($Module_PKey);
+$class1ItemCount = frontend_class1_count($Module_PKey);
+$Class1 = frontend_filter_class1($filter_array ?? []);
+
+[$PDO_Cond, $Cond_Array] = frontend_list_where($Module_PKey);
+frontend_apply_class1_filter($PDO_Cond, $Cond_Array, $Class1, $class1ItemCount);
+
+$faqItems = frontend_fetch_faq_items($Module_PKey, null, $PDO_Cond, $Cond_Array);
+unset($Cond_Array);
 $ldjson = frontend_breadcrumb_ldjson();
 ?>
 

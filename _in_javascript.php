@@ -14,7 +14,6 @@
 <link rel="stylesheet" href="<?php echo $web_url; ?>js/splitting/dist/splitting.css">
 <link rel="stylesheet" href="<?php echo $web_url; ?>js/splitting/dist/splitting-cells.css">
 
-
 <link href="<?php echo $web_url; ?>css/style.css?ver=<?php echo filemtime(__DIR__ . '/css/style.css') ?>" rel="stylesheet" charset="utf-8">
 <link href="<?php echo $web_url; ?>css/fonts.css?ver=<?php echo filemtime(__DIR__ . '/css/fonts.css') ?>" rel="stylesheet" charset="utf-8">
 

@@ -112,7 +112,7 @@ $clearUrl = ($WorkFile ?? 'list.php')
 				<div class="filterWrap__grid">
 					<?php require_once '../_search.php'; ?>
 					<div class="inputGroup">
-						<label class="inputLabel" for="Keywords">關鍵字搜尋</label>
+						<label class="inputLabel" for="Keywords">智慧語意搜尋</label>
 						<div class="inputWrapper">
 							<input type="text" name="Keywords" id="Keywords"
 								value="<?php echo e($Keywords); ?>"

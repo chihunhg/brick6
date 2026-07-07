@@ -157,14 +157,14 @@ $(function(){
                             <label for="snsID"><?php echo $lang_text["field_snsID"][$this_lang]; //通訊軟體ID ?></label>
                             <input name="snsID" id="snsID" type="text" class="form-control" size="20">
                         </div>
-						
+
 						<div class="formGroup__item">
                             <label for="snsID">
 								<?php echo $lang_text["field_okTime"][$this_lang]; //方便聯絡的時段 ?>
 								<span class="multTag"><?php echo $lang_text["chooseMult"][$this_lang]; //可複選 ?></span>
 							</label>
 							<div class="formMode">
-								<?php 
+								<?php
                                 foreach ($lang_text["data_okTime"][$this_lang] as $num => $item){?>
 								<div class="form-check">
                                     <input name="okTime[]" type="checkbox" class="form-check-input" id="okTime-<?php echo $num+1?>" value="<?php echo $item?>">
@@ -180,9 +180,9 @@ $(function(){
 								<span class="red">*</span>
 								<span class="multTag"><?php echo $lang_text["chooseMult"][$this_lang]; //可複選 ?></span>
 							</label>
-                            
+
 							<div class="formMode" id="knowCountry_wrap">
-								<?php 
+								<?php
                                 foreach ($lang_text["data_knowCountry"][$this_lang] as $num => $item){?>
 								<div class="form-check">
                                     <input name="knowCountry[]" type="checkbox" class="form-check-input" id="knowCountry-<?php echo $num+1?>" value="<?php echo $item?>">
@@ -198,9 +198,9 @@ $(function(){
 								<?php echo $lang_text["field_mjNeed"][$this_lang]; //主要訴求 ?>
 								<span class="multTag"><?php echo $lang_text["chooseMult"][$this_lang]; //可複選 ?></span>
 							</label>
-                            
+
 							<div class="formMode">
-								<?php 
+								<?php
                                 foreach ($lang_text["data_mjNeed"][$this_lang] as $num => $item){?>
 								<div class="form-check">
                                     <input name="mjNeed[]" type="checkbox" class="form-check-input" id="mjNeed-<?php echo $num+1?>" value="<?php echo $item?>">

@@ -1,4 +1,15 @@
 <?php
+
+/**
+ * 全站共用工具函式（SqlFilter、日期、驗證、郵件、reCAPTCHA 等）
+ *
+ * 載入時自動建立 $filter_array / $file_array（GET/POST/FILES）。
+ * 多數頁面經 common.php 或 manage/_inc.php 引入。
+ *
+ * 安全：SqlFilter、DelFile（UPLOAD_BASE）、Authcode（sodium）；HTML 輸出請用 sec.php e()
+ */
+
+/** CKEditor / 富文本白名單過濾（strip_tags + DOM 屬性清理） */
 function filter_html($input, $type = 'html') {
     $input = trim((string)$input);
     if ($input === '') return '';
@@ -189,6 +200,7 @@ function filter_html($input, $type = 'html') {
     return trim($out);
 }
 
+/** URL 是否安全（阻擋 javascript:/data:，可允許相對路徑） */
 function is_safe_url(string $url, array $allowedSchemes = ['http','https'], bool $allowRelative = true): bool {
     $url = trim($url);
     if ($url === '') return false;
@@ -209,6 +221,7 @@ function is_safe_url(string $url, array $allowedSchemes = ['http','https'], bool
     return in_array(strtolower($scheme), $allowedSchemes, true);
 }
 
+/** DOM 節點 innerHTML（子節點序列化） */
 function _dom_inner_html(DOMNode $node): string {
     $html = '';
     foreach ($node->childNodes as $child) {
@@ -217,6 +230,7 @@ function _dom_inner_html(DOMNode $node): string {
     return $html;
 }
 
+/** 移除 DOM 節點但保留子節點 */
 function _dom_remove_keep_children(DOMNode $node): void {
     $parent = $node->parentNode;
     if (!$parent) return;
@@ -274,19 +288,19 @@ function SqlFilter($input, $type = 'str') {
     }
 }
 
+if (!function_exists('list_search_keyword_normalize')) {
 /**
  * 列表關鍵字：使用者輸入去掉各類 Unicode 空白（與 list_search_sql_ws_remove_expr 搭配）
  */
-if (!function_exists('list_search_keyword_normalize')) {
     function list_search_keyword_normalize(string $input): string {
         return preg_replace('/\s+/u', '', $input);
     }
 }
 
+if (!function_exists('list_search_sql_ws_remove_expr')) {
 /**
  * SQL 運算式：欄位去掉常見空白後供 LOCATE 比對（$column 僅允許英數底線，避免注入）
  */
-if (!function_exists('list_search_sql_ws_remove_expr')) {
     function list_search_sql_ws_remove_expr(string $column): string {
         if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $column)) {
             return "IFNULL('', '')";
@@ -300,13 +314,13 @@ if (!function_exists('list_search_sql_ws_remove_expr')) {
     }
 }
 
+if (!function_exists('list_search_locate_any_fragment')) {
 /**
  * 多欄 OR 子字串比對（LOCATE + PDO 命名參數；防注入依綁定值，勿依賴刪單引號）
  *
  * @param list<string> $columns 白名單欄位名
  * @return array{fragment: string, bind: array<string,string>}
  */
-if (!function_exists('list_search_locate_any_fragment')) {
     function list_search_locate_any_fragment(array $columns, string $kwNorm, string $paramPrefix = 'KwS'): array {
         $parts = [];
         $bind = [];
@@ -330,8 +344,8 @@ if (!function_exists('list_search_locate_any_fragment')) {
     }
 }
 
-/** 請求參數僅接受純量字串（拒絕 strID[] 等陣列／物件，避免 trim 型別錯誤） */
 if (!function_exists('request_scalar_string')) {
+/** 請求參數僅接受純量字串（拒絕 strID[] 等陣列／物件，避免 trim 型別錯誤） */
     function request_scalar_string(mixed $value, string $default = ''): string {
         if (!is_scalar($value)) {
             return $default;
@@ -340,8 +354,8 @@ if (!function_exists('request_scalar_string')) {
     }
 }
 
-/** 從 $filter_array 取單一純量並經 SqlFilter（非純量回傳空字串） */
 if (!function_exists('filter_request_scalar')) {
+/** 從 $filter_array 取單一純量並經 SqlFilter（非純量回傳空字串） */
     function filter_request_scalar(array $filter, string $key, string $type = 'str'): string {
         if (!isset($filter[$key]) || !is_scalar($filter[$key])) {
             return '';
@@ -358,7 +372,7 @@ foreach ($_GET as $key => $value)  { $filter_array[$key] = $value; }
 foreach ($_POST as $key => $value) { $filter_array[$key] = $value; }
 foreach ($_FILES as $key => $value){ $file_array[$key]   = $value; }
 
-// 取得「基底資料夾」的實際路徑（支援相對/絕對），不是資料夾就回 null
+/** 解析基底目錄 realpath（相對路徑以本檔目錄為準；非目錄回 null） */
 function __resolve_base_dir(string $base): ?string {
     $base = str_replace('\\', '/', trim($base));
     if ($base === '') return null;
@@ -372,7 +386,7 @@ function __resolve_base_dir(string $base): ?string {
     return rtrim(str_replace('\\', '/', $real), '/');
 }
 
-// 把「相對目標路徑」正規化：移除重複斜線、處理 . / ..，不可含 NUL
+/** 正規化相對路徑（折疊 . / ..，拒絕絕對路徑與 NUL） */
 function __normalize_rel_path(string $rel): ?string {
     if ($rel === '' || strpos($rel, "\0") !== false) return null;
     $rel = str_replace('\\', '/', $rel);
@@ -396,7 +410,7 @@ function __normalize_rel_path(string $rel): ?string {
     return $out;
 }
 
-// 安全組合路徑並確認仍位於基底資料夾下
+/** 安全 join 路徑並確認仍在 $baseDir 之下 */
 function __safe_join(string $baseDir, string $rel): ?string {
     $base = __resolve_base_dir($baseDir);
     if ($base === null) return null;
@@ -445,11 +459,12 @@ function DelFile(string $Forder = '', string $sFileName = ''): bool {
     }
 }
 
+/** Email 格式驗證 */
 function CheckMail($email){
     return (bool)filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
-// 台灣身份證字號檢查
+/** 台灣身分證字號檢查（含 checksum） */
 function Checkid($id){
     $id = strtoupper($id);
     $headPoint = [
@@ -471,16 +486,22 @@ function Checkid($id){
     return false;
 }
 
+/** URL 格式驗證（合法回 1，否則 0） */
 function CheckURL($url){
     return (filter_var($url, FILTER_VALIDATE_URL) !== false) ? 1 : 0;
 }
 
+/** 數字補零至兩位（sprintf %02d） */
 function AddZero($strNumber=0){ return sprintf('%02d', $strNumber); }
 
+/** 字串右取 n 字（UTF-8 mb_substr） */
 function right($value, $count=0){ return mb_substr($value, mb_strlen($value,'utf-8')-$count, $count, 'UTF-8'); }
+/** 字串左取 n 字 */
 function left($string='', $count=0){ return mb_substr($string, 0, $count, 'UTF-8'); }
+/** 字串中段擷取 */
 function mid($string,$start,$length=0){ return mb_substr($string, $start, $length, 'utf-8'); }
 
+/** Flash alert（session 可用時寫入，否則 echo fallback div） */
 function alert($message){
     if (session_status() === PHP_SESSION_ACTIVE) {
         $_SESSION['flash_alert'] = (string)$message;
@@ -488,6 +509,7 @@ function alert($message){
     }
     echo '<div class="alert-fallback">'.htmlspecialchars((string)$message, ENT_QUOTES, 'UTF-8').'</div>';
 }
+/** HTTP 302 導向（headers 已送出時用 meta refresh） */
 function location_href($uurl){
     $target = (string)$uurl;
     if (!headers_sent()) {
@@ -498,6 +520,7 @@ function location_href($uurl){
     exit;
 }
 
+/** 是否為可解析日期字串 */
 function chkDate($value){
     if (!$value) return false;
     try {
@@ -509,6 +532,7 @@ function chkDate($value){
 	}
 }
 
+/** 英文／數字日期格式輸出（$num 0–9 對應不同樣式） */
 function Date_EN($dtDate,$num){
     if (!chkDate($dtDate)) return null;
     switch ($num) {
@@ -526,6 +550,7 @@ function Date_EN($dtDate,$num){
     return null;
 }
 
+/** 中文日期格式輸出（$num 1–6） */
 function Date_CH($dtDate,$num){
     if (!chkDate($dtDate)) return null;
     switch ($num) {
@@ -539,17 +564,13 @@ function Date_CH($dtDate,$num){
     return null;
 }
 
-/****模擬sqlserver中的dateadd函數*******
-$part 類型：string
-取值範圍：year,month,day,hour,min,sec
-表示：要增加的日期的哪個部分
-$n 類型：數值
-表示：要增加多少，根據$part決定增加哪個部分
-可為負數
-$datetime類型：timestamp
-表示：增加的基數
-返回 類型：timestamp
-**************結束**************/
+/**
+ * 模擬 SQL Server dateadd（year/month/day/hour/min/sec ±n）
+ *
+ * @param string $part  單位
+ * @param int    $n     增量（可負）
+ * @param int    $datetime Unix timestamp
+ */
 function dateadd($part,$n,$datetime){
 	$year=date("Y",$datetime);
 	$month=date("m",$datetime);
@@ -586,11 +607,13 @@ function dateadd($part,$n,$datetime){
 	return $ret;
 }
 
+/** 日期加減天／月／年（回傳 Y/m/d H:i:s 字串） */
 function add_date($givendate,$day=0,$mth=0,$yr=0) {
     $cd = strtotime($givendate);
     return date('Y/m/d H:i:s', mktime(date('H',$cd), date('i',$cd), date('s',$cd), date('m',$cd)+$mth, date('d',$cd)+$day, date('Y',$cd)+$yr));
 }
 
+/** 兩日期間隔（yyyy/q/m/d/w/ww/h/n 等 interval） */
 function datediff($interval, $datefrom, $dateto, $using_timestamps = false) {
     if (!$using_timestamps) { $datefrom = strtotime($datefrom, 0); $dateto = strtotime($dateto, 0); }
     $difference = $dateto - $datefrom;
@@ -621,6 +644,7 @@ function datediff($interval, $datefrom, $dateto, $using_timestamps = false) {
     }
 }
 
+/** 版型 show_contents 代碼對應中文說明 */
 function show_contents($num=1){
     switch($num){
         case 1: return '上圖下文';
@@ -631,6 +655,7 @@ function show_contents($num=1){
     return '';
 }
 
+/** 指定日期當月最後一天（Y-m-d） */
 function Lastday($date){
     $firstday = date('Y-m-01', strtotime($date));
     return date('Y-m-d', strtotime("$firstday +1 month -1 day"));
@@ -669,14 +694,16 @@ function Authcode($string, $operation = 'DECODE', $key = '', $expiry = 0) {
     return '';
 }
 
+/** Base64 URL-safe 編碼（JWT 等用） */
 function base64url_encode($data) { return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); }
+/** Base64 URL-safe 解碼 */
 function base64url_decode($data) {
     $replaced = strtr($data, '-_', '+/');
     $pad = strlen($replaced) % 4; if ($pad) $replaced .= str_repeat('=', 4 - $pad);
     return base64_decode($replaced);
 }
 
-// 抓取 URL 內容（注意：未做超時/重試，必要時可擴充）
+/** cURL 抓取 URL 內容（15 秒 timeout） */
 function getUrlContent($url){
     $ch = curl_init();
     curl_setopt_array($ch, [
@@ -693,11 +720,11 @@ function getUrlContent($url){
     return $result;
 }
 
+if (!function_exists('recaptcha_decode_double_base64_token')) {
 /**
  * 還原登入頁前端對 g-recaptcha-response 做的 btoa 包一層 Base64。
  * 注意：application/x-www-form-urlencoded 會把 Base64 內的「+」變成空白，須先還原。
  */
-if (!function_exists('recaptcha_decode_double_base64_token')) {
     function recaptcha_decode_double_base64_token(string $encoded): string {
         $encoded = trim($encoded);
         if ($encoded === '') {
@@ -721,10 +748,10 @@ if (!function_exists('recaptcha_decode_double_base64_token')) {
     }
 }
 
+if (!function_exists('recaptcha_resolve_response_token_from_request')) {
 /**
  * 取得 Google siteverify 用的 response token（優先解 Base64 隱藏欄，失敗則用備援明文欄或官方欄位）。
  */
-if (!function_exists('recaptcha_resolve_response_token_from_request')) {
     function recaptcha_resolve_response_token_from_request(array $filter): string {
         $t = recaptcha_decode_double_base64_token((string)($filter['encoded_recaptcha_token'] ?? ''));
         if ($t !== '' && strlen($t) >= 20) {
@@ -742,28 +769,28 @@ if (!function_exists('recaptcha_resolve_response_token_from_request')) {
     }
 }
 
-/** 前台／後台共用：reCAPTCHA 網站金鑰（.env RECAPTCHA_SITE_KEY） */
 if (!function_exists('recaptcha_site_key')) {
+/** 前台／後台共用：reCAPTCHA 網站金鑰（.env RECAPTCHA_SITE_KEY） */
     function recaptcha_site_key(): string {
         $v = $_ENV['RECAPTCHA_SITE_KEY'] ?? getenv('RECAPTCHA_SITE_KEY') ?? '';
         return trim((string)$v);
     }
 }
 
-/** 前台／後台共用：reCAPTCHA 密鑰（.env RECAPTCHA_SECRET） */
 if (!function_exists('recaptcha_secret_key')) {
+/** 前台／後台共用：reCAPTCHA 密鑰（.env RECAPTCHA_SECRET） */
     function recaptcha_secret_key(): string {
         $v = $_ENV['RECAPTCHA_SECRET'] ?? getenv('RECAPTCHA_SECRET') ?? '';
         return trim((string)$v);
     }
 }
 
+if (!function_exists('recaptcha_siteverify')) {
 /**
  * Google reCAPTCHA siteverify（官方建議用 POST，避免 response 過長被 GET 截斷）。
  *
  * @return array{success:bool, error-codes:array<int, string>}
  */
-if (!function_exists('recaptcha_siteverify')) {
     function recaptcha_siteverify(string $secret, string $responseToken, string $remoteIp = ''): array {
         $out = ['success' => false, 'error-codes' => []];
         if ($secret === '' || $responseToken === '') {
@@ -805,11 +832,12 @@ if (!function_exists('recaptcha_siteverify')) {
     }
 }
 
-// RWD helpers（留空殼，以後可加強）
+/** RWD 寬度 placeholder（目前原樣回傳） */
 function rwd_width($txt){
 	return $txt;
 }
 
+/** 表格 RWD 包裝 + target=_blank 補 rel=noopener */
 function rwd_table($txt,$num){
     $txt = (string)$txt;
     if (function_exists('manage_enhance_content_tables')) {
@@ -822,19 +850,23 @@ function rwd_table($txt,$num){
     return $txt;
 }
 
+/** 移除 HTML 標籤（純文字） */
 function RemoveHTML($Contents){
 	return preg_replace('/<[^>]*>/', '', (string)$Contents);
 }
+/** 移除電話中的 + - 空白 */
 function RemoveMobile($Contents){
 	return str_replace(['+','-',' '],'',(string)$Contents);
 }
 
+/** 依固定字數切割 UTF-8 字串並以 $inter 連接 */
 function mbstringtoarray($str,$cut_len,$charset='UTF-8',$inter="/"){
     $strlen=mb_strlen($str,$charset); $array=[];
     while($strlen){ $array[]=mb_substr($str,0,$cut_len,$charset); $str=mb_substr($str,$cut_len,$strlen-$cut_len,$charset); $strlen=mb_strlen($str,$charset);} 
     return implode($inter,$array);
 }
 
+/** 取得用戶端 IP（CLIENT_IP / X_FORWARDED_FOR / REMOTE_ADDR） */
 function GetIP(){
     foreach (['HTTP_CLIENT_IP','HTTP_X_FORWARDED_FOR','REMOTE_ADDR'] as $k) {
         if (!empty($_SERVER[$k]) && strcasecmp($_SERVER[$k], 'unknown')) return $_SERVER[$k];
@@ -842,6 +874,7 @@ function GetIP(){
     return 'unknown';
 }
 
+/** 依 IP 查詢 CleanTalk API 國別資訊 */
 function IPCountry($ip=''){
     $url = 'https://api.cleantalk.org/?method_name=ip_info&ip='.urlencode($ip);
     $json = getUrlContent($url);
@@ -850,7 +883,7 @@ function IPCountry($ip=''){
     return $obj->data->ip ?? '';
 }
 
-// 寄信（將敏感設定搬到 .env）
+/** 經 webmail API 寄信並寫入 maillog（.env MAIL_API_URL） */
 function SendMail($SendName, $SendMail, $FromName, $FromMail, $Subject, $MailBody){
     $ip        = UserIP();
     $base_url  = $_ENV['MAIL_API_URL'] ?? 'http://webmail.tsg.com.tw/mail.php';
@@ -922,7 +955,7 @@ function SendMail($SendName, $SendMail, $FromName, $FromMail, $Subject, $MailBod
     return $lastResp;
 }
 
-// 發送驗證信
+/** 產生驗證碼寫入 smslog 並寄信（120 秒有效） */
 function send_check_sms($EMail,$SessionID,$chkType=1,$strLink='',$MSG=''){
     $chk_number = random_int(100000,999999);
     $endtime = time()+120;
@@ -1044,7 +1077,7 @@ function safe_uint(mixed $value, int $default = 0): int {
     return $default;
 }
 
-// 發送簡訊（使用 .env 參數）
+/** 三竹簡訊 API（.env SMS_USERNAME / SMS_PASSWORD） */
 function sendSMS($Member,$Content){
     $username = $_ENV['SMS_USERNAME'] ?? '';
     $password = $_ENV['SMS_PASSWORD'] ?? '';
@@ -1061,36 +1094,10 @@ function sendSMS($Member,$Content){
     return getUrlContent($smsurl);
 }
 
+/** 台灣手機 09xxxxxxxx 格式驗證 */
 function chkMobile($tel){ return (bool)preg_match('/^09[0-9]{8}$/', str_replace('-', '', $tel)); }
 
-// 產生縮圖（列表用 thumb_ 前綴；使用 ImageResizer）
-function ReSizeImg($Forder = '', $Photo = '', $Width = 150)
-{
-    if (function_exists('create_image_list_thumb')) {
-        return create_image_list_thumb((string)$Forder, (string)$Photo, (int)$Width, 'thumb_');
-    }
-    return false;
-}
-
-// 計算縮圖寬高（防未定義變數）
-function ReSize($PhotoUrl,$PhotoW,$PhotoH){
-    $PhotoW = (int)$PhotoW; $PhotoH = (int)$PhotoH;
-    if (!is_file($PhotoUrl)) return [max(0,$PhotoW), max(0,$PhotoH)];
-    $src = getimagesize($PhotoUrl); $imgW = $src[0]; $imgH = $src[1];
-    $cropW = $PhotoW ?: $imgW; $cropH = $PhotoH ?: $imgH;
-
-    if ($imgW >= $imgH){
-        $cropW = min($imgW, $cropW);
-        $cropH = (int)ceil($imgH / ($imgW / max(1,$cropW)));
-    } else {
-        $cropH = min($imgH, $cropH);
-        $cropW = (int)ceil($imgW / ($imgH / max(1,$cropH)));
-    }
-    if ($PhotoW && $cropW > $PhotoW) { $cropH = (int)ceil($cropH / ($cropW / $PhotoW)); $cropW = $PhotoW; }
-    if ($PhotoH && $cropH > $PhotoH) { $cropW = (int)ceil($cropW / ($cropH / $PhotoH)); $cropH = $PhotoH; }
-    return [$cropW, $cropH];
-}
-
+/** 隨機英數 GUID 字串 */
 function getGUID($length = 8) {
     $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     $result = '';
@@ -1098,6 +1105,7 @@ function getGUID($length = 8) {
     return $result;
 }
 
+/** 關聯陣列轉 key=value 逗號字串（log 用） */
 function array_to_string($data_array=array()){
     if (!is_array($data_array)) return '';
     $pairs = [];
@@ -1105,18 +1113,22 @@ function array_to_string($data_array=array()){
     return implode(',', $pairs);
 }
 
+/** @see GetIP() */
 function UserIP(){ return GetIP(); }
 
+/** 遞迴建立目錄（預設 0775） */
 function makedirs($dirpath, $mode=0775) {
     $ok = is_dir($dirpath) || mkdir($dirpath, $mode, true);
     clearstatcache();
     return $ok;
 }
 
+/** 從資料夾名稱取 YYYYMM/ 子路徑（monthforder 慣例） */
 function monthforder($str){
 	$forder = explode('_',(string)$str); return left($forder[1] ?? '', 6) . '/';
 }
 
+/** 資料表是否存在（白名單表名 + SHOW TABLES / tableExists） */
 function chkTable($name){
     $name = trim((string)$name);
     if ($name === '' || !preg_match('/^[A-Za-z0-9_]+$/', $name)) {
@@ -1141,6 +1153,7 @@ function chkTable($name){
     }
 }
 
+/** 判斷字串純英文(1)／純中文(2)／混合(0)，回傳 [type, len] */
 function check_str($str=''){
     $s = strlen($str); $m = mb_strlen($str,'utf-8');
     if ($s === $m) return [1, $s]; // 純英文
@@ -1148,6 +1161,7 @@ function check_str($str=''){
     return [0,0];
 }
 
+/** 數字轉 Excel 欄名 A、B…AA（1→A） */
 function chr_asc($num){
     $num = (int)$num;
     if ($num < 27) return chr($num + 64);
@@ -1156,6 +1170,7 @@ function chr_asc($num){
     return chr_asc($int) . chr($mod);
 }
 
+/** 問卷題型代碼對應中文名稱 */
 function question_type($num){
     switch((int)$num){
         case 1: return '單選題';
@@ -1168,29 +1183,20 @@ function question_type($num){
     return '';
 }
 
-//全形或半形字符轉換
-/*
-*function：回傳轉換後全形或半形字符
-*param string
-*return 
-參數解釋
-$type：1全形轉半形；2.半形轉全形
-*/	
+/**
+ * 全形／半形轉換（mb_convert_kana）
+ *
+ * @param int $type 1 全→半；2 半→全
+ */
 function convertToHalfWidth($str='', $type=1){
 	return ($type==2) ? mb_convert_kana($str,'AS') : mb_convert_kana($str,'as');
 }
 
-//產生上一筆和下一筆的PKey值
-/*
-*function：回傳table的上下筆資料的PKey
-*param string
-*return 
-參數解釋
-$table_name：資料名稱
-$PDO_Cond：搜尋參數
-$table_name：搜尋陣列
-$table_name：目前資料的PKey
-*/	
+/**
+ * 同條件列表的上一筆／下一筆 PKey
+ *
+ * @return array{prev:int,next:int}
+ */
 function Page_List($table_name='',$PDO_Cond='',$Cond_Array=array(),$PKey=0){
 	$list_key = array();
 	$sql = 'Select PKey From '.$table_name.$PDO_Cond.' order by PKey';
@@ -1214,7 +1220,7 @@ function Page_List($table_name='',$PDO_Cond='',$Cond_Array=array(),$PKey=0){
     return ['prev'=>$prev, 'next'=>$next];
 }
 
-//檢查身份證性別
+/** 依身分證第二碼判斷性別（男／女／未知） */
 function getGenderFromID($id) {
     // 檢查長度
     if (strlen($id) !== 10) {
@@ -1357,9 +1363,7 @@ function secure_verify_and_migrate(string $plain, string $dbHash, int $pkey): bo
     return false;
 }
 
-// ─────────────────────────────────────────
-// Base64-URL 解碼工具（UTF-8 驗證）【新增】
-// ─────────────────────────────────────────
+/** Base64-URL 轉標準 Base64（補 padding） */
 function b64url_to_b64(string $b64url): string {
     $b64 = strtr($b64url, '-_', '+/');
     $pad = 4 - (strlen($b64) % 4);
