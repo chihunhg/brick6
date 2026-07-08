@@ -48,9 +48,8 @@ if ($pageName !== 'index') {
     if ($detailSeoTitle !== '') {
         $pageTitle = $detailSeoTitle . '∣' . $Web_Name;
     }
-    if (!empty($list_photo)) {
-        $fb_img = $web_url . $list_photo;
-    }
+    // OG 圖：列表圖 → 內容圖 → default_fb.jpg
+    $fb_img = frontend_head_image_url();
 }
 
 ?>

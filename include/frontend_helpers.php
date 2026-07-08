@@ -713,23 +713,111 @@ if (!function_exists('frontend_professional_service_ldjson')) {
     }
 }
 
+if (!function_exists('frontend_article_organization_entity')) {
+    /** Article author／publisher 用組織實體 */
+    function frontend_article_organization_entity(): array
+    {
+        global $Web_Name, $web_url;
+
+        return [
+            '@type' => 'Organization',
+            'name'  => trim((string)($Web_Name ?? '')),
+            'url'   => safe_href((string)$web_url),
+            'logo'  => [
+                '@type' => 'ImageObject',
+                'url'   => safe_href((string)$web_url . 'images/logo.jpg'),
+            ],
+        ];
+    }
+}
+
+if (!function_exists('frontend_article_headline_text')) {
+    /** Article headline（建議 120 字內） */
+    function frontend_article_headline_text(string $seoTitle = '', string $strName = ''): string
+    {
+        $headline = trim(strip_tags($seoTitle));
+        if ($headline === '') {
+            $headline = trim(strip_tags($strName));
+        }
+
+        if (mb_strlen($headline, 'UTF-8') > 120) {
+            $headline = mb_substr($headline, 0, 120, 'UTF-8');
+        }
+
+        return $headline;
+    }
+}
+
+if (!function_exists('frontend_article_image_urls')) {
+    /**
+     * Article image 陣列（列表圖 → 內容圖 → 預設圖，絕對 URL）
+     *
+     * @return list<string>
+     */
+    function frontend_article_image_urls(int $pkey, ?string $fallbackImageUrl = null): array
+    {
+        global $web_url;
+
+        $urls = [];
+        $seen = [];
+        $append = static function (?string $url) use (&$urls, &$seen): void {
+            $url = trim((string)($url ?? ''));
+            if ($url === '') {
+                return;
+            }
+
+            $absolute = frontend_absolute_public_url($url);
+            if ($absolute === '#' || isset($seen[$absolute])) {
+                return;
+            }
+
+            $seen[$absolute] = true;
+            $urls[] = $absolute;
+        };
+
+        $append($fallbackImageUrl);
+
+        $cfg = $GLOBALS['frontend_module_config'] ?? null;
+        if (is_array($cfg) && $pkey > 0) {
+            $append(frontend_module_list_image_url($pkey, $cfg));
+
+            $master = (string)($cfg['master'] ?? '');
+            if ($master === 'album') {
+                foreach (frontend_fetch_album_gallery_items($pkey) as $item) {
+                    $append((string)($item['full'] ?? ''));
+                }
+            } else {
+                $photos = frontend_fetch_detail_photos($pkey, $cfg);
+                ksort($photos['photo']);
+                foreach ($photos['photo'] as $url) {
+                    $append((string)$url);
+                }
+            }
+        }
+
+        if ($urls === []) {
+            $append(rtrim((string)$web_url, '/') . '/images/default/default_fb.jpg');
+        }
+
+        return $urls;
+    }
+}
+
 if (!function_exists('frontend_article_ldjson')) {
     /**
-     * 內頁 Article 結構化資料（需頁面已設定 PKey 與 strName／seoTitle）
+     * 內頁 Article 結構化資料（schema.org 規範）
      *
      * @return array<string,mixed>|null
      */
     function frontend_article_ldjson(?string $imageUrl = null): ?array
     {
-        global $PKey, $strName, $seoTitle, $m_description, $web_url, $page_link, $Web_Name, $OpenDate, $strDate;
+        global $PKey, $strName, $seoTitle, $m_description, $web_url, $page_link;
+        global $OpenDate, $strDate, $dtUDate, $detailRow;
 
-        $headline = '';
-        if (isset($seoTitle)) {
-            $headline = trim((string)$seoTitle);
-        }
-        if ($headline === '' && !empty($strName)) {
-            $headline = trim(strip_tags((string)$strName));
-        }
+        $headline = frontend_article_headline_text(
+            isset($seoTitle) ? (string)$seoTitle : '',
+            (string)($strName ?? '')
+        );
 
         $pkey = (int)($PKey ?? 0);
         if ($headline === '' || $pkey <= 0) {
@@ -737,23 +825,19 @@ if (!function_exists('frontend_article_ldjson')) {
         }
 
         $pageUrl = safe_href((string)($web_url . ($page_link ?? '')));
+        $organization = frontend_article_organization_entity();
+
         $ld = [
             '@context' => 'https://schema.org',
             '@type'    => 'Article',
             'headline' => $headline,
-            'url'      => $pageUrl,
+            'author'   => $organization,
+            'publisher' => $organization,
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
                 '@id'   => $pageUrl,
             ],
-            'publisher' => [
-                '@type' => 'Organization',
-                'name'  => trim((string)($Web_Name ?? '')),
-                'logo'  => [
-                    '@type' => 'ImageObject',
-                    'url'   => safe_href((string)$web_url . 'images/logo.jpg'),
-                ],
-            ],
+            'image' => frontend_article_image_urls($pkey, $imageUrl),
         ];
 
         $description = trim(strip_tags((string)($m_description ?? '')));
@@ -761,22 +845,56 @@ if (!function_exists('frontend_article_ldjson')) {
             $ld['description'] = $description;
         }
 
-        $image = trim((string)($imageUrl ?? ''));
-        if ($image !== '') {
-            $ld['image'] = safe_href($image);
+        $publishedRaw = '';
+        if (!empty($OpenDate)) {
+            $publishedRaw = trim((string)$OpenDate);
+        } elseif (!empty($strDate)) {
+            $publishedRaw = trim((string)$strDate);
+        }
+        $publishedIso = frontend_iso8601_datetime($publishedRaw);
+        if ($publishedIso !== null) {
+            $ld['datePublished'] = $publishedIso;
         }
 
-        $datePublished = '';
-        if (!empty($OpenDate)) {
-            $datePublished = trim((string)$OpenDate);
-        } elseif (!empty($strDate)) {
-            $datePublished = trim((string)$strDate);
+        $modifiedRaw = '';
+        if (!empty($dtUDate)) {
+            $modifiedRaw = trim((string)$dtUDate);
+        } elseif (is_array($detailRow ?? null)) {
+            $modifiedRaw = trim((string)crud_row_val($detailRow, 'dtUDate'));
         }
-        if ($datePublished !== '') {
-            $ld['datePublished'] = $datePublished;
+        $modifiedIso = frontend_iso8601_datetime($modifiedRaw);
+        if ($modifiedIso !== null) {
+            $ld['dateModified'] = $modifiedIso;
+        } elseif ($publishedIso !== null) {
+            $ld['dateModified'] = $publishedIso;
         }
 
         return $ld;
+    }
+}
+
+if (!function_exists('frontend_iso8601_datetime')) {
+    /** 將資料庫日期字串轉為 ISO 8601（Asia/Taipei，如 2026-06-04T10:30:00+08:00） */
+    function frontend_iso8601_datetime(?string $raw): ?string
+    {
+        $raw = trim((string)($raw ?? ''));
+        if ($raw === '') {
+            return null;
+        }
+
+        $tz = new DateTimeZone('Asia/Taipei');
+        foreach (['Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d', 'Y/m/d H:i:s', 'Y/m/d H:i', 'Y/m/d'] as $format) {
+            $dt = DateTimeImmutable::createFromFormat('!' . $format, $raw, $tz);
+            if ($dt instanceof DateTimeImmutable) {
+                return $dt->format('Y-m-d\TH:i:sP');
+            }
+        }
+
+        try {
+            return (new DateTimeImmutable($raw, $tz))->format('Y-m-d\TH:i:sP');
+        } catch (Exception) {
+            return null;
+        }
     }
 }
 
@@ -846,6 +964,130 @@ if (!function_exists('frontend_optional_cover_image_url')) {
         $url = frontend_cover_image_url($parentPKey, $cfg);
 
         return $url !== $default ? $url : null;
+    }
+}
+
+if (!function_exists('frontend_module_list_image_url')) {
+    /** 單元列表圖 URL；無圖回傳 null */
+    function frontend_module_list_image_url(int $parentPKey, ?array $cfg = null): ?string
+    {
+        global $web_root;
+
+        if ($parentPKey <= 0) {
+            return null;
+        }
+
+        $cfg = $cfg ?? ($GLOBALS['frontend_module_config'] ?? null);
+        if (!is_array($cfg)) {
+            return null;
+        }
+
+        $master = (string)($cfg['master'] ?? '');
+        if ($master === 'album') {
+            $url = frontend_album_cover_image_url($parentPKey);
+            $default = safe_href((string)($web_root . 'images/default/default_fb.jpg'));
+
+            return $url !== $default ? $url : null;
+        }
+
+        return frontend_optional_cover_image_url($parentPKey, $cfg);
+    }
+}
+
+if (!function_exists('frontend_module_content_image_url')) {
+    /** 單元內容圖 URL（首張）；無圖回傳 null */
+    function frontend_module_content_image_url(int $parentPKey, ?array $cfg = null): ?string
+    {
+        if ($parentPKey <= 0) {
+            return null;
+        }
+
+        $cfg = $cfg ?? ($GLOBALS['frontend_module_config'] ?? null);
+        if (!is_array($cfg)) {
+            return null;
+        }
+
+        $master = (string)($cfg['master'] ?? '');
+        if ($master === 'album') {
+            $items = frontend_fetch_album_gallery_items($parentPKey);
+            if ($items === []) {
+                return null;
+            }
+
+            $first = trim((string)($items[0]['full'] ?? ''));
+            return $first !== '' ? safe_href($first) : null;
+        }
+
+        $photos = frontend_fetch_detail_photos($parentPKey, $cfg);
+        if ($photos['photo'] === []) {
+            return null;
+        }
+
+        ksort($photos['photo']);
+        foreach ($photos['photo'] as $url) {
+            $url = trim((string)$url);
+            if ($url !== '') {
+                return safe_href($url);
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('frontend_absolute_public_url')) {
+    /** 將站內相對路徑轉為含域名的絕對 URL（OG／JSON-LD 用） */
+    function frontend_absolute_public_url(string $url): string
+    {
+        global $web_url;
+
+        $url = trim($url);
+        if ($url === '') {
+            return safe_href(rtrim((string)$web_url, '/') . '/images/default/default_fb.jpg');
+        }
+
+        if (preg_match('#^https?://#i', $url)) {
+            return safe_href($url);
+        }
+
+        if (str_starts_with($url, '/')) {
+            return safe_href(current_scheme() . '://' . current_host() . $url);
+        }
+
+        return safe_href(rtrim((string)$web_url, '/') . '/' . ltrim($url, '/'));
+    }
+}
+
+if (!function_exists('frontend_head_image_url')) {
+    /**
+     * head OG／分享圖：列表圖 → 內容圖 → default_fb.jpg（絕對 URL）
+     */
+    function frontend_head_image_url(): string
+    {
+        global $web_url, $PKey;
+
+        $default = frontend_absolute_public_url((string)($web_url . 'images/default/default_fb.jpg'));
+        $pkey = (int)($PKey ?? 0);
+        if ($pkey <= 0) {
+            return $default;
+        }
+
+        $cfg = $GLOBALS['frontend_module_config'] ?? null;
+        if (!is_array($cfg) || ($cfg['master'] ?? '') === '' || ($cfg['fk'] ?? '') === '') {
+            return $default;
+        }
+
+        $listUrl = frontend_module_list_image_url($pkey, $cfg);
+        if ($listUrl !== null) {
+            return frontend_absolute_public_url($listUrl);
+        }
+
+        $contentUrl = frontend_module_content_image_url($pkey, $cfg);
+        if ($contentUrl !== null) {
+            return frontend_absolute_public_url($contentUrl);
+        }
+
+        return $default;
     }
 }
 
