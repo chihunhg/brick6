@@ -96,9 +96,9 @@ $(function(){
 		}
 
 		window.manageFormValidationOk(formEl);
-		$("#u").val("ok");
+		$("#Send").val("ok");
 		$("#form1").submit();
-		$("#u").val("");
+		$("#Send").val("");
 	});
 });
 <?php echo script_close(); ?>
@@ -115,7 +115,7 @@ $(function(){
 					<span class="mainTitle__en wow fadeInUp"><?php echo $lang_text[$pageName][$this_lang][$pageName.'_en']; ?></span>
 					<span class="mainTitle__mj wow fadeInUp"><?php echo $lang_text[$pageName][$this_lang][$pageName]; ?></span>
 				</h2>
-                <form name="form1" id="form1" method="post" action="<?php echo $web_url.'mail.php'; ?>" class="formGroupWrap wow fadeIn" data-wow-delay="0.25s">
+                <form name="form1" id="form1" method="post" action="<?php echo 'mail.htm'; ?>" class="formGroupWrap wow fadeIn" data-wow-delay="0.25s">
                     <div class="errorArea is-hidden" id="formErrorArea" aria-live="polite" tabindex="-1">
                         <div class="errorArea__header"><?php echo e(($this_lang == 2) ? 'Error messages' : '錯誤訊息'); ?></div>
                         <div class="errorArea__body">
@@ -228,7 +228,7 @@ $(function(){
 							</span>
                         </button>
                     </div>
-                    <input type="hidden" name="u" id="u" value="">
+                    <input type="hidden" name="Send" id="Send" value="">
                     <input type="hidden" name="this_lang" id="this_lang" value="<?php if(!empty($this_lang)&&is_numeric($this_lang)){echo sqlfilter($this_lang,'int');}?>" />
                     <input type="hidden" name="csrf_token" value="<?php echo e_attr($csrf_token); ?>" />
                 </form>
