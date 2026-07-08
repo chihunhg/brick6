@@ -5,7 +5,7 @@ declare(strict_types=1);
  * 需由父頁提供：$Keywords、$kwPlaceholder；選填 $WorkFile
  */
 if (!function_exists('manage_semantic_search_label')) {
-    require_once dirname(__DIR__) . '/../include/manage_semantic_search_helpers.php';
+    require_once dirname(__DIR__) . '/include/manage_semantic_search_helpers.php';
 }
 $semanticSearchLabel = manage_semantic_search_label();
 ?>
