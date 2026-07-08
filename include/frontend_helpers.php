@@ -114,6 +114,28 @@ if (!function_exists('frontend_company_module_pkey')) {
     }
 }
 
+if (!function_exists('frontend_migration_services_module_pkey')) {
+    /** 各國移民／migration-services 單元 Module_PKey（選單反查，回落 knowledge） */
+    function frontend_migration_services_module_pkey(): int
+    {
+        static $pkey = null;
+        if ($pkey !== null) {
+            return $pkey;
+        }
+
+        $pkey = frontend_module_pkey_for_page('migration-services.htm', null, false);
+        if ($pkey <= 0) {
+            try {
+                $pkey = frontend_module_pkey('knowledge');
+            } catch (RuntimeException) {
+                $pkey = 0;
+            }
+        }
+
+        return (int)$pkey;
+    }
+}
+
 if (!function_exists('frontend_nav_module_items')) {
     /**
      * 主選單單元（來自 _inc.php 的 $Array_MU_*，依 PKey 排序）

@@ -46,10 +46,11 @@ require("_inc.php");
 				<div class="swiper ixSer imgCardList wow fadeInUp">
 					<div class="swiper-wrapper">
 						<?php
+						$ixSerModulePKey = frontend_migration_services_module_pkey();
 						$sql = 'select * from view_dbclass1 WHERE Upload= :Upload and Module_PKey= :Module_PKey and intLang= :intLang ORDER BY Sort';
-						$rs  = new recordset($sql,['Upload' => 'Yes', 'Module_PKey' => frontend_module_pkey_for_page('migration-services.htm'),'intLang'=>$this_lang]);
+						$rs  = new recordset($sql,['Upload' => 'Yes', 'Module_PKey' => $ixSerModulePKey,'intLang'=>$this_lang]);
 						if (($SQL_Error = $rs->getErrorMessage())) {
-							$result = sql_error($sql . PHP_EOL . array_to_string(['Upload' => 'Yes', 'Module_PKey' => frontend_module_pkey_for_page('migration-services.htm'),'intLang'=>$this_lang,'Home'=>'Yes']), $SQL_Error,$WorkFile, 'system');
+							$result = sql_error($sql . PHP_EOL . array_to_string(['Upload' => 'Yes', 'Module_PKey' => $ixSerModulePKey,'intLang'=>$this_lang,'Home'=>'Yes']), $SQL_Error,$WorkFile, 'system');
 							echo '<pre>', e(print_r($result, true)), '</pre>';
 							exit;
 						}

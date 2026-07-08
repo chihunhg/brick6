@@ -10,7 +10,7 @@ $pageName = "p2";
 $subPageName = "p2_1";
 require("_inc.php");
 
-$Module_PKey = frontend_module_pkey_for_page('migration-services.htm');
+$Module_PKey = frontend_migration_services_module_pkey();
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 
