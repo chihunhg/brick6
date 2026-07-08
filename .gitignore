@@ -28,3 +28,6 @@ desktop.ini
 *.php-20*
 *.php_bak*
 *.aspx.cs-20*
+
+# ===== 本機診斷腳本（勿提交）=====
+scripts/_check_*.php
