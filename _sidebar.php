@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 前台 Class1 側欄選單（列表／內頁共用 partial）
+ *
+ * 需父頁提供 Module_PKey、Class1；frontend_sidebar_should_show 判斷是否顯示。
+ */
+
 $sidebarModulePKey = (int)($Module_PKey ?? 0);
 $sidebarClass1 = (int)($Class1 ?? 0);
 

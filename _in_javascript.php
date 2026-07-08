@@ -1,4 +1,8 @@
-<?php echo script_src_tag($web_url . 'js/jquery-3.7.1.min.js'); ?>
+<?php
+/**
+ * head 內 JS 與 CSS 共用引入（jQuery、站內腳本與樣式）
+ */
+echo script_src_tag($web_url . 'js/jquery-3.7.1.min.js'); ?>
 
 <?php echo script_src_tag($web_url . 'js/popup.js?ver=' . filemtime(__DIR__ . '/js/popup.js')); ?>
 

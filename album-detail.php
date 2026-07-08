@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * 前台相簿內頁（album-detail.htm / album-detail{N}.htm）
+ *
+ * 資料流程：註冊模組設定 → frontend_fetch_detail → 相簿圖集輸出。
+ * 列表：album.php；後台：manage/album/_config.php。
+ */
+
 declare(strict_types=1);
 
 $pageName = '03';
@@ -8,6 +15,28 @@ $subPageName = '';
 
 require('_inc.php');
 
+/**
+ * 模組設定（前台列表／內頁共用）
+ *
+ * 用途：合併後台 _config.php（資料表 master/fk/lang/msg 等）與前台專用選項，
+ *       供 frontend_module_config() 及 frontend_* helper 組 SQL、產生連結。
+ *
+ * 使用方式：
+ *   1. frontend_module_pkey() — 從選單 registry 取得本單元 Module_PKey
+ *   2. array_merge(require manage/…/_config.php, [前台覆寫]) — 後台與前台設定合一
+ *   3. frontend_module_set_config() — 註冊後方可呼叫 frontend_fetch_detail 等函式
+ *
+ * 前台覆寫欄位說明：
+ *   view                   — 內頁查詢用的 view 表（含語系、Upload、OpenDate 等欄位）
+ *   class_link             — 分類列表友好 URL 前綴
+ *   detail_link            — 內頁友好 URL 前綴
+ *   publish_window         — true：依 OpenDate～EndDate 刊登區間篩選；false：僅 Upload=Yes
+ *   class1_filter_min_count — Class1 分類數 ≥ 此值才在麵包屑顯示分類層級（預設 2）
+ *
+ * 內頁專用（設定後由下方程式使用）：
+ *   frontend_request_pkey() — 由網址 PKey 參數取得主鍵
+ *   frontend_fetch_detail() — 讀取單筆主檔（套用 publish_window / Upload 條件）
+ */
 $Module_PKey = frontend_module_pkey('album');
 
 frontend_module_set_config(array_merge(

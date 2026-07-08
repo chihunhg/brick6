@@ -13,6 +13,10 @@
 <?php echo script_src_tag($web_root . 'js/page-function.js?ver=' . filemtime(__DIR__ . '/js/page-function.js')); ?>
 
 <?php
+
+/**
+ * </body> 前共用片段（瀏覽記錄、結構化資料等）
+ */
 $visitPageLink = frontend_visit_normalize_page_link(
     (string)($GLOBALS['REQUEST_URI_PATH'] ?? $page_link ?? '')
 );

@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * 前台首頁（index.htm）
+ *
+ * 首頁區塊：Banner、關於簡介、服務、最新消息等；由 _inc.php 載入共用環境。
+ */
 $pageName = "index";
 $subPageName = "";
 

@@ -1,4 +1,8 @@
 <?php
+
+/**
+ * Google Tag Manager body 片段（noscript）
+ */
 //gtmCode--begin--------------------------------------------------
 if ( !empty($Web_gtmCode) ){
 ?>

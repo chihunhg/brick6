@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * 前台友好連結列表（weblink.htm）
+ *
+ * 資料流程：註冊模組設定 → frontend_list_where → 分頁連結列表。
+ * 後台：manage/weblink/_config.php。
+ */
+
 declare(strict_types=1);
 
 $pageName = '';
@@ -8,6 +15,26 @@ $subPageName = '';
 
 require('_inc.php');
 
+/**
+ * 模組設定（前台列表／內頁共用）
+ *
+ * 用途：合併後台 _config.php（資料表 master/fk/lang 等）與前台專用選項，
+ *       供 frontend_module_config() 及 frontend_* helper 組 SQL、產生連結。
+ *
+ * 使用方式：
+ *   1. frontend_module_pkey() — 從選單 registry 取得本單元 Module_PKey
+ *   2. array_merge(require manage/…/_config.php, [前台覆寫]) — 後台與前台設定合一
+ *   3. frontend_module_set_config() — 註冊後方可呼叫 frontend_list_where 等函式
+ *
+ * 前台覆寫欄位說明：
+ *   view                   — 列表查詢用的 view 表（含語系、Upload 等欄位）
+ *   class_link             — 分類列表友好 URL 前綴（例：news.htm 的 news）
+ *   detail_link            — 內頁友好 URL 前綴（例：news-detail12.htm 的 news-detail）
+ *   publish_window         — true：依 OpenDate～EndDate 刊登區間篩選；false：僅 Upload=Yes
+ *   order_by               — 列表排序（供 frontend_fetch_list 使用）
+ *   page_size              — 每頁筆數（frontend_list_paginate / frontend_fetch_list）
+ *   class1_filter_min_count — Class1 分類數 ≥ 此值才顯示分類篩選與側欄（預設 2）
+ */
 $Module_PKey = frontend_module_pkey('weblink');
 
 frontend_module_set_config(array_merge(

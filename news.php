@@ -1,10 +1,37 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 前台最新消息列表（news.htm / news{N}.htm）
+ *
+ * 資料流程：_inc.php → 註冊模組設定 → frontend_list_where 查詢 → 分頁列表輸出。
+ * 內頁請見 news-detail.php；後台表結構定義於 manage/news/_config.php。
+ */
+
 $pageName = 'p4';
 $subPageName = 'p4_1';
 require('_inc.php');
 
+/**
+ * 模組設定（前台列表／內頁共用）
+ *
+ * 用途：合併後台 _config.php（資料表 master/fk/lang 等）與前台專用選項，
+ *       供 frontend_module_config() 及 frontend_* helper 組 SQL、產生連結。
+ *
+ * 使用方式：
+ *   1. frontend_module_pkey('news') — 從選單 registry 取得本單元 Module_PKey
+ *   2. array_merge(require manage/…/_config.php, [前台覆寫]) — 後台與前台設定合一
+ *   3. frontend_module_set_config() — 註冊後方可呼叫 frontend_list_where 等函式
+ *
+ * 前台覆寫欄位說明：
+ *   view                   — 列表／內頁查詢用的 view 表（含語系、Upload 等欄位）
+ *   class_link             — 分類列表友好 URL 前綴（例：news.htm、news3.htm 的 news）
+ *   detail_link            — 內頁友好 URL 前綴（例：news-detail12.htm 的 news-detail）
+ *   publish_window         — true：依 OpenDate～EndDate 刊登區間篩選；false：僅 Upload=Yes
+ *   order_by               — 列表排序（白名單欄位，供 frontend_fetch_list 使用）
+ *   page_size              — 每頁筆數（frontend_list_paginate / frontend_fetch_list）
+ *   class1_filter_min_count — Class1 分類數 ≥ 此值才顯示分類篩選與側欄（預設 2）
+ */
 $Module_PKey = frontend_module_pkey('news');
 frontend_module_set_config(array_merge(
     require __DIR__ . '/manage/news/_config.php',

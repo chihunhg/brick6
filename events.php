@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * 前台活動訊息列表（events.htm）
+ *
+ * 依後台 ad 模組 Class1 分類列出活動；legacy 直接查 view（尚未 frontend_module_set_config）。
+ * 內頁：events-detail.php。
+ */
 $pageName = "p3";
 $subPageName = "p3_1";
 require("_inc.php");

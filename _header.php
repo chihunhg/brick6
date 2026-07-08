@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * 前台頁首導覽列（各頁 require）
+ *
+ * 含 Logo、主選單、語系切換；需先載入 _inc.php。
+ */
 require('_in_gtm2.php');
 ?>
 

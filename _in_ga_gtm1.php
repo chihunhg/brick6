@@ -1,4 +1,8 @@
 <?php
+
+/**
+ * Google Analytics / GTM head 片段
+ */
 //gaCode--begin--------------------------------------------------
 if ( !empty($Web_gaCode) ){
 ?>

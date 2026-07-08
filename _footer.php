@@ -1,3 +1,10 @@
+<?php
+/**
+ * 前台頁尾（各頁 require）
+ *
+ * 聯絡資訊、社群連結、版權聲明。
+ */
+?>
 
 <footer class="footer">
 	<div class="container">

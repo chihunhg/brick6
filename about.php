@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * 前台關於我們導覽（about.htm）
+ *
+ * 依 company 模組顯示分類導覽，導向 company.php 內頁。
+ */
 $pageName = "p1";
 $subPageName = "";
 require("_inc.php");

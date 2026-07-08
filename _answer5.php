@@ -1,3 +1,8 @@
+<?php
+/**
+ * 問卷日期欄位區塊（questionnaire.php include）
+ */
+?>
 <!--日期開放題-->
 <div class="inputGroup__box">
 	<div class="inputGroup__box__input">

@@ -1,3 +1,8 @@
+<?php
+/**
+ * 問卷複選題選項區塊（questionnaire.php include）
+ */
+?>
 <!--複選題-->
 <div class="inputGroup__box">
 	<div class="inputGroup__box__input">

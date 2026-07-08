@@ -1,4 +1,10 @@
-<?php if ($pageName == "index") { ?>
+<?php
+/**
+ * 前台 Banner 輪播（首頁 index 使用）
+ *
+ * 由 frontend_banner_rows() 讀取 ad 模組 Banner 資料。
+ */
+if ($pageName == "index") { ?>
 	<section class="bannerWrap">
 		<div class="swiper banner" role="region" aria-label="首頁 Banner 輪播">
 			<div class="swiper-wrapper">

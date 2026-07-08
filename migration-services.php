@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * 前台遷移服務列表（migration-services.htm）
+ *
+ * 使用 knowledge 模組；legacy 查 view_paper 分類列表（尚未 frontend_module_set_config）。
+ * 內頁：migration-services-detail.php。
+ */
 $pageName = "p2";
 $subPageName = "p2_1";
 require("_inc.php");

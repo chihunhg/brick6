@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * 前台活動訊息內頁（events-detail.htm）
+ *
+ * 依 PKey 讀取單筆活動主檔與子表；含報名表單連結 mail-events.php。
+ * 列表：events.php。
+ */
 $pageName = "p3";
 $subPageName = "p3_1";
 require("_inc.php");

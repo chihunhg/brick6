@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * 前台列表分頁列（需 Total、tPage、tPageTotal 等變數）
+ */
+
 if(!empty($Total) && $Total > 0){
 
 ?>

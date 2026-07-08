@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * 前台遷移服務內頁（migration-services-detail.htm）
+ *
+ * 依 PKey 讀取 knowledge 單元內容；legacy 查 view_paper。
+ * 列表：migration-services.php。
+ */
 $pageName = "p2";
 $subPageName = "p2_1";
 require("_inc.php");

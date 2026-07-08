@@ -1,4 +1,8 @@
 <?php
+
+/**
+ * <head> 內 SEO／meta／CSS 共用片段
+ */
 // -------------------- 頁面標題處理 --------------------
 switch ($pageName) {
     case 'p1':  $pageTitle = $p1.' ∣ '.$pageTitle2; break;

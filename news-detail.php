@@ -1,10 +1,41 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 前台最新消息內頁（news-detail.htm / news-detail{N}.htm）
+ *
+ * 資料流程：_inc.php → 註冊模組設定 → frontend_fetch_detail 取主檔
+ * → 內文／圖片／連結子表 → 輸出文章版面。
+ * 列表請見 news.php；後台表結構定義於 manage/news/_config.php。
+ */
+
 $pageName = 'p4';
 $subPageName = 'p4_1';
 require('_inc.php');
 
+/**
+ * 模組設定（前台列表／內頁共用）
+ *
+ * 用途：合併後台 _config.php（資料表 master/fk/lang/msg 等）與前台專用選項，
+ *       供 frontend_module_config() 及 frontend_* helper 組 SQL、產生連結。
+ *
+ * 使用方式：
+ *   1. frontend_module_pkey('news') — 從選單 registry 取得本單元 Module_PKey
+ *   2. array_merge(require manage/…/_config.php, [前台覆寫]) — 後台與前台設定合一
+ *   3. frontend_module_set_config() — 註冊後方可呼叫 frontend_fetch_detail 等函式
+ *
+ * 前台覆寫欄位說明：
+ *   view                   — 內頁查詢用的 view 表（含語系、Upload、OpenDate 等欄位）
+ *   class_link             — 分類列表友好 URL 前綴（例：news.htm、news3.htm 的 news）
+ *   detail_link            — 內頁友好 URL 前綴（例：news-detail12.htm 的 news-detail）
+ *   publish_window         — true：依 OpenDate～EndDate 刊登區間篩選；false：僅 Upload=Yes
+ *   class1_filter_min_count — Class1 分類數 ≥ 此值才在麵包屑顯示分類層級（預設 2）
+ *
+ * 內頁專用（設定後由下方程式使用，非本陣列欄位）：
+ *   frontend_request_pkey()      — 由網址 PKey 參數取得主鍵
+ *   frontend_fetch_detail()      — 讀取單筆主檔（套用 publish_window / Upload 條件）
+ *   show_type                    — 本模組僅 show_type=0 或 2 可顯示內頁（其餘導回列表）
+ */
 $Module_PKey = frontend_module_pkey('news');
 frontend_module_set_config(array_merge(
     require __DIR__ . '/manage/news/_config.php',

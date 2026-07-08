@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * 前台預覽密碼閘道（default.php）
+ *
+ * 輸入正確密碼後寫入 Session，導向 redirect 參數指定頁面。
+ */
 require("_inc.php");
 
 if ( $_REQUEST["Send"] == "OK" ){

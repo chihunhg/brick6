@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * 前台聯絡我們（contact.htm）
+ *
+ * 表單 POST 至 mail.htm；含 CSRF、reCAPTCHA 與前端欄位驗證。
+ * 寄信處理：mail.php。
+ */
 $pageName    = "p5";
 $subPageName = "";
 require("_inc.php");

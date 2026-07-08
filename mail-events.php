@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * 活動報名表單處理（events 內頁 POST）
+ *
+ * POST 含 CSRF；驗證後寄信並寫入活動報名相關表。
+ */
 $pageName    = "p3";
 $subPageName = "p3_1";
 require_once("_inc.php");

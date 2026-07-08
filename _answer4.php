@@ -1,3 +1,8 @@
+<?php
+/**
+ * 問卷文字欄位區塊（questionnaire.php include）
+ */
+?>
 <!--多行文字開放題-->
 <div class="inputGroup__box">
 	<div class="inputGroup__box__input">
