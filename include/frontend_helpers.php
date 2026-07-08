@@ -651,6 +651,135 @@ if (!function_exists('frontend_breadcrumb_ldjson')) {
     }
 }
 
+if (!function_exists('frontend_website_ldjson')) {
+    /** @return array<string,mixed>|null */
+    function frontend_website_ldjson(): ?array
+    {
+        global $Web_Name, $web_url;
+
+        $name = trim((string)($Web_Name ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        return [
+            '@context' => 'https://schema.org',
+            '@type'    => 'WebSite',
+            'name'     => $name,
+            'url'      => safe_href((string)$web_url),
+        ];
+    }
+}
+
+if (!function_exists('frontend_professional_service_ldjson')) {
+    /** @return array<string,mixed>|null */
+    function frontend_professional_service_ldjson(): ?array
+    {
+        global $Web_Name, $web_url, $Web_Tel, $Web_Address, $m_description;
+
+        $name = trim((string)($Web_Name ?? ''));
+        if ($name === '') {
+            return null;
+        }
+
+        $ld = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'ProfessionalService',
+            'name'     => $name,
+            'url'      => safe_href((string)$web_url),
+            'image'    => safe_href((string)$web_url . 'images/logo.jpg'),
+        ];
+
+        $tel = trim((string)($Web_Tel ?? ''));
+        if ($tel !== '') {
+            $ld['telephone'] = $tel;
+        }
+
+        $description = trim(strip_tags((string)($m_description ?? '')));
+        if ($description !== '') {
+            $ld['description'] = $description;
+        }
+
+        $address = trim((string)($Web_Address ?? ''));
+        if ($address !== '') {
+            $ld['address'] = [
+                '@type'          => 'PostalAddress',
+                'streetAddress'  => $address,
+                'addressCountry' => 'TW',
+            ];
+        }
+
+        return $ld;
+    }
+}
+
+if (!function_exists('frontend_article_ldjson')) {
+    /**
+     * 內頁 Article 結構化資料（需頁面已設定 PKey 與 strName／seoTitle）
+     *
+     * @return array<string,mixed>|null
+     */
+    function frontend_article_ldjson(?string $imageUrl = null): ?array
+    {
+        global $PKey, $strName, $seoTitle, $m_description, $web_url, $page_link, $Web_Name, $OpenDate, $strDate;
+
+        $headline = '';
+        if (isset($seoTitle)) {
+            $headline = trim((string)$seoTitle);
+        }
+        if ($headline === '' && !empty($strName)) {
+            $headline = trim(strip_tags((string)$strName));
+        }
+
+        $pkey = (int)($PKey ?? 0);
+        if ($headline === '' || $pkey <= 0) {
+            return null;
+        }
+
+        $pageUrl = safe_href((string)($web_url . ($page_link ?? '')));
+        $ld = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'Article',
+            'headline' => $headline,
+            'url'      => $pageUrl,
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id'   => $pageUrl,
+            ],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name'  => trim((string)($Web_Name ?? '')),
+                'logo'  => [
+                    '@type' => 'ImageObject',
+                    'url'   => safe_href((string)$web_url . 'images/logo.jpg'),
+                ],
+            ],
+        ];
+
+        $description = trim(strip_tags((string)($m_description ?? '')));
+        if ($description !== '') {
+            $ld['description'] = $description;
+        }
+
+        $image = trim((string)($imageUrl ?? ''));
+        if ($image !== '') {
+            $ld['image'] = safe_href($image);
+        }
+
+        $datePublished = '';
+        if (!empty($OpenDate)) {
+            $datePublished = trim((string)$OpenDate);
+        } elseif (!empty($strDate)) {
+            $datePublished = trim((string)$strDate);
+        }
+        if ($datePublished !== '') {
+            $ld['datePublished'] = $datePublished;
+        }
+
+        return $ld;
+    }
+}
+
 if (!function_exists('frontend_detail_href')) {
     /** 內頁 friendly URL（detail_link + pkey.htm） */
     function frontend_detail_href(int $pkey, ?array $cfg = null): string

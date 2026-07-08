@@ -92,6 +92,21 @@ if ($pageName === 'index') {
     echo json_ld_script_tag($org_ld);
 }
 
+$website_ld = frontend_website_ldjson();
+if ($website_ld !== null) {
+    echo json_ld_script_tag($website_ld);
+}
+
+$professional_service_ld = frontend_professional_service_ldjson();
+if ($professional_service_ld !== null) {
+    echo json_ld_script_tag($professional_service_ld);
+}
+
+$article_ld = frontend_article_ldjson($fb_img);
+if ($article_ld !== null) {
+    echo json_ld_script_tag($article_ld);
+}
+
 if (!empty($Web_Address)) {
     $store_ld = [
         "@context" => "https://schema.org",
