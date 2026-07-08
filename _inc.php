@@ -137,6 +137,20 @@ if ( !$rs->eof ){
 	$Web_Fax = $rs->field("Fax");
 	$Web_EMail = $rs->field("ToMail");
 	$Web_Address = $rs->field("Address");
+	$Web_PostCode = $rs->field("PostCode");
+	$Web_County = $rs->field("strCounty");
+	$Web_City = $rs->field("strCity");
+	$Web_ServiceDescription = $rs->field("ServiceDescription");
+	$Web_PriceRange = $rs->field("PriceRange");
+	$Web_GeoLat = $rs->field("GeoLat");
+	$Web_GeoLng = $rs->field("GeoLng");
+	$Web_HasMap = $rs->field("HasMap");
+	$Web_ContactAreaServed = $rs->field("ContactAreaServed");
+	$Web_ContactLanguage = $rs->field("ContactLanguage");
+	$Web_AreaServed = $rs->field("AreaServed");
+	$Web_OpeningDays = $rs->field("OpeningDays");
+	$Web_Opens = $rs->field("Opens");
+	$Web_Closes = $rs->field("Closes");
 	//$Web_GoogleMap1 = $rs->field("GoogleMap1");
 	//$Web_GoogleMap2 = $rs->field("GoogleMap2");
 

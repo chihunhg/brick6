@@ -1246,10 +1246,10 @@ if (!function_exists('crud_load_webset_form_data')) {
             'Keywords'    => [],
             'Tel'         => [],
             'Fax'         => [],
+            'Address'     => [],
             'PostCode'    => [],
             'County'      => [],
             'City'        => [],
-            'Address'     => [],
             'Facebook'    => [],
             'Line'        => [],
             'IG'          => [],
@@ -1259,6 +1259,17 @@ if (!function_exists('crud_load_webset_form_data')) {
             'ToMail'      => '',
             'gaCode'      => '',
             'gtmCode'     => '',
+            'ServiceDescription' => '',
+            'PriceRange'  => '',
+            'GeoLat'      => '',
+            'GeoLng'      => '',
+            'HasMap'      => '',
+            'ContactAreaServed' => '',
+            'ContactLanguage'   => 'zh-Hant',
+            'AreaServed'  => '',
+            'OpeningDays' => '',
+            'Opens'       => '',
+            'Closes'      => '',
         ];
 
         $rows = crud_fetch_all('SELECT * FROM webset ORDER BY intLang');
@@ -1271,10 +1282,10 @@ if (!function_exists('crud_load_webset_form_data')) {
             $out['Description'][$i] = (string)($r['Description'] ?? '');
             $out['Tel'][$i]         = (string)($r['Tel'] ?? '');
             $out['Fax'][$i]         = (string)($r['Fax'] ?? '');
+            $out['Address'][$i]    = (string)($r['Address'] ?? '');
             $out['PostCode'][$i]   = (string)($r['PostCode'] ?? '');
             $out['County'][$i]     = (string)($r['strCounty'] ?? '');
             $out['City'][$i]       = (string)($r['strCity'] ?? '');
-            $out['Address'][$i]    = (string)($r['Address'] ?? '');
             $out['Facebook'][$i]   = (string)($r['Facebook'] ?? '');
             $out['Line'][$i]       = (string)($r['Line'] ?? '');
             $out['IG'][$i]         = (string)($r['IG'] ?? '');
@@ -1284,6 +1295,15 @@ if (!function_exists('crud_load_webset_form_data')) {
             $out['ToMail']         = (string)($r['ToMail'] ?? $out['ToMail']);
             $out['gaCode']         = (string)($r['gaCode'] ?? $out['gaCode']);
             $out['gtmCode']        = (string)($r['gtmCode'] ?? $out['gtmCode']);
+
+            foreach ([
+                'ServiceDescription', 'PriceRange', 'GeoLat', 'GeoLng', 'HasMap',
+                'ContactAreaServed', 'ContactLanguage', 'AreaServed', 'OpeningDays', 'Opens', 'Closes',
+            ] as $globalKey) {
+                if ($out[$globalKey] === '' && trim((string)($r[$globalKey] ?? '')) !== '') {
+                    $out[$globalKey] = (string)$r[$globalKey];
+                }
+            }
 
             $kwRaw = (string)($r['Keywords'] ?? '');
             if ($kwRaw !== '') {
@@ -1331,17 +1351,57 @@ if (!function_exists('crud_save_webset_from_filter')) {
                 $row['Description'] = SqlFilter($filter['Description' . $n], 'tab');
             }
             $row['Keywords'] = SqlFilter(implode(',', $keywords), 'tab');
+            if (isset($filter['ServiceDescription'])) {
+                $row['ServiceDescription'] = SqlFilter($filter['ServiceDescription'], 'tab');
+            }
+            if (isset($filter['PriceRange'])) {
+                $row['PriceRange'] = SqlFilter($filter['PriceRange'], 'tab');
+            }
+            if (isset($filter['GeoLat'])) {
+                $row['GeoLat'] = SqlFilter($filter['GeoLat'], 'tab');
+            }
+            if (isset($filter['GeoLng'])) {
+                $row['GeoLng'] = SqlFilter($filter['GeoLng'], 'tab');
+            }
+            if (isset($filter['HasMap'])) {
+                $row['HasMap'] = SqlFilter($filter['HasMap'], 'tab');
+            }
+            if (isset($filter['ContactAreaServed'])) {
+                $row['ContactAreaServed'] = SqlFilter($filter['ContactAreaServed'], 'tab');
+            }
+            if (isset($filter['ContactLanguage'])) {
+                $row['ContactLanguage'] = SqlFilter($filter['ContactLanguage'], 'tab');
+            }
+            if (isset($filter['AreaServed'])) {
+                $row['AreaServed'] = SqlFilter($filter['AreaServed'], 'tab');
+            }
+            if (isset($filter['Opens'])) {
+                $row['Opens'] = SqlFilter($filter['Opens'], 'tab');
+            }
+            if (isset($filter['Closes'])) {
+                $row['Closes'] = SqlFilter($filter['Closes'], 'tab');
+            }
+            $openingDays = [];
+            if (isset($filter['openingDays']) && is_array($filter['openingDays'])) {
+                foreach ($filter['openingDays'] as $day) {
+                    $day = trim((string)$day);
+                    if ($day !== '') {
+                        $openingDays[] = $day;
+                    }
+                }
+            }
+            $row['OpeningDays'] = SqlFilter(implode(',', $openingDays), 'tab');
+            if (isset($filter['Address' . $n])) {
+                $row['Address'] = SqlFilter($filter['Address' . $n], 'tab');
+            }
             if (isset($filter['PostCode' . $n])) {
                 $row['PostCode'] = SqlFilter($filter['PostCode' . $n], 'tab');
             }
-            if (isset($filter['strCounty' . $n]) && ($filter['strCity' . $n] ?? '') !== '請選擇') {
+            if (isset($filter['strCounty' . $n])) {
                 $row['strCounty'] = SqlFilter($filter['strCounty' . $n], 'tab');
             }
-            if (isset($filter['strCity' . $n]) && ($filter['strCity' . $n] ?? '') !== '請選擇') {
+            if (isset($filter['strCity' . $n])) {
                 $row['strCity'] = SqlFilter($filter['strCity' . $n], 'tab');
-            }
-            if (isset($filter['Address' . $n])) {
-                $row['Address'] = SqlFilter($filter['Address' . $n], 'tab');
             }
             if (isset($filter['Tel' . $n])) {
                 $row['Tel'] = SqlFilter($filter['Tel' . $n], 'tab');
@@ -1433,6 +1493,26 @@ if (!function_exists('crud_validate_webset_from_filter')) {
                     $msg .= "【收件信箱】格式錯誤：" . $em . "\n";
                     break;
                 }
+            }
+        }
+        $allowedPriceRange = ['$', '$$', '$$$', '$$$$'];
+        $priceRange = trim((string)($filter['PriceRange'] ?? ''));
+        if ($priceRange !== '' && !in_array($priceRange, $allowedPriceRange, true)) {
+            $msg .= "【ProfessionalService】價格區間格式錯誤\n";
+        }
+        $hasMap = trim((string)($filter['HasMap'] ?? ''));
+        if ($hasMap !== '' && !preg_match('#^https?://#i', $hasMap)) {
+            $msg .= "【ProfessionalService】地圖連結需為 http/https URL\n";
+        }
+        $geoLat = trim((string)($filter['GeoLat'] ?? ''));
+        $geoLng = trim((string)($filter['GeoLng'] ?? ''));
+        if (($geoLat !== '' && !is_numeric($geoLat)) || ($geoLng !== '' && !is_numeric($geoLng))) {
+            $msg .= "【ProfessionalService】經緯度需為數字\n";
+        }
+        foreach (['Opens' => '開門', 'Closes' => '關門'] as $field => $label) {
+            $time = trim((string)($filter[$field] ?? ''));
+            if ($time !== '' && !preg_match('/^\d{2}:\d{2}$/', $time)) {
+                $msg .= "【ProfessionalService】{$label}時間格式需為 HH:MM\n";
             }
         }
         return $msg;
