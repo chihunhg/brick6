@@ -17,10 +17,7 @@ if ($pkey === false || $pkey === null || $pkey <= 0) {
     json_out(['success' => false, 'error' => 'Invalid PKey'], 400);
 }
 
-$modulePKey = frontend_module_pkey_for_link('paper.htm');
-if ($modulePKey <= 0) {
-    $modulePKey = frontend_module_pkey_for_link('paper');
-}
+$modulePKey = frontend_module_pkey_for_page('paper.htm', 'paper');
 if ($modulePKey <= 0) {
     json_out(['success' => false, 'error' => 'Module not found'], 500);
 }

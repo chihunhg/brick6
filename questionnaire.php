@@ -13,7 +13,7 @@ $subPageName = 'p11_1';
 require('_inc.php');
 $WorkFile = basename(__FILE__);
 
-$Module_PKey = frontend_module_pkey('question');
+$Module_PKey = frontend_module_pkey_for_page('questionnaire.htm');
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '問卷調查';
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? 'questionnaire.htm';
 $page_link = 'questionnaire.htm';

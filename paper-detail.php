@@ -19,7 +19,7 @@ require('_inc.php');
  *       供 frontend_module_config() 及 frontend_* helper 組 SQL、產生連結。
  *
  * 使用方式：
- *   1. frontend_module_pkey() — 從選單 registry 取得本單元 Module_PKey
+ *   1. frontend_module_pkey_for_page('paper.htm') — 依 PageLink 從後台選單反查 Module_PKey
  *   2. array_merge(require manage/…/_config.php, [前台覆寫]) — 後台與前台設定合一
  *   3. frontend_module_set_config() — 註冊後方可呼叫 frontend_fetch_detail 等函式
  *
@@ -34,13 +34,7 @@ require('_inc.php');
  *   frontend_request_pkey() — 由網址 PKey 參數取得主鍵
  *   frontend_fetch_detail() — 讀取單筆主檔（套用 publish_window / Upload 條件）
  */
-$Module_PKey = frontend_module_pkey_for_link('paper.htm');
-if ($Module_PKey <= 0) {
-    $Module_PKey = frontend_module_pkey_for_link('paper');
-}
-if ($Module_PKey <= 0) {
-    throw new RuntimeException('paper-detail.php: 無法從選單設定取得 paper 單元的 Module_PKey（請確認後台 PageLink 為 paper.htm）');
-}
+$Module_PKey = frontend_module_pkey_for_page('paper.htm', 'paper');
 frontend_module_set_config(array_merge(
     require __DIR__ . '/manage/paper/_config.php',
     [

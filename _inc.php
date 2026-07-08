@@ -57,8 +57,8 @@ $upload_forder = 'Upload/';
 $m_description = '';
 $m_keywords    = '';
 /*
- * 前台共用單元 Module_PKey 定義：include/frontend_modules.php
- * 程式請用 frontend_module_pkey('news') 等，勿直接寫數字。
+ * 前台 Module_PKey：各頁請用 frontend_module_pkey_for_page('news.htm') 依選單 PageLink 反查。
+ * 固定 slug 對照見 include/frontend_modules.php（首頁區塊等用途）。
  */
 //產生選單資料
 $Array_MU_PKey = array();//單元主鍵

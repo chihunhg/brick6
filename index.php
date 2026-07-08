@@ -47,9 +47,9 @@ require("_inc.php");
 					<div class="swiper-wrapper">
 						<?php
 						$sql = 'select * from view_dbclass1 WHERE Upload= :Upload and Module_PKey= :Module_PKey and intLang= :intLang ORDER BY Sort';
-						$rs  = new recordset($sql,['Upload' => 'Yes', 'Module_PKey' => frontend_module_pkey('knowledge'),'intLang'=>$this_lang]);
+						$rs  = new recordset($sql,['Upload' => 'Yes', 'Module_PKey' => frontend_module_pkey_for_page('migration-services.htm'),'intLang'=>$this_lang]);
 						if (($SQL_Error = $rs->getErrorMessage())) {
-							$result = sql_error($sql . PHP_EOL . array_to_string(['Upload' => 'Yes', 'Module_PKey' => frontend_module_pkey('knowledge'),'intLang'=>$this_lang,'Home'=>'Yes']), $SQL_Error,$WorkFile, 'system');
+							$result = sql_error($sql . PHP_EOL . array_to_string(['Upload' => 'Yes', 'Module_PKey' => frontend_module_pkey_for_page('migration-services.htm'),'intLang'=>$this_lang,'Home'=>'Yes']), $SQL_Error,$WorkFile, 'system');
 							echo '<pre>', e(print_r($result, true)), '</pre>';
 							exit;
 						}
@@ -189,7 +189,7 @@ require("_inc.php");
 							]
 						);
 						$PDO_Cond = ' Where Module_PKey= :Module_PKey and intLang= :intLang and OpenDate<= :OpenDate and EndDate>= :EndDate and Home= :Home';
-						$Cond_Array['Module_PKey'] = frontend_module_pkey('news');
+						$Cond_Array['Module_PKey'] = frontend_module_pkey_for_page('news.htm');
 						$Cond_Array['intLang'] = $this_lang;
 						$Cond_Array['OpenDate'] = date('Y-m-d H:i');
 						$Cond_Array['EndDate'] = date('Y-m-d').' 23:59:59';

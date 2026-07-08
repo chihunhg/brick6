@@ -6,11 +6,11 @@ declare(strict_types=1);
  * 前台列表／內頁共用（對應 manage 模組 _config.php 模式）
  *
  * 使用方式（例：news.php）：
- *   $frontendConfig = array_merge(require __DIR__.'/manage/news/_config.php', [
+ *   $Module_PKey = frontend_module_pkey_for_page('news.htm');
+ *   frontend_module_set_config(array_merge(require __DIR__.'/manage/news/_config.php', [
  *       'view' => 'view_news', 'class_link' => 'news', 'detail_link' => 'news-detail',
  *       'publish_window' => true, 'order_by' => 'OpenDate DESC', 'page_size' => 12,
- *   ]);
- *   frontend_module_set_config($frontendConfig);
+ *   ]));
  */
 
 if (!function_exists('frontend_module_registry')) {
@@ -61,6 +61,56 @@ if (!function_exists('frontend_module_pkey_for_link')) {
         }
 
         return 0;
+    }
+}
+
+if (!function_exists('frontend_module_pkey_for_page')) {
+    /**
+     * 依前台 PageLink 從後台選單反查 Module_PKey（共用後台表、各自選單 PKey 時使用）
+     *
+     * @param string $pageLink 主列表友好 URL，如 news.htm、migration-services.htm
+     * @param string|null $fallbackLink 回落 PageLink（如 paper.htm 無命中時試 paper）
+     * @param bool $required false 時查無則回傳 0，不拋例外
+     */
+    function frontend_module_pkey_for_page(
+        string $pageLink,
+        ?string $fallbackLink = null,
+        bool $required = true
+    ): int {
+        $pkey = frontend_module_pkey_for_link($pageLink);
+        if ($pkey <= 0 && $fallbackLink !== null && $fallbackLink !== '') {
+            $pkey = frontend_module_pkey_for_link($fallbackLink);
+        }
+        if ($required && $pkey <= 0) {
+            $hint = $pageLink . ($fallbackLink !== null && $fallbackLink !== '' ? ' / ' . $fallbackLink : '');
+            throw new RuntimeException(
+                'frontend_module_pkey_for_page: 無法從選單取得 Module_PKey（PageLink=' . $hint . '）'
+            );
+        }
+
+        return $pkey;
+    }
+}
+
+if (!function_exists('frontend_company_module_pkey')) {
+    /** 關於我們單元 Module_PKey（about.htm / company.htm 選單反查，回落 frontend_modules company） */
+    function frontend_company_module_pkey(): int
+    {
+        static $pkey = null;
+        if ($pkey !== null) {
+            return $pkey;
+        }
+
+        $pkey = frontend_module_pkey_for_page('about.htm', 'company.htm', false);
+        if ($pkey <= 0) {
+            try {
+                $pkey = frontend_module_pkey('company');
+            } catch (RuntimeException) {
+                $pkey = 0;
+            }
+        }
+
+        return (int)$pkey;
     }
 }
 
@@ -181,7 +231,7 @@ if (!function_exists('frontend_nav_sub_items')) {
     /** 主選單下拉項目：關於我們用 view_company，其餘用 view_dbclass1 */
     function frontend_nav_sub_items(int $modulePKey): array
     {
-        if ($modulePKey > 0 && $modulePKey === frontend_module_pkey('company')) {
+        if ($modulePKey > 0 && $modulePKey === frontend_company_module_pkey()) {
             return frontend_nav_company_items($modulePKey);
         }
 
@@ -207,7 +257,7 @@ if (!function_exists('frontend_nav_sub_href')) {
     /** 下拉子項連結（company 用 detail，其餘 class1） */
     function frontend_nav_sub_href(int $modulePKey, string $listPageLink, int $itemPKey): string
     {
-        if ($modulePKey > 0 && $modulePKey === frontend_module_pkey('company')) {
+        if ($modulePKey > 0 && $modulePKey === frontend_company_module_pkey()) {
             return frontend_company_detail_href($itemPKey);
         }
 

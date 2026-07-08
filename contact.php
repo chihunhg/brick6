@@ -10,7 +10,7 @@ $pageName    = "p5";
 $subPageName = "";
 require("_inc.php");
 
-$Module_PKey = frontend_module_pkey('contact');
+$Module_PKey = frontend_module_pkey_for_page('contact.htm');
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 

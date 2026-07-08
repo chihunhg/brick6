@@ -9,10 +9,7 @@
 $pageName = "p3";
 $subPageName = "p3_1";
 require("_inc.php");
-$Module_PKey = frontend_module_pkey_for_link($lang_text['p3']['p3_page'] ?? 'events.htm');
-if ($Module_PKey <= 0) {
-    $Module_PKey = frontend_module_pkey_for_link('events.htm');
-}
+$Module_PKey = frontend_module_pkey_for_page((string)($lang_text['p3']['p3_page'] ?? 'events.htm'), 'events.htm');
 $Module_Name = $Array_MU_Name[$Module_PKey] ?? '';
 $Module_Link = $Array_MU_Link[$Module_PKey] ?? $page_link;
 

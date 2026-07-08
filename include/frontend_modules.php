@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 /**
- * 前台共用單元 Module_PKey（對應 module_p.PKey）
+ * 前台共用單元 Module_PKey 對照表（slug → PKey）
  *
- * 前端程式請使用 frontend_module_pkey('slug') 取值，勿直接寫數字。
+ * 各前台 *.php 頁面請優先使用 frontend_module_pkey_for_page('xxx.htm') 依選單 PageLink 反查；
+ * 本檔僅供首頁區塊、程式內比對等仍須固定 slug 的場景。
  *
  * @return array<string, int>
  */
