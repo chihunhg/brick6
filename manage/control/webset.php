@@ -63,6 +63,9 @@ $Keywords    = $ws['Keywords'];
 $Tel         = $ws['Tel'];
 $Fax         = $ws['Fax'];
 $Address     = $ws['Address'];
+$PostCode    = $ws['PostCode'];
+$County      = $ws['County'];
+$City        = $ws['City'];
 $Facebook    = $ws['Facebook'];
 $Line        = $ws['Line'];
 $IG          = $ws['IG'];
@@ -72,6 +75,30 @@ $FromMail    = $ws['FromMail'];
 $ToMail      = $ws['ToMail'];
 $gaCode      = $ws['gaCode'];
 $gtmCode     = $ws['gtmCode'];
+
+$ServiceDescription = (string)$ws['ServiceDescription'];
+$PriceRange         = (string)$ws['PriceRange'];
+$GeoLat             = (string)$ws['GeoLat'];
+$GeoLng             = (string)$ws['GeoLng'];
+$HasMap             = (string)$ws['HasMap'];
+$ContactAreaServed  = (string)$ws['ContactAreaServed'];
+$ContactLanguage    = (string)$ws['ContactLanguage'];
+$AreaServed         = (string)$ws['AreaServed'];
+$OpeningDays        = (string)$ws['OpeningDays'];
+$Opens              = (string)$ws['Opens'];
+$Closes             = (string)$ws['Closes'];
+$selectedOpeningDays = array_filter(array_map('trim', explode(',', $OpeningDays)));
+
+$openingDayOptions = [
+    'Monday'    => '週一',
+    'Tuesday'   => '週二',
+    'Wednesday' => '週三',
+    'Thursday'  => '週四',
+    'Friday'    => '週五',
+    'Saturday'  => '週六',
+    'Sunday'    => '週日',
+];
+$priceRangeOptions = ['' => '未設定', '$' => '$ 低價', '$$' => '$$ 中價', '$$$' => '$$$ 高價', '$$$$' => '$$$$ 極高價'];
 
 $breadcrumbs = [
     ['label' => '單元管理'],
@@ -133,6 +160,25 @@ function fieldCheck0(theForm) {
 			}
 		}
 	}
+
+	var hasMap = $.trim($('#HasMap').val());
+	if (hasMap !== '' && !/^https?:\/\//i.test(hasMap)) {
+		array.push('HasMap');
+		errors.push('地圖連結需為 http/https URL');
+	}
+	var geoLat = $.trim($('#GeoLat').val());
+	var geoLng = $.trim($('#GeoLng').val());
+	if ((geoLat !== '' && isNaN(parseFloat(geoLat))) || (geoLng !== '' && isNaN(parseFloat(geoLng)))) {
+		array.push('GeoLat');
+		errors.push('經緯度需為數字');
+	}
+	['Opens', 'Closes'].forEach(function(id) {
+		var time = $.trim($('#' + id).val());
+		if (time !== '' && !/^\d{2}:\d{2}$/.test(time)) {
+			array.push(id);
+			errors.push((id === 'Opens' ? '開門' : '關門') + '時間格式需為 HH:MM');
+		}
+	});
 
 	if (errors.length) {
 		return window.manageFormValidationFail(errors, {
@@ -204,6 +250,99 @@ function fieldCheck0(theForm) {
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="editView__section editView__section--nested">
+                                <h5 class="editView__sectionTitle">ProfessionalService 結構化資料（JSON-LD）</h5>
+                                <p class="fieldHint">以下為全站共用設定，儲存後同步至各語系；結構化地址請於各語系 tab 設定。</p>
+
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="ServiceDescription">
+                                        公司詳細敘述
+                                        <?php echo manage_render_field_help('description：核心優勢與服務簡介，可能出現在搜尋結果描述'); ?>
+                                    </label>
+                                    <div class="col--10">
+                                        <textarea name="ServiceDescription" id="ServiceDescription" class="formInput" rows="4" maxlength="1000" placeholder="例：30年經驗、客製化服務、資安處理…"><?php echo e($ServiceDescription); ?></textarea>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">聯絡電話</label>
+                                    <div class="col--10">
+                                        <p class="fieldHint mb-0">telephone：請於各語系 tab 填寫「聯絡電話」，建議含國碼（如 +886）。</p>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="PriceRange">價格區間</label>
+                                    <div class="col--10">
+                                        <select name="PriceRange" id="PriceRange" class="formSelect">
+                                            <?php foreach ($priceRangeOptions as $val => $label) { ?>
+                                            <option value="<?php echo e($val); ?>"<?php echo ($PriceRange === $val) ? ' selected' : ''; ?>><?php echo e($label); ?></option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">經緯度座標</label>
+                                    <div class="col--10">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <input type="text" name="GeoLat" id="GeoLat" class="formInput" value="<?php echo e($GeoLat); ?>" maxlength="20" placeholder="緯度 latitude（例：25.033964）">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="text" name="GeoLng" id="GeoLng" class="formInput" value="<?php echo e($GeoLng); ?>" maxlength="20" placeholder="經度 longitude（例：121.564468）">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="HasMap">地圖連結</label>
+                                    <div class="col--10">
+                                        <input type="url" name="HasMap" id="HasMap" class="formInput" value="<?php echo e($HasMap); ?>" maxlength="500" placeholder="https://maps.google.com/...">
+                                        <p class="fieldHint">hasMap：Google Maps 連結。</p>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="ContactAreaServed">聯絡服務地區</label>
+                                    <div class="col--10">
+                                        <input type="text" name="ContactAreaServed" id="ContactAreaServed" class="formInput" value="<?php echo e($ContactAreaServed); ?>" maxlength="255" placeholder="例：TW">
+                                        <p class="fieldHint">contactPoint.areaServed</p>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="ContactLanguage">聯絡語言</label>
+                                    <div class="col--10">
+                                        <input type="text" name="ContactLanguage" id="ContactLanguage" class="formInput" value="<?php echo e($ContactLanguage !== '' ? $ContactLanguage : 'zh-Hant'); ?>" maxlength="100" placeholder="zh-Hant">
+                                        <p class="fieldHint">contactPoint.availableLanguage；多語請以逗號分隔。</p>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">營業時間</label>
+                                    <div class="col--10">
+                                        <div class="d-flex flex-wrap gap-3 mb-2">
+                                            <?php foreach ($openingDayOptions as $dayVal => $dayLabel) { ?>
+                                            <label class="form-check-label">
+                                                <input type="checkbox" class="form-check-input" name="openingDays[]" value="<?php echo e($dayVal); ?>"<?php echo in_array($dayVal, $selectedOpeningDays, true) ? ' checked' : ''; ?>>
+                                                <?php echo e($dayLabel); ?>
+                                            </label>
+                                            <?php } ?>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <input type="text" name="Opens" id="Opens" class="formInput" value="<?php echo e($Opens); ?>" maxlength="5" placeholder="開門 09:00">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" name="Closes" id="Closes" class="formInput" value="<?php echo e($Closes); ?>" maxlength="5" placeholder="關門 18:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="AreaServed">服務涵蓋範圍</label>
+                                    <div class="col--10">
+                                        <input type="text" name="AreaServed" id="AreaServed" class="formInput" value="<?php echo e($AreaServed); ?>" maxlength="500" placeholder="台中,台北,新竹,台灣">
+                                        <p class="fieldHint">areaServed：多區域請以逗號分隔。</p>
+                                    </div>
+                                </div>
+                            </div>
                         </article>
 
                         <article class="editView__tabs tabsGp">
@@ -254,7 +393,7 @@ function fieldCheck0(theForm) {
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="Tel<?php echo $i; ?>">聯絡電話<?php echo manage_render_field_help('結構化使用，並顯示於前台頁尾、聯絡我們'); ?></label>
                                         <div class="col--10">
-                                            <input type="text" name="Tel<?php echo $i; ?>" id="Tel<?php echo $i; ?>" class="formInput" value="<?php echo e($Tel[$i] ?? ''); ?>" maxlength="50">
+                                            <input type="text" name="Tel<?php echo $i; ?>" id="Tel<?php echo $i; ?>" class="formInput" value="<?php echo e($Tel[$i] ?? ''); ?>" maxlength="50" placeholder="+886-2-12345678">
                                         </div>
                                     </div>
                                     <div class="formGrid">
@@ -264,12 +403,28 @@ function fieldCheck0(theForm) {
                                         </div>
                                     </div>
                                     <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="Address<?php echo $i; ?>">聯絡地址
-                                        <?php echo manage_render_field_help('結構化使用，並顯示於前台頁尾、聯絡我們'); ?></label>
+                                        <label class="col--2 inputLabel editView__formLabel">結構化地址
+                                        <?php echo manage_render_field_help('JSON-LD address 與前台頁尾、聯絡我們顯示'); ?></label>
                                         <div class="col--10">
-                                            <input type="text" name="Address<?php echo $i; ?>" id="Address<?php echo $i; ?>" class="formInput" value="<?php echo e($Address[$i] ?? ''); ?>" maxlength="255">
+                                            <input type="text" name="Address<?php echo $i; ?>" id="Address<?php echo $i; ?>" class="formInput mb-2" value="<?php echo e($Address[$i] ?? ''); ?>" maxlength="255" placeholder="街道地址">
+                                            <div class="row g-2">
+                                                <div class="col-md-3">
+                                                    <input type="text" name="PostCode<?php echo $i; ?>" id="PostCode<?php echo $i; ?>" class="formInput" value="<?php echo e($PostCode[$i] ?? ''); ?>" maxlength="10" placeholder="郵遞區號">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="text" name="strCity<?php echo $i; ?>" id="strCity<?php echo $i; ?>" class="formInput" value="<?php echo e($City[$i] ?? ''); ?>" maxlength="50" placeholder="城市／縣市">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="text" name="strCounty<?php echo $i; ?>" id="strCounty<?php echo $i; ?>" class="formInput" value="<?php echo e($County[$i] ?? ''); ?>" maxlength="50" placeholder="行政區">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <input type="text" class="formInput" value="TW" readonly disabled aria-label="國家代碼">
+                                                </div>
+                                            </div>
+                                            <p class="fieldHint">address：街道、行政區、城市、郵遞區號；國家代碼固定 TW。</p>
                                         </div>
                                     </div>
+
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="Facebook<?php echo $i; ?>">Facebook連結
                                         <?php echo manage_render_field_help('顯示於前台頁尾'); ?></label>
@@ -330,7 +485,8 @@ function fieldCheck0(theForm) {
                         </div>
                         <ul class="notes__list">
                             <li>各語系對應 <span class="badge notes__badge">webset</span> 表一筆資料（<code>intLang</code>）。</li>
-                            <li>寄件／收件信箱、GA／GTM 代碼儲存於各語系列（讀取時取第一筆非空值）。</li>
+                            <li>寄件／收件信箱、GA／GTM、ProfessionalService（除地址外）為全站共用，儲存時同步至各語系列。</li>
+                            <li>結構化地址（街道、郵遞區號、城市、行政區）依各語系 tab 分別設定。</li>
                             <li>網站名稱為必填；描述建議 160 字元以內。</li>
                         </ul>
                     </div>

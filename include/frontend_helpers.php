@@ -675,7 +675,10 @@ if (!function_exists('frontend_professional_service_ldjson')) {
     /** @return array<string,mixed>|null */
     function frontend_professional_service_ldjson(): ?array
     {
-        global $Web_Name, $web_url, $Web_Tel, $Web_Address, $m_description;
+        global $Web_Name, $web_url, $Web_Tel, $Web_Address, $Web_PostCode, $Web_County, $Web_City;
+        global $Web_ServiceDescription, $Web_PriceRange, $Web_GeoLat, $Web_GeoLng, $Web_HasMap;
+        global $Web_ContactAreaServed, $Web_ContactLanguage, $Web_AreaServed;
+        global $Web_OpeningDays, $Web_Opens, $Web_Closes, $m_description;
 
         $name = trim((string)($Web_Name ?? ''));
         if ($name === '') {
@@ -695,18 +698,106 @@ if (!function_exists('frontend_professional_service_ldjson')) {
             $ld['telephone'] = $tel;
         }
 
-        $description = trim(strip_tags((string)($m_description ?? '')));
+        $description = trim(strip_tags((string)($Web_ServiceDescription ?? '')));
+        if ($description === '') {
+            $description = trim(strip_tags((string)($m_description ?? '')));
+        }
         if ($description !== '') {
             $ld['description'] = $description;
         }
 
-        $address = trim((string)($Web_Address ?? ''));
-        if ($address !== '') {
-            $ld['address'] = [
+        $priceRange = trim((string)($Web_PriceRange ?? ''));
+        if ($priceRange !== '') {
+            $ld['priceRange'] = $priceRange;
+        }
+
+        $street = trim((string)($Web_Address ?? ''));
+        $postCode = trim((string)($Web_PostCode ?? ''));
+        $county = trim((string)($Web_County ?? ''));
+        $city = trim((string)($Web_City ?? ''));
+        if ($street !== '' || $postCode !== '' || $county !== '' || $city !== '') {
+            $address = [
                 '@type'          => 'PostalAddress',
-                'streetAddress'  => $address,
                 'addressCountry' => 'TW',
             ];
+            if ($street !== '') {
+                $address['streetAddress'] = $street;
+            }
+            if ($county !== '') {
+                $address['addressRegion'] = $county;
+            }
+            if ($city !== '') {
+                $address['addressLocality'] = $city;
+            }
+            if ($postCode !== '') {
+                $address['postalCode'] = $postCode;
+            }
+            $ld['address'] = $address;
+        }
+
+        $geoLat = trim((string)($Web_GeoLat ?? ''));
+        $geoLng = trim((string)($Web_GeoLng ?? ''));
+        if ($geoLat !== '' && $geoLng !== '' && is_numeric($geoLat) && is_numeric($geoLng)) {
+            $ld['geo'] = [
+                '@type'     => 'GeoCoordinates',
+                'latitude'  => (float)$geoLat,
+                'longitude' => (float)$geoLng,
+            ];
+        }
+
+        $hasMap = trim((string)($Web_HasMap ?? ''));
+        if ($hasMap !== '' && preg_match('#^https?://#i', $hasMap)) {
+            $ld['hasMap'] = $hasMap;
+        }
+
+        $contactTel = trim((string)($Web_Tel ?? ''));
+        $contactArea = trim((string)($Web_ContactAreaServed ?? ''));
+        $contactLang = trim((string)($Web_ContactLanguage ?? ''));
+        if ($contactTel !== '' || $contactArea !== '' || $contactLang !== '') {
+            $contactPoint = [
+                '@type'       => 'ContactPoint',
+                'contactType' => 'customer service',
+            ];
+            if ($contactTel !== '') {
+                $contactPoint['telephone'] = $contactTel;
+            }
+            if ($contactArea !== '') {
+                $contactPoint['areaServed'] = $contactArea;
+            }
+            if ($contactLang !== '') {
+                $langs = array_values(array_filter(array_map('trim', explode(',', $contactLang))));
+                if (count($langs) === 1) {
+                    $contactPoint['availableLanguage'] = $langs[0];
+                } elseif ($langs !== []) {
+                    $contactPoint['availableLanguage'] = $langs;
+                }
+            }
+            $ld['contactPoint'] = $contactPoint;
+        }
+
+        $openingDays = array_values(array_filter(array_map('trim', explode(',', (string)($Web_OpeningDays ?? '')))));
+        $opens = trim((string)($Web_Opens ?? ''));
+        $closes = trim((string)($Web_Closes ?? ''));
+        if ($openingDays !== [] && $opens !== '' && $closes !== '') {
+            $ld['openingHoursSpecification'] = [];
+            foreach ($openingDays as $day) {
+                $ld['openingHoursSpecification'][] = [
+                    '@type'     => 'OpeningHoursSpecification',
+                    'dayOfWeek' => $day,
+                    'opens'     => $opens,
+                    'closes'    => $closes,
+                ];
+            }
+        }
+
+        $areaServedRaw = trim((string)($Web_AreaServed ?? ''));
+        if ($areaServedRaw !== '') {
+            $areas = array_values(array_filter(array_map('trim', explode(',', $areaServedRaw))));
+            if (count($areas) === 1) {
+                $ld['areaServed'] = $areas[0];
+            } elseif ($areas !== []) {
+                $ld['areaServed'] = $areas;
+            }
         }
 
         return $ld;
