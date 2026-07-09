@@ -89,8 +89,11 @@ RewriteRule ^en/investor-detail([0-9]*)\.htm$ investor-detail.php?this_lang=2&PK
 
 #相關問題
 RewriteRule ^faq([0-9]*)\.htm$ faq.php?this_lang=1&Class1=$1 [L]
+# FAQ Demo（Day 7 onboarding）
+RewriteRule ^faqdemo([0-9]*)\.htm$ faqdemo.php?this_lang=1&Class1=$1 [L]
 #英文
 RewriteRule ^en/faq([0-9]*)\.htm$ faq.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/faqdemo([0-9]*)\.htm$ faqdemo.php?this_lang=2&Class1=$1 [L]
 
 RewriteRule ^(.*_bak.*)$ / [R=301,NC]
 RewriteRule ^(.*-bak.*)$ / [R=301,NC]

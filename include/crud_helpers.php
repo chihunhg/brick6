@@ -242,6 +242,7 @@ if (!function_exists('crud_trusted_module_tables')) {
             'view_dbclass1',
             'view_dbclass2',
             'view_faq',
+            'view_faqdemo',
             'view_filedown',
             'view_investor',
             'view_module_lang',
@@ -712,7 +713,7 @@ if (!function_exists('crud_lang_table_select_meta')) {
         }
         $select = [];
         foreach ([
-            'Sort', 'intLang', 'isShow', 'strName', 'Title', 'Description', 'Keywords', 'Movielink', 'Contents',
+            'Sort', 'intLang', 'isShow', 'strName', 'strNote', 'Title', 'Description', 'Keywords', 'Movielink', 'Contents',
             'intLink', 'strLink', 'strURL', 'Target', 'FileName', 'FileSize', 'Forder',
         ] as $col) {
             if (crud_table_has_column($tableLang, $col)) {
@@ -755,6 +756,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
         $Description = [];
         $Keywords = [];
         $Movielink = [];
+        $strNote   = [];
         $Contents  = [];
         $intLink   = [];
         $strLink   = [];
@@ -768,6 +770,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
             'language'    => $language,
             'isShow'      => $isShow,
             'strName'     => $strName,
+            'strNote'     => $strNote,
             'Title'       => $Title,
             'Subject'     => $Subject,
             'Description' => $Description,
@@ -819,6 +822,9 @@ if (!function_exists('crud_load_lang_slots_data')) {
             }
             if (crud_table_has_column($tableLang, 'Movielink')) {
                 $Movielink[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Movielink') : ($r['Movielink'] ?? ''));
+            }
+            if (crud_table_has_column($tableLang, 'strNote')) {
+                $strNote[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'strNote') : ($r['strNote'] ?? ''));
             }
             if (crud_table_has_column($tableLang, 'Contents')) {
                 $Contents[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Contents') : ($r['Contents'] ?? ''));
@@ -4272,6 +4278,9 @@ if (!function_exists('crud_save_lang_slots')) {
             }
             if (isset($filter['Movielink' . $n]) && crud_table_has_column($tableLang, 'Movielink')) {
                 $row['Movielink'] = SqlFilter((string)$filter['Movielink' . $n], 'tab');
+            }
+            if (isset($filter['strNote' . $n]) && crud_table_has_column($tableLang, 'strNote')) {
+                $row['strNote'] = SqlFilter((string)$filter['strNote' . $n], 'tab');
             }
             if (crud_table_has_column($tableLang, 'Contents')) {
                 $html = '';

@@ -723,11 +723,11 @@ if (!function_exists('frontend_professional_service_ldjson')) {
             if ($street !== '') {
                 $address['streetAddress'] = $street;
             }
-            if ($county !== '') {
-                $address['addressRegion'] = $county;
-            }
             if ($city !== '') {
                 $address['addressLocality'] = $city;
+            }
+            if ($county !== '') {
+                $address['addressRegion'] = $county;
             }
             if ($postCode !== '') {
                 $address['postalCode'] = $postCode;
@@ -1327,7 +1327,7 @@ if (!function_exists('frontend_fetch_faq_items')) {
     /**
      * FAQ 單頁列表（Q：strName；A：faq_msg.Contents Sort 1）
      *
-     * @return list<array{pkey:int,question:string,answer:string,image:?string}>
+     * @return list<array{pkey:int,question:string,answer:string,note:string,image:?string}>
      */
     function frontend_fetch_faq_items(
         int $modulePKey,
@@ -1341,8 +1341,12 @@ if (!function_exists('frontend_fetch_faq_items')) {
         }
         $view = frontend_view_table();
         $orderBy = frontend_safe_order_by((string)($cfg['order_by'] ?? 'Sort ASC'), 'Sort ASC');
+        $selectCols = 'PKey, strName';
+        if (crud_table_has_column($view, 'strNote')) {
+            $selectCols .= ', strNote';
+        }
         $rows = crud_fetch_all(
-            "SELECT PKey, strName FROM {$view}{$where} ORDER BY {$orderBy}",
+            "SELECT {$selectCols} FROM {$view}{$where} ORDER BY {$orderBy}",
             $params
         );
 
@@ -1365,6 +1369,9 @@ if (!function_exists('frontend_fetch_faq_items')) {
                 'pkey'     => $pkey,
                 'question' => (string)crud_row_val($row, 'strName'),
                 'answer'   => $answer,
+                'note'     => crud_table_has_column($view, 'strNote')
+                    ? trim((string)crud_row_val($row, 'strNote'))
+                    : '',
                 'image'    => frontend_optional_cover_image_url($pkey, $cfg),
             ];
         }
