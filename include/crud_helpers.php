@@ -5110,7 +5110,12 @@ if (!function_exists('crud_upload_file_slots')) {
                 $photoH[$i] = (int)($imgInfo[1] ?? 0);
             }
 
-            if (function_exists('convert_webp')) {
+            if (function_exists('convert_uploaded_to_webp')) {
+                $webpFull = convert_uploaded_to_webp($destAbs, dirname($destAbs) . DIRECTORY_SEPARATOR, 85);
+                if ($webpFull === false) {
+                    $messages .= "檔案 {$i}: ({$origName}) WebP 轉換失敗\n";
+                }
+            } elseif (function_exists('convert_webp')) {
                 convert_webp($destAbs);
             } elseif (function_exists('covnert_webp')) {
                 covnert_webp($destAbs);

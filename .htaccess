@@ -10,6 +10,10 @@
     # CSP / X-Frame-Options 改由 PHP 依請求動態注入（見 _inc.php → send_security_headers）
     Header set X-XSS-Protection "1; mode=block"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), fullscreen=(self), accelerometer=(), gyroscope=(), magnetometer=(), usb=(), payment=()"
+    # 上傳圖片／靜態資源：瀏覽器長期快取（Upload/、images/、css/、js/）
+    <FilesMatch "\.(?i:jpe?g|png|gif|webp|svg|ico|woff2?|css|js|pdf|mp4|zip)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
 </IfModule>
 # ==============================
 

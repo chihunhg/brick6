@@ -1,0 +1,21 @@
+# Upload/ 目錄用（部署時複製為 Upload/.htaccess）
+# Upload/ 已在 .gitignore，正式機需手動放置或隨部署腳本同步。
+#
+# 禁止執行 PHP、允許靜態檔長期快取
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+</IfModule>
