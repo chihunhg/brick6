@@ -35,69 +35,100 @@ RewriteRule (^|/)(composer\.(json|lock)|package(-lock)?\.json|\.travis\.yml|\.en
 RewriteRule ^en/$ index.php?this_lang=2 [L]
 RewriteRule ^en$ index.php?this_lang=2 [L]
 
+# 友好 URL 慣例（Class 無值時不帶參數）：
+#   module.htm              → 列表（無 Class1/2/3）
+#   module{N}.htm           → Class1=N
+#   product{A}-{B}.htm      → Class1=A、Class2=B
+#   product{A}-{B}-{C}.htm  → Class1=A、Class2=B、Class3=C
+# 分類編號用 [0-9]+，避免 module0.htm 或空 Class 參數。
+
 #各國移民
-RewriteRule ^paper([0-9]*)\.htm$ paper.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^paper-detail([0-9]*)\.htm$ paper-detail.php?this_lang=1&PKey=$1 [L]
+RewriteRule ^paper\.htm$ paper.php?this_lang=1 [L]
+RewriteRule ^paper([0-9]+)\.htm$ paper.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^paper-detail([0-9]+)\.htm$ paper-detail.php?this_lang=1&PKey=$1 [L]
 #英文
-RewriteRule ^en/paper([0-9]*)\.htm$ paper.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/paper-detail([0-9]*)\.htm$ paper-detail.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^en/paper\.htm$ paper.php?this_lang=2 [L]
+RewriteRule ^en/paper([0-9]+)\.htm$ paper.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/paper-detail([0-9]+)\.htm$ paper-detail.php?this_lang=2&PKey=$1 [L]
 
 #活動資訊
-RewriteRule ^events([0-9]*)\.htm$ events.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^events-detail([0-9]*)\.htm$ events-detail.php?this_lang=1&PKey=$1 [L]
+RewriteRule ^events\.htm$ events.php?this_lang=1 [L]
+RewriteRule ^events([0-9]+)\.htm$ events.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^events-detail([0-9]+)\.htm$ events-detail.php?this_lang=1&PKey=$1 [L]
 #英文
-RewriteRule ^en/events([0-9]*)\.htm$ events.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/events-detail([0-9]*)\.htm$ events-detail.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^en/events\.htm$ events.php?this_lang=2 [L]
+RewriteRule ^en/events([0-9]+)\.htm$ events.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/events-detail([0-9]+)\.htm$ events-detail.php?this_lang=2&PKey=$1 [L]
 
 #最新消息
-RewriteRule ^news([0-9]*)\.htm$ news.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^news-detail([0-9]*)\.htm$ news-detail.php?this_lang=1&PKey=$1 [L]
+RewriteRule ^news\.htm$ news.php?this_lang=1 [L]
+RewriteRule ^news([0-9]+)\.htm$ news.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^news-detail([0-9]+)\.htm$ news-detail.php?this_lang=1&PKey=$1 [L]
 #英文
-RewriteRule ^en/news([0-9]*)\.htm$ news.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/news-detail([0-9]*)\.htm$ news-detail.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^en/news\.htm$ news.php?this_lang=2 [L]
+RewriteRule ^en/news([0-9]+)\.htm$ news.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/news-detail([0-9]+)\.htm$ news-detail.php?this_lang=2&PKey=$1 [L]
 
 #關於我們
-RewriteRule ^company([0-9]*)\.htm$ company.php?this_lang=1&PKey=$1 [L]
-RewriteRule ^en/company-detail([0-9]*)\.htm$ company.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^company([0-9]+)\.htm$ company.php?this_lang=1&PKey=$1 [L]
+RewriteRule ^en/company-detail([0-9]+)\.htm$ company.php?this_lang=2&PKey=$1 [L]
 
 #檔案下載
-RewriteRule ^download([0-9]*)\.htm$ download.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^download\.htm$ download.php?this_lang=1 [L]
+RewriteRule ^download([0-9]+)\.htm$ download.php?this_lang=1&Class1=$1 [L]
 #英文
-RewriteRule ^en/download([0-9]*)\.htm$ download.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/download\.htm$ download.php?this_lang=2 [L]
+RewriteRule ^en/download([0-9]+)\.htm$ download.php?this_lang=2&Class1=$1 [L]
 
 #相關網站
-RewriteRule ^weblink([0-9]*)\.htm$ weblink.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^weblink\.htm$ weblink.php?this_lang=1 [L]
+RewriteRule ^weblink([0-9]+)\.htm$ weblink.php?this_lang=1&Class1=$1 [L]
 #英文
-RewriteRule ^en/weblink([0-9]*)\.htm$ weblink.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/weblink\.htm$ weblink.php?this_lang=2 [L]
+RewriteRule ^en/weblink([0-9]+)\.htm$ weblink.php?this_lang=2&Class1=$1 [L]
 
 #相簿
-RewriteRule ^album([0-9]*)\.htm$ album.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^album-detail([0-9]*)\.htm$ album-detail.php?this_lang=1&PKey=$1 [L]
+RewriteRule ^album\.htm$ album.php?this_lang=1 [L]
+RewriteRule ^album([0-9]+)\.htm$ album.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^album-detail([0-9]+)\.htm$ album-detail.php?this_lang=1&PKey=$1 [L]
 #英文
-RewriteRule ^en/album([0-9]*)\.htm$ album.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/album-detail([0-9]*)\.htm$ album-detail.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^en/album\.htm$ album.php?this_lang=2 [L]
+RewriteRule ^en/album([0-9]+)\.htm$ album.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/album-detail([0-9]+)\.htm$ album-detail.php?this_lang=2&PKey=$1 [L]
 
-#工業產品
-RewriteRule ^product([0-9]*)\.htm$ product.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^product-detail([0-9]*)\.htm$ product-detail.php?this_lang=1&PKey=$1 [L]
+#工業產品（三層分類：僅有值的層級才出現在 URL）
+RewriteRule ^product\.htm$ product.php?this_lang=1 [L]
+RewriteRule ^product([0-9]+)\.htm$ product.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^product([0-9]+)-([0-9]+)\.htm$ product.php?this_lang=1&Class1=$1&Class2=$2 [L]
+RewriteRule ^product([0-9]+)-([0-9]+)-([0-9]+)\.htm$ product.php?this_lang=1&Class1=$1&Class2=$2&Class3=$3 [L]
+RewriteRule ^product-detail([0-9]+)\.htm$ product-detail.php?this_lang=1&PKey=$1 [L]
 #英文
-RewriteRule ^en/product([0-9]*)\.htm$ product.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/product-detail([0-9]*)\.htm$ product-detail.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^en/product\.htm$ product.php?this_lang=2 [L]
+RewriteRule ^en/product([0-9]+)\.htm$ product.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/product([0-9]+)-([0-9]+)\.htm$ product.php?this_lang=2&Class1=$1&Class2=$2 [L]
+RewriteRule ^en/product([0-9]+)-([0-9]+)-([0-9]+)\.htm$ product.php?this_lang=2&Class1=$1&Class2=$2&Class3=$3 [L]
+RewriteRule ^en/product-detail([0-9]+)\.htm$ product-detail.php?this_lang=2&PKey=$1 [L]
 
 #投資人專區
-RewriteRule ^investor([0-9]*)\.htm$ investor.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^investor-detail([0-9]*)\.htm$ investor-detail.php?this_lang=1&PKey=$1 [L]
+RewriteRule ^investor\.htm$ investor.php?this_lang=1 [L]
+RewriteRule ^investor([0-9]+)\.htm$ investor.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^investor-detail([0-9]+)\.htm$ investor-detail.php?this_lang=1&PKey=$1 [L]
 #英文
-RewriteRule ^en/investor([0-9]*)\.htm$ investor.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/investor-detail([0-9]*)\.htm$ investor-detail.php?this_lang=2&PKey=$1 [L]
+RewriteRule ^en/investor\.htm$ investor.php?this_lang=2 [L]
+RewriteRule ^en/investor([0-9]+)\.htm$ investor.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/investor-detail([0-9]+)\.htm$ investor-detail.php?this_lang=2&PKey=$1 [L]
 
 #相關問題
-RewriteRule ^faq([0-9]*)\.htm$ faq.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^faq\.htm$ faq.php?this_lang=1 [L]
+RewriteRule ^faq([0-9]+)\.htm$ faq.php?this_lang=1&Class1=$1 [L]
 # FAQ Demo（Day 7 onboarding）
-RewriteRule ^faqdemo([0-9]*)\.htm$ faqdemo.php?this_lang=1&Class1=$1 [L]
+RewriteRule ^faqdemo\.htm$ faqdemo.php?this_lang=1 [L]
+RewriteRule ^faqdemo([0-9]+)\.htm$ faqdemo.php?this_lang=1&Class1=$1 [L]
 #英文
-RewriteRule ^en/faq([0-9]*)\.htm$ faq.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/faqdemo([0-9]*)\.htm$ faqdemo.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/faq\.htm$ faq.php?this_lang=2 [L]
+RewriteRule ^en/faq([0-9]+)\.htm$ faq.php?this_lang=2&Class1=$1 [L]
+RewriteRule ^en/faqdemo\.htm$ faqdemo.php?this_lang=2 [L]
+RewriteRule ^en/faqdemo([0-9]+)\.htm$ faqdemo.php?this_lang=2&Class1=$1 [L]
 
 RewriteRule ^(.*_bak.*)$ / [R=301,NC]
 RewriteRule ^(.*-bak.*)$ / [R=301,NC]
