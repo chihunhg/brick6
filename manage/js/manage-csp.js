@@ -924,6 +924,35 @@
                 exportForm.action = prevAction || '';
                 break;
             }
+            case 'order-export': {
+                var orderExportForm = document.getElementById(el.getAttribute('data-form-id') || 'form1')
+                    || document.forms['form1'];
+                if (!orderExportForm) {
+                    break;
+                }
+                if (!validateListOpenDateRange(orderExportForm)) {
+                    break;
+                }
+                ensureListSearchSubmit(orderExportForm);
+                var orderFrameName = 'order-export-frame';
+                var orderFrame = document.getElementById(orderFrameName);
+                if (!orderFrame) {
+                    orderFrame = document.createElement('iframe');
+                    orderFrame.id = orderFrameName;
+                    orderFrame.name = orderFrameName;
+                    orderFrame.setAttribute('title', '訂單匯出');
+                    orderFrame.style.display = 'none';
+                    document.body.appendChild(orderFrame);
+                }
+                var orderPrevAction = orderExportForm.action;
+                var orderPrevTarget = orderExportForm.target;
+                orderExportForm.action = 'output.php';
+                orderExportForm.target = orderFrameName;
+                orderExportForm.submit();
+                orderExportForm.target = orderPrevTarget || '';
+                orderExportForm.action = orderPrevAction || '';
+                break;
+            }
             case 'search-class-change':
                 searchClassChange(el);
                 break;
