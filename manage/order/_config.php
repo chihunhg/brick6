@@ -11,5 +11,6 @@ return [
     'csrf'          => 'order_update',
     'list_csrf'     => 'order_list',
     'list_file'     => 'list.php',
+    'list_layout'   => 'full',
     'page_size'     => 30,
 ];

@@ -924,6 +924,35 @@
                 exportForm.action = prevAction || '';
                 break;
             }
+            case 'epaper-export': {
+                var epaperForm = document.getElementById(el.getAttribute('data-form-id') || 'form1')
+                    || document.forms['form1'];
+                if (!epaperForm) {
+                    break;
+                }
+                if (!validateListOpenDateRange(epaperForm)) {
+                    break;
+                }
+                ensureListSearchSubmit(epaperForm);
+                var epaperFrameName = 'epaper-export-frame';
+                var epaperFrame = document.getElementById(epaperFrameName);
+                if (!epaperFrame) {
+                    epaperFrame = document.createElement('iframe');
+                    epaperFrame.id = epaperFrameName;
+                    epaperFrame.name = epaperFrameName;
+                    epaperFrame.setAttribute('title', '電子報匯出');
+                    epaperFrame.style.display = 'none';
+                    document.body.appendChild(epaperFrame);
+                }
+                var epaperPrevAction = epaperForm.action;
+                var epaperPrevTarget = epaperForm.target;
+                epaperForm.action = 'output.php';
+                epaperForm.target = epaperFrameName;
+                epaperForm.submit();
+                epaperForm.target = epaperPrevTarget || '';
+                epaperForm.action = epaperPrevAction || '';
+                break;
+            }
             case 'order-export': {
                 var orderExportForm = document.getElementById(el.getAttribute('data-form-id') || 'form1')
                     || document.forms['form1'];
@@ -951,6 +980,20 @@
                 orderExportForm.submit();
                 orderExportForm.target = orderPrevTarget || '';
                 orderExportForm.action = orderPrevAction || '';
+                break;
+            }
+            case 'coupon-export': {
+                var couponPkey = el.getAttribute('data-pkey') || '';
+                if (couponPkey) {
+                    openExternalUrl('output.php?PKey=' + encodeURIComponent(couponPkey));
+                }
+                break;
+            }
+            case 'coupon-d-export': {
+                var couponDetailPkey = el.getAttribute('data-coupon-pkey') || '';
+                if (couponDetailPkey) {
+                    openExternalUrl('output.php?Coupon_PKey=' + encodeURIComponent(couponDetailPkey));
+                }
                 break;
             }
             case 'search-class-change':
@@ -1273,4 +1316,41 @@
             }
         });
     });
+
+    window.couponDExcelCheck = function (form) {
+        var fileInput = form.querySelector('#Photo1');
+        var errEl = document.getElementById('Photo1_txt');
+        if (!fileInput || !fileInput.files || !fileInput.files.length) {
+            if (errEl) {
+                errEl.textContent = '請選擇匯入檔案';
+            }
+            if (fileInput) {
+                fileInput.focus();
+            }
+            return false;
+        }
+        if (errEl) {
+            errEl.textContent = '';
+        }
+        return true;
+    };
+
+    window.couponDManualCheck = function (form) {
+        var emailEl = form.querySelector('#EMail');
+        var errEl = document.getElementById('EMail_txt');
+        var val = emailEl ? String(emailEl.value || '').trim() : '';
+        if (!val) {
+            if (errEl) {
+                errEl.textContent = '會員帳號空白';
+            }
+            if (emailEl) {
+                emailEl.focus();
+            }
+            return false;
+        }
+        if (errEl) {
+            errEl.textContent = '';
+        }
+        return true;
+    };
 })();

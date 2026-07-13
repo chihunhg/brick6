@@ -7,32 +7,42 @@ require_once '../_module.php';
 $detailConfig = require __DIR__ . '/_config.php';
 require_once __DIR__ . '/_form_data.php';
 
-$listCsrfKey = (string)($detailConfig['list_csrf'] ?? 'order_list');
-$table_name  = (string)($detailConfig['master'] ?? 'order_p');
+$listCsrfKey = (string)($detailConfig['list_csrf'] ?? 'epaper_list');
+$table_name  = (string)($detailConfig['master'] ?? 'epaper');
 $PKName      = 'PKey';
-$FKName      = (string)($detailConfig['fk'] ?? 'Order_PKey');
 
-unset($_SESSION['PKey_' . ($ModuleNo ?? '')]);
-
-$crud_cfg = crud_cfg($table_name, $FKName, [
-    'lang_table' => 'order_d',
-]);
+$crud_cfg = crud_cfg($table_name, 'PKey');
 crud_process_list_actions($crud_cfg);
 
 crud_csrf_guard_list($listCsrfKey);
 $csrf_token = crud_csrf_ensure($listCsrfKey);
 
-[$PDO_Cond, $Cond_Array, $searchMeta] = order_list_build_where($filter_array ?? []);
-$Keywords = (string)($searchMeta['Keywords'] ?? '請輸入收件人或訂單編號搜尋');
-$openDateSearch = is_array($searchMeta['dateSearch'] ?? null) ? $searchMeta['dateSearch'] : [];
-$intState = (int)($searchMeta['intState'] ?? 0);
+[$PDO_Cond, $Cond_Array] = crud_module_where();
+
+$kwPlaceholder = '請輸入 E-Mail 搜尋';
+$Keywords = epaper_list_apply_keyword_search(
+    $PDO_Cond,
+    $Cond_Array,
+    $filter_array ?? [],
+    $kwPlaceholder
+);
+if ($Keywords === '') {
+    $Keywords = $kwPlaceholder;
+}
+
+$openDateSearch = crud_list_apply_opendate_range(
+    $PDO_Cond,
+    $Cond_Array,
+    $filter_array ?? [],
+    'dtDate'
+);
 
 $Total = crud_fetch_scalar(
     "SELECT COUNT({$PKName}) AS Total FROM {$table_name} {$PDO_Cond}",
     $Cond_Array,
     'Total'
 );
-$defaultPageSize = (int)($detailConfig['page_size'] ?? 30);
+$defaultPageSize = (int)($detailConfig['page_size'] ?? 15);
 $tPageSize = crud_list_page_size($filter_array ?? [], $defaultPageSize);
 ['tPage' => $tPage, 'tPageTotal' => $tPageTotal, 'offset' => $offset] = crud_paginate(
     $Total,
@@ -47,7 +57,7 @@ $listRows = crud_fetch_all($sql, $Cond_Array);
 $i = 0;
 $list_show_expand_row = false;
 manage_list_expand_enabled($list_show_expand_row);
-$listGridClass = manage_list_grid_class('order-list');
+$listGridClass = manage_list_grid_class('epaper-list');
 
 $clearUrl = ($WorkFile ?? 'list.php')
     . '?manNo=' . urlencode((string)($manNo ?? ''))
@@ -67,7 +77,7 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                             <div class="filterWrap__content">
                                 <div class="filterWrap__grid">
                                     <div class="inputGroup">
-                                        <label class="inputLabel" for="OpenDate">訂單期間（起）</label>
+                                        <label class="inputLabel" for="OpenDate">訂閱期間（起）</label>
                                         <div class="inputWrapper">
                                             <input type="date" name="OpenDate" id="OpenDate"
                                                 value="<?php echo e((string)($openDateSearch['OpenDate'] ?? '')); ?>"
@@ -75,7 +85,7 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                                         </div>
                                     </div>
                                     <div class="inputGroup">
-                                        <label class="inputLabel" for="EndDate">訂單期間（迄）</label>
+                                        <label class="inputLabel" for="EndDate">訂閱期間（迄）</label>
                                         <div class="inputWrapper">
                                             <input type="date" name="EndDate" id="EndDate"
                                                 value="<?php echo e((string)($openDateSearch['EndDate'] ?? '')); ?>"
@@ -87,31 +97,16 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                                         </div>
                                     </div>
                                     <div class="inputGroup">
-                                        <label class="inputLabel" for="intState">處理進度</label>
-                                        <div class="inputWrapper">
-                                            <select name="intState" id="intState" class="formSelect">
-                                                <option value="">全部顯示</option>
-                                                <?php for ($st = 1; $st <= 4; $st++) { ?>
-                                                <option value="<?php echo $st; ?>"<?php
-                                                    if ($intState === $st) {
-                                                        echo ' selected="selected"';
-                                                    }
-                                                ?>><?php echo e(FlowState($st)); ?></option>
-                                                <?php } ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="inputGroup">
-                                        <label class="inputLabel" for="Keywords">智慧語意搜尋</label>
+                                        <label class="inputLabel" for="Keywords">關鍵字</label>
                                         <div class="inputWrapper">
                                             <input type="text" name="Keywords" id="Keywords"
                                                 value="<?php echo e($Keywords); ?>"
-                                                placeholder="<?php echo e('請輸入收件人或訂單編號搜尋'); ?>"
+                                                placeholder="<?php echo e($kwPlaceholder); ?>"
                                                 class="formInput"
                                                 data-manage-action="list-search"
                                                 data-form-id="form1"
                                                 data-work-file="<?php echo e($WorkFile ?? ''); ?>"
-                                                data-default-keywords="<?php echo e('請輸入收件人或訂單編號搜尋'); ?>">
+                                                data-default-keywords="<?php echo e($kwPlaceholder); ?>">
                                         </div>
                                     </div>
                                 </div>
@@ -132,8 +127,8 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                             require_once '../_select.php';
                             ?>
                             <button type="button" class="btnStyle btnStyle--outline btnStyle--sm"
-                                data-manage-action="order-export" data-form-id="form1">
-                                <i class="bi bi-file-earmark-excel"></i> 匯出訂單
+                                data-manage-action="epaper-export" data-form-id="form1">
+                                <i class="bi bi-file-earmark-excel"></i> 匯出
                             </button>
 
                             <?php require_once '_list.php'; ?>
@@ -143,7 +138,6 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                             echo hiddenNumeric('manNo', $manNo ?? '') . PHP_EOL;
                             echo hiddenNumeric('subNo', $subNo ?? '') . PHP_EOL;
                             echo hiddenNumeric('Total', $i) . PHP_EOL;
-                            echo hiddenNumeric('PKey', $PKey ?? '') . PHP_EOL;
                             echo hiddenNumeric('Page', $tPage) . PHP_EOL;
                             echo hiddenNumeric('PageSize', $tPageSize) . PHP_EOL;
                             ?>
@@ -159,8 +153,8 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                             <i class="bi bi-info-circle notes__icon"></i> 系統備註
                         </div>
                         <ul class="notes__list">
-                            <li>列表依訂單編號（由大至小）排序。</li>
-                            <li>匯出訂單依目前搜尋條件產生 Excel。</li>
+                            <li>列表依建立日期（由新至舊）排序。</li>
+                            <li>匯出 Excel 依目前搜尋條件產生名單。</li>
                         </ul>
                     </div>
                     <div class="notes__spacer"></div>

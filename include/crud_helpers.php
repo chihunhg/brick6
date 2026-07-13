@@ -2828,6 +2828,25 @@ if (!function_exists('manage_list_grid_class')) {
     }
 }
 
+if (!function_exists('manage_list_layout_container_class')) {
+    /**
+     * 列表頁 container class（_config list_layout=full 為滿版）
+     *
+     * @param array<string, mixed> $config
+     */
+    function manage_list_layout_container_class(array $config = []): string {
+        $layout = strtolower(trim((string)($config['list_layout'] ?? '')));
+        if ($layout === 'full' || !empty($config['list_full'])) {
+            return 'container container--full';
+        }
+        $custom = trim((string)($config['list_container'] ?? ''));
+        if ($custom !== '') {
+            return $custom;
+        }
+        return 'container';
+    }
+}
+
 if (!function_exists('crud_lang_row_is_show_on')) {
     /** 語系子表 isShow 是否視為啟用（Y/1/Yes 等） */
     function crud_lang_row_is_show_on($value): bool {
