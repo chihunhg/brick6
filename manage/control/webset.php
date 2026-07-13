@@ -283,11 +283,11 @@ function fieldCheck0(theForm) {
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">經緯度座標</label>
                                     <div class="col--10">
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
+                                        <div class="formGrid">
+                                            <div class="col--6">
                                                 <input type="text" name="GeoLat" id="GeoLat" class="formInput" value="<?php echo e($GeoLat); ?>" maxlength="20" placeholder="緯度 latitude（例：25.033964）">
                                             </div>
-                                            <div class="col-md-6">
+                                            <div class="col--6">
                                                 <input type="text" name="GeoLng" id="GeoLng" class="formInput" value="<?php echo e($GeoLng); ?>" maxlength="20" placeholder="經度 longitude（例：121.564468）">
                                             </div>
                                         </div>
@@ -317,7 +317,7 @@ function fieldCheck0(theForm) {
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">營業時間</label>
                                     <div class="col--10">
-                                        <div class="d-flex flex-wrap gap-3 mb-2">
+                                        <div class="formGrid">
                                             <?php foreach ($openingDayOptions as $dayVal => $dayLabel) { ?>
                                             <label class="form-check-label">
                                                 <input type="checkbox" class="form-check-input" name="openingDays[]" value="<?php echo e($dayVal); ?>"<?php echo in_array($dayVal, $selectedOpeningDays, true) ? ' checked' : ''; ?>>
@@ -325,11 +325,11 @@ function fieldCheck0(theForm) {
                                             </label>
                                             <?php } ?>
                                         </div>
-                                        <div class="row g-2">
-                                            <div class="col-md-4">
+                                        <div class="formGrid">
+                                            <div class="col--6">
                                                 <input type="text" name="Opens" id="Opens" class="formInput" value="<?php echo e($Opens); ?>" maxlength="5" placeholder="開門 09:00">
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col--6">
                                                 <input type="text" name="Closes" id="Closes" class="formInput" value="<?php echo e($Closes); ?>" maxlength="5" placeholder="關門 18:00">
                                             </div>
                                         </div>

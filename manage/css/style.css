@@ -461,7 +461,7 @@ body.seo-tdk-page-busy {
 .inputLabel__required{color:var(--cl-danger-600);}
 
 .inputWrapper{position:relative;}
-.formGrid{display:grid;grid-template-columns: repeat(12,1fr); gap: 1rem;}
+.formGrid{display:grid;grid-template-columns: repeat(12,1fr);gap: 1rem;margin-bottom: .5rem;}
 .formInput{width:100%;padding:0.625rem 1rem;background-color:var(--cl-gray-50);border:1px solid var(--cl-gray-200);border-radius: var(--radius-xs);outline:none;transition:all 0.2s;}
 .formInput:focus{border-color:var(--cl-main-500);background-color:var(--cl-white);box-shadow:0 0 0 2px var(--cl-main-100);}
 .formSelect{width:100%;padding: 0.625rem 2.5rem 0.625rem 1rem;background-color:var(--cl-gray-50);border:1px solid var(--cl-gray-200);border-radius: var(--radius-xs);outline:none;appearance:none;cursor:pointer;background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23666'><path d='M4 6l4 4 4-4'/></svg>");background-repeat: no-repeat;background-position: right 1rem center;   /* 距離右邊 1rem */background-size: 1rem;}
@@ -852,7 +852,7 @@ a.breadcrumb__item.breadcrumb__link:hover{color:var(--cl-main);}
 .tabsGp__link::after{content:'';position:absolute;z-index: -1;left:0;top:0;width:100%;height:100%;background:var(--bgCl, var(--cl-gray-200));opacity:.1}
 .tabsGp__link.--active{background-color:var(--bgCl, var(--cl-gray-500));color:var(--cl-white);}
 .tabsGp__body{display:flex;flex-direction:column;gap:1rem;}
-.tabContent{display:none;flex-direction:column;gap:1rem;width:100%;border:1px solid var(--cl-gray-200);border-top:solid .25rem var(--bgCl, var(--cl-gray-200));border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:1rem;background-color:var(--cl-white);}
+.tabContent{display:none;flex-direction:column;gap:1rem;width:100%;border:1px solid var(--cl-gray-200);border-top:solid .25rem var(--bgCl, var(--cl-gray-200));border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding: 2rem;background-color:var(--cl-white);}
 .tabContent.--active{display:flex;}
 .tabContent > .formGrid{width:100%;}
 

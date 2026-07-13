@@ -178,10 +178,10 @@ $(function () {
                                     <label class="col--2 inputLabel editView__formLabel">
                                         顯示語系 <span class="inputLabel__required">*</span>
                                     </label>
-                                    <div class="col--10 inputGroup">
-                                        <input name="button" type="button" class="btn btn-outline-secondary" value="全選"
+                                    <div class="col--10 inputGroup row">
+                                        <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="all">
-                                        <input name="button2" type="button" class="btn btn-outline-secondary" value="取消全選"
+                                        <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="none">
                                         <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
                                             <label for="Show<?php echo $i; ?>">
@@ -234,7 +234,7 @@ $(function () {
                                     <div class="col--10 inputGroup">
                                         <input name="strLink" type="text" id="strLink" class="formInput"
                                             value="<?php echo e($strLink); ?>" maxlength="255">
-                                        <div class="inputGroup inputGroup--inline" style="margin-top:0.5rem;">
+                                        <div class="inputGroup inputGroup--inline row gap--2" style="margin-top:0.5rem;">
                                             <label class="flex flex--itCenter gap--2 editView__radioLabel">
                                                 <input name="Target" type="radio" id="Target" value="_blank"<?php echo ($Target === '' || $Target === '_blank') ? ' checked' : ''; ?>>
                                                 <span class="editView__radioText">另開視窗 (_blank)</span>
@@ -248,7 +248,7 @@ $(function () {
                                 </div>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">呈現方式</label>
-                                    <div class="col--10 inputGroup">
+                                    <div class="col--10 inputGroup row gap--2">
                                         <label class="flex flex--itCenter gap--2 editView__radioLabel">
                                             <input name="isShow" type="radio" id="adPresent1" value="1"<?php echo $presentMode === 1 ? ' checked' : ''; ?>>
                                             <span class="editView__radioText">圖檔</span>

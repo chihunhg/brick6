@@ -42,7 +42,7 @@ RewriteRule ^en$ index.php?this_lang=2 [L]
 #   product{A}-{B}-{C}.htm  → Class1=A、Class2=B、Class3=C
 # 分類編號用 [0-9]+，避免 module0.htm 或空 Class 參數。
 
-#各國移民
+#專欄主題
 RewriteRule ^paper\.htm$ paper.php?this_lang=1 [L]
 RewriteRule ^paper([0-9]+)\.htm$ paper.php?this_lang=1&Class1=$1 [L]
 RewriteRule ^paper-detail([0-9]+)\.htm$ paper-detail.php?this_lang=1&PKey=$1 [L]
@@ -50,15 +50,6 @@ RewriteRule ^paper-detail([0-9]+)\.htm$ paper-detail.php?this_lang=1&PKey=$1 [L]
 RewriteRule ^en/paper\.htm$ paper.php?this_lang=2 [L]
 RewriteRule ^en/paper([0-9]+)\.htm$ paper.php?this_lang=2&Class1=$1 [L]
 RewriteRule ^en/paper-detail([0-9]+)\.htm$ paper-detail.php?this_lang=2&PKey=$1 [L]
-
-#活動資訊
-RewriteRule ^events\.htm$ events.php?this_lang=1 [L]
-RewriteRule ^events([0-9]+)\.htm$ events.php?this_lang=1&Class1=$1 [L]
-RewriteRule ^events-detail([0-9]+)\.htm$ events-detail.php?this_lang=1&PKey=$1 [L]
-#英文
-RewriteRule ^en/events\.htm$ events.php?this_lang=2 [L]
-RewriteRule ^en/events([0-9]+)\.htm$ events.php?this_lang=2&Class1=$1 [L]
-RewriteRule ^en/events-detail([0-9]+)\.htm$ events-detail.php?this_lang=2&PKey=$1 [L]
 
 #最新消息
 RewriteRule ^news\.htm$ news.php?this_lang=1 [L]
@@ -70,8 +61,18 @@ RewriteRule ^en/news([0-9]+)\.htm$ news.php?this_lang=2&Class1=$1 [L]
 RewriteRule ^en/news-detail([0-9]+)\.htm$ news-detail.php?this_lang=2&PKey=$1 [L]
 
 #關於我們
+RewriteRule ^company\.htm$ company.php?this_lang=1 [L]
 RewriteRule ^company([0-9]+)\.htm$ company.php?this_lang=1&PKey=$1 [L]
-RewriteRule ^en/company-detail([0-9]+)\.htm$ company.php?this_lang=2&PKey=$1 [L]
+#英文
+RewriteRule ^en/company\.htm$ company.php?this_lang=2 [L]
+RewriteRule ^en/company([0-9]+)\.htm$ company.php?this_lang=2&PKey=$1 [L]
+
+#關於我們
+RewriteRule ^questionnaire\.htm$ questionnaire.php?this_lang=1 [L]
+RewriteRule ^questionnaire([0-9]+)\.htm$ questionnaire.php?this_lang=1&PKey=$1 [L]
+#英文
+RewriteRule ^en/questionnaire\.htm$ questionnaire.php?this_lang=2 [L]
+RewriteRule ^en/questionnaire([0-9]+)\.htm$ questionnaire.php?this_lang=2&PKey=$1 [L]
 
 #檔案下載
 RewriteRule ^download\.htm$ download.php?this_lang=1 [L]
