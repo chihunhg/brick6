@@ -2,17 +2,14 @@ CKEDITOR.editorConfig = function( config ) {
 	config.toolbarGroups = [
 		{ name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
 		{ name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
-		{ name: 'editing', groups: [ 'find', 'selection', 'spellchecker', 'editing' ] },
+		{ name: 'editing', groups: [ 'selection', 'editing' ] },
 		{ name: 'links', groups: [ 'links' ] },
 		{ name: 'insert', groups: [ 'insert' ] },
 		{ name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
 		'/',
-		{ name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'bidi', 'paragraph' ] },
+		{ name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'paragraph' ] },
 		{ name: 'styles', groups: [ 'styles' ] },
-		{ name: 'colors', groups: [ 'colors' ] },
-		{ name: 'tools', groups: [ 'tools' ] },
-		{ name: 'others', groups: [ 'others' ] },
-		{ name: 'about', groups: [ 'about' ] }
+		{ name: 'colors', groups: [ 'colors' ] }
 	];
 
 	config.extraPlugins = 'youtube';
@@ -25,10 +22,11 @@ CKEDITOR.editorConfig = function( config ) {
 	config.youtube_controls = true;
 	config.youtube_privacy = false;
 	config.removeButtons = 'Save,NewPage,Preview,Print,Templates,Find,SelectAll,Scayt,Form,Radio,TextField,Textarea,Select,Button,ImageButton,HiddenField,CreateDiv,Language,CopyFormatting,Flash,Smiley,PageBreak,Iframe,ShowBlocks,About,Replace,Checkbox,BidiLtr,BidiRtl';
-	config.removePlugins = 'exportpdf';
-	config.pasteFromWordRemoveFontStyles = false; 
+	config.removePlugins = 'exportpdf,scayt,wsc,elementspath,forms,flash,iframe,smiley';
+	config.pasteFromWordRemoveFontStyles = false;
 	config.pasteFromWordRemoveStyles = false;
 	config.versionCheck = false;
+	config.resize_enabled = true;
 
 	config.format_tags = 'p;h1;h2;h3;pre';
 	config.allowedContent = true;

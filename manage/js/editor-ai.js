@@ -185,10 +185,6 @@
     }
 
     function setEditorHtml(editorId, html) {
-        if (window.ManageEditor && typeof window.ManageEditor.setHtml === 'function') {
-            window.ManageEditor.setHtml(editorId, html);
-            return;
-        }
         if (window.CKEDITOR && CKEDITOR.instances[editorId]) {
             CKEDITOR.instances[editorId].setData(html);
             return;

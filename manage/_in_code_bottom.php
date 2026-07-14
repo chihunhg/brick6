@@ -25,18 +25,11 @@ $__js_ver = static function (string $file): string {
 <?php echo script_src_tag('../js/jquery.maxlength.js?ver=' . $__js_ver('jquery.maxlength.js')); ?>
 <!-- 動態載入下拉選單 -->
 <?php echo script_src_tag('../js/ajax.js?ver=' . $__js_ver('ajax.js')); ?>
-<!-- 載入html 編輯器（ManageEditor 相容層；FAQ PoC 可切 Summernote） -->
+<!-- 載入html 編輯器 -->
 <?php
-require_once __DIR__ . '/_editor_bootstrap.php';
-if (manage_editor_engine() === 'ckeditor') {
-    $__ck_path = __DIR__ . '/ckeditor/ckeditor.js';
-    $__ck_ver  = is_file($__ck_path) ? (string)filemtime($__ck_path) : '1';
-    if (empty($GLOBALS['manage_ckeditor_js_loaded'])) {
-        echo script_src_tag('../ckeditor/ckeditor.js?ver=' . $__ck_ver);
-        $GLOBALS['manage_ckeditor_js_loaded'] = true;
-    }
-}
-manage_editor_render_assets();
+$__ck_path = __DIR__ . '/ckeditor/ckeditor.js';
+$__ck_ver  = is_file($__ck_path) ? (string)filemtime($__ck_path) : '1';
+echo script_src_tag('../ckeditor/ckeditor.js?ver=' . $__ck_ver);
 ?>
 <!-- 載入檔案Size檢查（jquery-browser；filesize 見上方 script_src_tag） -->
 <?php echo script_src_tag('../js/jquery-browser.js?ver=' . $__js_ver('jquery-browser.js')); ?>

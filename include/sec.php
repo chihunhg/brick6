@@ -734,18 +734,14 @@ if (!function_exists('csp_policy_editor_string')) {
 }
 
 if (!function_exists('send_manage_editor_security_headers')) {
-    /** 後台 CKEditor／Summernote 編輯頁：放寬 script/style/frame 以相容編輯器與 elFinder */
+    /** 後台 CKEditor 編輯頁：放寬 script/style/frame 以相容 CKEditor 4 / elFinder */
     function send_manage_editor_security_headers(array $extra = []): void {
         $scriptHosts = [
             'https://www.google.com',
             'https://www.gstatic.com',
-            'https://cdnjs.cloudflare.com',
-            'https://cdn.jsdelivr.net',
         ];
         $styleHosts = [
             'https://fonts.googleapis.com',
-            'https://cdn.jsdelivr.net',
-            'https://cdnjs.cloudflare.com',
             'https://use.fontawesome.com',
         ];
         $frameHosts = [
