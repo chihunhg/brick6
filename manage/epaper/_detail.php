@@ -8,6 +8,34 @@ $layout_page_title = (string)($layout_page_title ?? ($isAdd ? '新增訂閱' : '
 ?>
 <?php require_once '../_layout_head.php'; ?>
 <?php echo script_open(); ?>
+$(function() {
+    $('#EMail').on('blur change', function() {
+        checkEpaperEmail();
+    });
+});
+
+function checkEpaperEmail() {
+    var email = $.trim($('#EMail').val());
+    var $txt = $('#EMail_txt');
+    if (email === '') {
+        $txt.text('');
+        return;
+    }
+    $.ajax({
+        type: 'POST',
+        url: '_chkid.php',
+        data: {
+            EMail: email,
+            excludePKey: <?php echo (int)($Update_PKey ?? 0); ?>
+        },
+        dataType: 'text'
+    }).done(function(res) {
+        $txt.text($.trim(typeof res === 'string' ? res : ''));
+    }).fail(function() {
+        $txt.text('');
+    });
+}
+
 function fieldCheck0(theForm) {
     if (typeof loading === 'function') {
         loading(1);
@@ -15,12 +43,16 @@ function fieldCheck0(theForm) {
     var errors = [];
     var fields = [];
     var email = $.trim($('#EMail').val());
+    var emailMsg = $.trim($('#EMail_txt').text());
 
     if (email === '') {
         errors.push('E-Mail 空白');
         fields.push('EMail');
     } else if (typeof isEmail === 'function' && !isEmail(email)) {
         errors.push('E-Mail 格式錯誤');
+        fields.push('EMail');
+    } else if (emailMsg !== '') {
+        errors.push(emailMsg.indexOf('已存在') >= 0 ? 'E-Mail 已存在，不得重複新增' : emailMsg);
         fields.push('EMail');
     }
 

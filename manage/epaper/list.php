@@ -155,6 +155,7 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                         </div>
                         <ul class="notes__list">
                             <li>列表依建立日期（由新至舊）排序。</li>
+                            <li>同一模組內 E-Mail 不可重複；已存在時無法新增。</li>
                             <li>匯出 Excel 依目前搜尋條件產生名單。</li>
                         </ul>
                     </div>

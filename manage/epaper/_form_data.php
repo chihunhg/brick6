@@ -84,9 +84,33 @@ if (!function_exists('epaper_detail_load')) {
     }
 }
 
+if (!function_exists('epaper_email_exists')) {
+    /** 同模組內 Email 是否已存在（excludePKey 用於編輯時排除自己） */
+    function epaper_email_exists(string $email, int $modulePKey, int $excludePKey = 0): bool
+    {
+        $email = trim($email);
+        if ($email === '' || $modulePKey <= 0) {
+            return false;
+        }
+
+        $sql = 'SELECT PKey FROM epaper WHERE Module_PKey = :mpk AND EMail = :em';
+        $params = [
+            'mpk' => $modulePKey,
+            'em'  => $email,
+        ];
+        if ($excludePKey > 0) {
+            $sql .= ' AND PKey <> :pk';
+            $params['pk'] = $excludePKey;
+        }
+        $sql .= ' LIMIT 1';
+
+        return crud_fetch_one($sql, $params) !== null;
+    }
+}
+
 if (!function_exists('epaper_validate_form')) {
     /** @param array<string, mixed> $filter */
-    function epaper_validate_form(array $filter, int $modulePKey): string
+    function epaper_validate_form(array $filter, int $modulePKey, int $formPKey = 0): string
     {
         $msg = '';
         $email = trim((string)($filter['EMail'] ?? ''));
@@ -95,6 +119,8 @@ if (!function_exists('epaper_validate_form')) {
             $msg .= "【E-Mail】為空白\n";
         } elseif (!function_exists('CheckMail') || !CheckMail($email)) {
             $msg .= "【E-Mail】格式錯誤\n";
+        } elseif (epaper_email_exists($email, $modulePKey, $formPKey)) {
+            $msg .= "【E-Mail】已存在，不得重複新增\n";
         }
 
         if ($modulePKey <= 0) {

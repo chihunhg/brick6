@@ -30,7 +30,7 @@ if ($modulePKey <= 0) {
 
 $returnUrl = crud_addin_return_url($formPKey);
 
-$MSG = epaper_validate_form($filter_array, $modulePKey);
+$MSG = epaper_validate_form($filter_array, $modulePKey, $formPKey);
 if ($MSG !== '') {
     crud_form_error_redirect($MSG, $returnUrl);
 }
