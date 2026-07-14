@@ -93,7 +93,6 @@ switch($Web_Secure){
 		$Password_change = false;//密碼強迫變更
 		$Password_day = 180;//密碼強迫變更天數
 		$Acount_Lock = false;//帳戶鎖定機制
-		$default_pw = 'brick4080';//預設密碼
 		break;
 	case 2://付費高階方案
 		$log_day = 30;//Log 記錄保留天數
@@ -103,7 +102,6 @@ switch($Web_Secure){
 		$Password_change = false;//密碼強迫變更
 		$Password_day = 180;//密碼強迫變更天數
 		$Acount_Lock = true;//帳戶鎖定機制
-		$default_pw = 'Brick4080';//預設密碼
 		break;
 	case 3://公家普級方案
 		$log_day = 90;//Log 記錄保留天數
@@ -113,7 +111,6 @@ switch($Web_Secure){
 		$Password_change = true;//密碼強迫變更
 		$Password_day = 180;//密碼強迫變更天數
 		$Acount_Lock = true;//帳戶鎖定機制
-		$default_pw = 'Aa@4080';//預設密碼
 		break;
 	default:
 		$log_day = 30;//Log 記錄保留天數
@@ -123,9 +120,9 @@ switch($Web_Secure){
 		$Password_change = false;//密碼強迫變更
 		$Password_day = 180;//密碼強迫變更天數
 		$Acount_Lock = true;//帳戶鎖定機制
-		$default_pw = 'Brick4080';//預設密碼
 		break;
 }
+$default_pw = manage_admin_initial_password_from_env() ?? '';
 $sql_d = 'delete from managelog Where datediff(\''.date('Y-m-d').'\', dtDate) > '.$log_day;
 execute_sql($sql_d);
 

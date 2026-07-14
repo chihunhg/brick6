@@ -1322,6 +1322,68 @@ function generate_initial_secret(array $POLICY, int $minLen=12, int $maxLen=20):
     return implode('', $pwChars);
 }
 
+/** 前台維護閘道密碼（.env MAINTENANCE_GATE_PASSWORD） */
+function maintenance_gate_password_from_env(): ?string
+{
+    if (!function_exists('host_env_raw')) {
+        return null;
+    }
+    $raw = host_env_raw('MAINTENANCE_GATE_PASSWORD');
+    return ($raw !== null && $raw !== '') ? $raw : null;
+}
+
+/** 後台 Admin 首次建立密碼（.env ADMIN_INITIAL_PASSWORD） */
+function manage_admin_initial_password_from_env(): ?string
+{
+    if (!function_exists('host_env_raw')) {
+        return null;
+    }
+    $raw = host_env_raw('ADMIN_INITIAL_PASSWORD');
+    return ($raw !== null && $raw !== '') ? $raw : null;
+}
+
+/**
+ * 若 webcontrol 尚無 Admin，依 .env ADMIN_INITIAL_PASSWORD 建立
+ * （未設定 env 時略過，避免寫死可預測密碼）
+ */
+function manage_bootstrap_admin_account(): bool
+{
+    $sql = 'SELECT PKey FROM webcontrol WHERE strID = :strID';
+    $rs  = new recordset($sql, ['strID' => 'Admin']);
+    if ($err = $rs->getErrorMessage()) {
+        error_log('[brick6] manage_bootstrap_admin_account: ' . $err);
+        $rs->close();
+        return false;
+    }
+    if (!$rs->eof) {
+        $rs->close();
+        return false;
+    }
+    $rs->close();
+
+    $initialSecret = manage_admin_initial_password_from_env();
+    if ($initialSecret === null) {
+        error_log('[brick6] Admin 帳號不存在且 ADMIN_INITIAL_PASSWORD 未於 .env 設定，略過自動建立。');
+        return false;
+    }
+
+    $now = date('Y-m-d H:i:s');
+    $pdo = new dbPDO();
+    $pdo->insert('webcontrol', [
+        'strName'    => '網站管理者',
+        'intType'    => '1',
+        'strID'      => 'Admin',
+        'strPW'      => hash_password($initialSecret),
+        'FunctionID' => '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15',
+        'UserID'     => 'Admin',
+        'dtUDate'    => $now,
+        'dtDate'     => $now,
+    ]);
+    $pdo->close();
+
+    return true;
+}
+
 /**
  * 以「pepper 版 verify_password()」驗證；若 DB 是舊格式（無 pepper bcrypt 或 md5），
  * 驗證通過後自動遷移成新的 hash_password()。

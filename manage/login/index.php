@@ -32,47 +32,8 @@ if (isset($_SESSION['Manage'], $_SESSION['Login_ID'])
     exit;
 }
 
-// 依等級產生符合規則的初始密碼（僅建立帳號當下用一次）
-//$initial_secret = generate_initial_secret($POLICY, 12, 20);
-switch($Web_Secure){
-	case 1://免費專業方案
-		$initial_secret = 'brick4080';//預設值
-		break;
-	case 2://付費高階方案
-		$initial_secret = 'Brick4080';//預設值
-		break;
-	case 3://公家普級方案
-		$initial_secret = 'Aa@4080';//預設值
-		break;
-	default:
-		$initial_secret = 'Brick4080';//預設值
-		break;
-}
-// ---- 若無 Admin，建立預設管理者（不輸出敏感資訊）----
-$sql = 'SELECT PKey FROM webcontrol WHERE strID = :strID';
-$rs  = new recordset($sql, ['strID' => 'Admin']);
-if ($err = $rs->getErrorMessage()) {
-    $result = sql_error($sql.PHP_EOL.array_to_string(['Admin']), $err, $WorkFile, 'system');
-    echo '<pre>'; print_r($result); echo '</pre>'; exit;
-}
-if ($rs->eof) {
-    $sql_query  = new dbPDO();
-    $table_name = 'webcontrol';
-    $now        = date('Y-m-d H:i:s');
-    $data_array = [
-        'strName'    => '網站管理者',
-        'intType'    => '1',
-        'strID'      => 'Admin',
-        'strPW'      => hash_password($initial_secret),
-        'FunctionID' => '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15',
-        'UserID'     => 'Admin',
-        'dtUDate'    => $now,
-        'dtDate'     => $now,
-    ];
-    $sql_query->insert($table_name, $data_array);
-    $sql_query->close();
-}
-$rs->close();
+// ---- 若無 Admin，依 .env ADMIN_INITIAL_PASSWORD 建立（不輸出敏感資訊）----
+manage_bootstrap_admin_account();
 // reCAPTCHA（從 .env 讀）
 $site_key = $_ENV['RECAPTCHA_SITE_KEY'] ?? '';
 // ---- 30 分鐘解鎖 ----

@@ -1,37 +1,39 @@
 <?php
+declare(strict_types=1);
 
 /**
  * 前台預覽密碼閘道（default.php）
  *
- * 輸入正確密碼後寫入 Session，導向 redirect 參數指定頁面。
+ * 密碼：.env MAINTENANCE_GATE_PASSWORD
+ * 通過後寫入 Session，redirect 僅允許站內相對路徑（safe_redirect）。
  */
-require("_inc.php");
+require('_inc.php');
 
-if ( $_REQUEST["Send"] == "OK" ){
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && (string)($_POST['Send'] ?? '') === 'OK') {
+    $expectedPass  = maintenance_gate_password_from_env();
+    $submittedPass = (string)($_POST['pass'] ?? '');
 
-	if ( $_POST["pass"] == "89904080" ){
+    if ($expectedPass === null) {
+        error_log('[brick6] MAINTENANCE_GATE_PASSWORD 未於 .env 設定，維護閘道無法驗證。');
+        $_SESSION['login_error'] = '系統設定未完成，請聯絡管理員';
+        $selfPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        safe_redirect(is_string($selfPath) && $selfPath !== '' ? $selfPath : '/default.php');
+    }
 
-		$_SESSION["isPass"] = 'Y';
-		//echo '$_SESSION["isPass"]='.$_SESSION["isPass"];exit;
+    if (hash_equals($expectedPass, $submittedPass)) {
+        $_SESSION['isPass'] = 'Y';
 
-		//setcookie("isPass",'Y',time()+86400);
-		if ( isset($_REQUEST["redirect"]) ){
-			location_href($_REQUEST["redirect"]);
-		}
+        $redirect = trim((string)($_POST['redirect'] ?? ''));
+        if ($redirect !== '') {
+            safe_redirect($redirect);
+        }
 
-		//echo '$_SESSION["isPass"]='.$_SESSION["isPass"].'<br>';
-		//exit;
+        safe_redirect('index.htm');
+    }
 
-		location_href("index.htm");
-
-	} else {
-		// CSP 安全：使用 data 屬性傳遞錯誤訊息
-		$error_msg = '驗證通行碼不正確';
-		// 將錯誤訊息存到 session，在頁面載入時顯示
-		$_SESSION['login_error'] = $error_msg;
-		location_href($_SERVER['REQUEST_URI']);
-		exit();
-	}
+    $_SESSION['login_error'] = '驗證通行碼不正確';
+    $selfPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    safe_redirect(is_string($selfPath) && $selfPath !== '' ? $selfPath : '/default.php');
 }
 ?>
 
@@ -47,7 +49,7 @@ if ( $_REQUEST["Send"] == "OK" ){
 <section class="setting-box">
     <figure><img src="<?php echo $web_url; ?>images/default/index-default.png" alt="網站維護中"></figure>
 	<form name="form1" id="form1" method="post" action="" class="login-root">
-        <input name="pass" id="pass" type="text" placeholder="請輸入驗證通行碼">
+        <input name="pass" id="pass" type="password" placeholder="請輸入驗證通行碼" autocomplete="current-password">
         <button class="btn-style ml-auto mr-auto mt-30" name="Submit" id="Submit" type="button" value="確認送出">確認送出</button>
 	    <input type="hidden" name="Send" id="Send">
         <input type="hidden" name="csrf" value="<?php if(isset($CSRF)){echo $CSRF;}?>" />
