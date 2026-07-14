@@ -243,6 +243,7 @@ if (!function_exists('crud_trusted_module_tables')) {
             'view_dbclass2',
             'view_faq',
             'view_faqdemo',
+            'view_history',
             'view_filedown',
             'view_investor',
             'view_module_lang',

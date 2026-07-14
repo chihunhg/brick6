@@ -289,7 +289,14 @@ body.seo-tdk-page-busy {
 /* Main Content Area 主內容區域 */
 .mainContent{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;background: rgba(243,244,246,1);background: var(--cl-gray-50);}
 .container{width: 90%;margin:0 auto;padding:1.5rem;display:flex;flex-direction:column;/* gap:2rem;*/}
-.container--full{width:100%;max-width:none;}
+.container--full,
+.mainContent > .container.container--full{
+  width:100%;
+  max-width:none;
+  margin-left:0;
+  margin-right:0;
+  box-sizing:border-box;
+}
 /* question 問卷列表：滿版 */
 .tableHeader.tableGrid--question:not(.tableGrid--has-lang),
 .tableRow__data.tableGrid--question:not(.tableGrid--has-lang){grid-template-columns:50px 50px minmax(70px,100px) 1fr 100px 140px 120px 100px 90px;}
@@ -684,6 +691,34 @@ input[type="number"].formInput::-webkit-inner-spin-button{
   grid-template-columns:50px minmax(120px,1.2fr) 90px minmax(180px,1.6fr) minmax(100px,0.9fr) minmax(100px,0.9fr) minmax(140px,1fr);
   width:100%;
 }
+.tableHeader.tableGrid--history-list:not(.tableGrid--has-lang):not(.tableGrid--has-home),
+.tableRow__data.tableGrid--history-list:not(.tableGrid--has-lang):not(.tableGrid--has-home),
+.tableHeader.tableGrid--history-list-compact:not(.tableGrid--has-lang):not(.tableGrid--has-home),
+.tableRow__data.tableGrid--history-list-compact:not(.tableGrid--has-lang):not(.tableGrid--has-home){
+  grid-template-columns:50px 100px minmax(160px,1.6fr) 90px 140px 120px;
+  width:100%;
+}
+.tableHeader.tableGrid--history-list.tableGrid--has-lang:not(.tableGrid--has-home),
+.tableRow__data.tableGrid--history-list.tableGrid--has-lang:not(.tableGrid--has-home),
+.tableHeader.tableGrid--history-list-compact.tableGrid--has-lang:not(.tableGrid--has-home),
+.tableRow__data.tableGrid--history-list-compact.tableGrid--has-lang:not(.tableGrid--has-home){
+  grid-template-columns:50px 100px minmax(160px,1.6fr) minmax(68px,96px) 90px 140px 120px;
+  width:100%;
+}
+.tableHeader.tableGrid--history-list.tableGrid--has-lang.tableGrid--has-home,
+.tableRow__data.tableGrid--history-list.tableGrid--has-lang.tableGrid--has-home,
+.tableHeader.tableGrid--history-list-compact.tableGrid--has-lang.tableGrid--has-home,
+.tableRow__data.tableGrid--history-list-compact.tableGrid--has-lang.tableGrid--has-home{
+  grid-template-columns:50px 100px minmax(160px,1.6fr) minmax(68px,96px) 80px 90px 140px 120px;
+  width:100%;
+}
+.tableHeader.tableGrid--history-list:not(.tableGrid--has-lang).tableGrid--has-home,
+.tableRow__data.tableGrid--history-list:not(.tableGrid--has-lang).tableGrid--has-home,
+.tableHeader.tableGrid--history-list-compact:not(.tableGrid--has-lang).tableGrid--has-home,
+.tableRow__data.tableGrid--history-list-compact:not(.tableGrid--has-lang).tableGrid--has-home{
+  grid-template-columns:50px 100px minmax(160px,1.6fr) 80px 90px 140px 120px;
+  width:100%;
+}
 .tableHeader.tableGrid--epaper-list,
 .tableRow__data.tableGrid--epaper-list,
 .tableHeader.tableGrid--epaper-list-compact,
@@ -749,6 +784,7 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 
 /* Sort Input 排序輸入框 */
 .tableRow__sortInput{width:3rem;text-align:center;padding:0.375rem;font-weight:700;color:var(--cl-gray-700);background-color:var(--cl-white);border:1px solid var(--cl-gray-200);border-radius: var(--radius-xs);box-shadow: var(--shadow-sm);outline:none;}
+.tableRow__sortInput--year{width:4.75rem;min-width:4.75rem;box-sizing:border-box;}
 .tableRow__sortInput:focus{border-color:var(--cl-main-500);box-shadow:0 0 0 2px var(--cl-main-200);}
 
 /* Toggle Switch 開關 */

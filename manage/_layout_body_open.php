@@ -11,7 +11,17 @@ $__layout_title = (string)($layout_page_title ?? '');
             <?php require_once __DIR__ . '/_sidebar.php'; ?>
 
             <main class="mainContent">
-                <div class="<?php echo e((string)($layout_container_class ?? 'container')); ?>">
+                <?php
+                $__layout_container = (string)(
+                    $layout_container_class
+                    ?? $GLOBALS['layout_container_class']
+                    ?? 'container'
+                );
+                if ($__layout_container === '') {
+                    $__layout_container = 'container';
+                }
+                ?>
+                <div class="<?php echo e($__layout_container); ?>">
 <?php
 $__skip_header_title = !empty($GLOBALS['manage_page_header_in_breadcrumbs'])
     || (isset($breadcrumbs) && is_array($breadcrumbs));
