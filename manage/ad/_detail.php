@@ -369,6 +369,153 @@ $(function () {
                             </div>
                         </article>
 
+
+                        <!-- 還沒加程式，預覽為版型 -->
+                        <article class="editView__body">
+                            <div class="editView__section">
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">預覽</label>
+                                    <div class="col--10 inputGroup">
+                                        
+                                        <div class="flex row gap--2">
+                                            <label class="flex flex--itCenter gap--2 editView__radioLabel">
+                                                <input type="radio" name="banner_alignment" value="flex-start" checked>
+                                                <span class="editView__radioText">置左</span>
+                                            </label>
+                                            <label class="flex flex--itCenter gap--2 editView__radioLabel">
+                                                <input type="radio" name="banner_alignment" value="center">
+                                                <span class="editView__radioText">置中</span>
+                                            </label>
+                                            <label class="flex flex--itCenter gap--2 editView__radioLabel">
+                                                <input type="radio" name="banner_alignment" value="flex-end">
+                                                <span class="editView__radioText">置右</span>
+                                            </label>
+                                        </div>
+
+                                        <div class="preview-container" >
+                                            <div class="banner-preview" id="previewBanner">
+                                                <div id="textContainer" style="display: flex; flex-direction: column; width: 100%;">
+                                                    <h3 class="banner-title" id="previewTitle"></h3>
+                                                    <p class="banner-desc" id="previewDesc"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <section class="notes">
+                                            <ul class="notes__list">
+                                                <li>預覽僅為文字位置示意，實際設計效果，如字體、圖片動態效果等以網站前台為準。</li>
+                                            </ul>
+                                        </section>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        <!-- 及時預覽的JS -->
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                console.log("【終極預覽系統】啟動中...");
+
+                                const previewBanner = document.getElementById('previewBanner');
+                                const textContainer = document.getElementById('textContainer');
+                                const previewTitle = document.getElementById('previewTitle');
+                                const previewDesc = document.getElementById('previewDesc');
+                                const radioAlignments = document.getElementsByName('banner_alignment');
+
+                                // ==========================================
+                                // 1. 文字與對齊同步
+                                // ==========================================
+                                function updateTextPreview() {
+                                    let activeTitleInput = document.getElementById('strName1') || document.getElementById('strName0');
+                                    let activeDescInput = document.getElementById('Subject1') || document.getElementById('Subject0');
+
+                                    if (document.activeElement && document.activeElement.id) {
+                                        if (document.activeElement.id.startsWith('strName')) activeTitleInput = document.activeElement;
+                                        if (document.activeElement.id.startsWith('Subject')) activeDescInput = document.activeElement;
+                                    }
+
+                                    if (previewTitle && activeTitleInput) previewTitle.textContent = activeTitleInput.value;
+                                    if (previewDesc && activeDescInput) previewDesc.textContent = activeDescInput.value;
+
+                                    let selectedAlign = 'flex-start';
+                                    for (const radio of radioAlignments) {
+                                        if (radio.checked) { selectedAlign = radio.value; break; }
+                                    }
+                                    if (previewBanner) previewBanner.style.alignItems = selectedAlign;
+                                    if (textContainer) {
+                                        if (selectedAlign === 'flex-start') textContainer.style.textAlign = 'left';
+                                        else if (selectedAlign === 'center') textContainer.style.textAlign = 'center';
+                                        else if (selectedAlign === 'flex-end') textContainer.style.textAlign = 'right';
+                                    }
+                                }
+
+                                document.querySelectorAll('input[id^="strName"], input[id^="Subject"]').forEach(input => {
+                                    input.addEventListener('input', updateTextPreview);
+                                    input.addEventListener('focus', updateTextPreview);
+                                });
+                                radioAlignments.forEach(radio => radio.addEventListener('change', updateTextPreview));
+
+
+                                // ==========================================
+                                // 2. 終極絕招 A：使用「捕獲模式 (true)」監聽全網頁上傳
+                                // 就算原本的 JS 寫了 stopPropagation() 也擋不住這個監聽器！
+                                // ==========================================
+                                document.addEventListener('change', function(event) {
+                                    // 判斷是不是我們圖片上傳的 input
+                                    if (event.target && event.target.type === 'file' && event.target.name.startsWith('Photo')) {
+                                        console.log("【捕獲成功】偵測到檔案選取！", event.target.id);
+                                        const file = event.target.files[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = function(e) {
+                                                const base64Url = e.target.result;
+                                                
+                                                // 同步給大 Banner
+                                                if (previewBanner) {
+                                                    previewBanner.style.backgroundImage = `url('${base64Url}')`;
+                                                    console.log("【同步成功】大 Banner 已更換背景！");
+                                                }
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }
+                                }, true); // <--- 這個 true 就是「捕獲階段」，能穿透所有阻擋！
+
+
+                                // ==========================================
+                                // 3. 終極絕招 B：監聽「所有」上傳框內的 <img> 屬性變化
+                                // 不管你的 ID 叫 preview0 還是 preview_xxx，只要 src 變了，大 Banner 就跟著變
+                                // ==========================================
+                                const allPreviewImages = document.querySelectorAll('.uploadBox__picBx img');
+                                console.log(`【系統偵測】畫面上共有 ${allPreviewImages.length} 個小縮圖框`);
+
+                                allPreviewImages.forEach((img, index) => {
+                                    // 初始化：如果進頁面時，第一個縮圖本來就有舊圖，直接塞給大 Banner 當預設背景
+                                    if (index === 0 && img.getAttribute('src') && previewBanner) {
+                                        previewBanner.style.backgroundImage = `url('${img.getAttribute('src')}')`;
+                                    }
+
+                                    // 監聽 src 變化
+                                    const imgObserver = new MutationObserver(function(mutationsList) {
+                                        for (let mutation of mutationsList) {
+                                            if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+                                                const newSrc = img.getAttribute('src');
+                                                // 只要任何一個縮圖（通常是第一個 index === 0）變更，就同步給大 Banner
+                                                if (newSrc && previewBanner && index === 0) {
+                                                    previewBanner.style.backgroundImage = `url('${newSrc}')`;
+                                                    console.log(`【監聽成功】偵測到第 ${index} 個縮圖 src 改變，已同步大 Banner！`);
+                                                }
+                                            }
+                                        }
+                                    });
+
+                                    imgObserver.observe(img, { attributes: true });
+                                });
+
+                                // 啟動初始化
+                                updateTextPreview();
+                            });
+                        </script>
+
                         <?php require_once '../_submit.php'; ?>
                         </form>
                     </section>

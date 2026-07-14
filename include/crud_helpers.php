@@ -2761,7 +2761,7 @@ if (!function_exists('manage_render_field_help')) {
             . '</button>'
             . '<div class="ttpShow ttpShow--field" role="dialog" aria-hidden="true" aria-label="欄位說明">'
             . '<div class="ttpShow__body">' . $body . '</div>'
-            . '<button type="button" class="ttpShow__closeBtn" data-manage-action="preview-help-close" aria-label="關閉">X</button>'
+            . '<button type="button" class="ttpShow__closeBtn" data-manage-action="preview-help-close" aria-label="關閉"><i class="bi bi-x-lg"></i></button>'
             . '</div></div>';
     }
 }

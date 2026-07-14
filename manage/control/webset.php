@@ -250,7 +250,9 @@ function fieldCheck0(theForm) {
                                     </div>
                                 </div>
                             </div>
-
+                        </article>
+                        
+                        <article class="editView__body">
                             <div class="editView__section editView__section--nested">
                                 <h5 class="editView__sectionTitle">ProfessionalService 結構化資料（JSON-LD）</h5>
                                 <p class="fieldHint">以下為全站共用設定，儲存後同步至各語系；結構化地址請於各語系 tab 設定。</p>

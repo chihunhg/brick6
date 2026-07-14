@@ -625,14 +625,14 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .tableRow__data.tableGrid--news-l5-compact.tableGrid--has-home{grid-template-columns:50px 80px minmax(80px,120px) minmax(80px,120px) minmax(80px,120px) minmax(80px,120px) 1fr 110px 110px 60px 72px 120px;}
 /* 列表「預覽」說明（對齊 brick1 manage.js + .ttpShowZone.active） */
 .listPreviewCol{display:inline-flex;align-items:center;justify-content:center;gap:.25rem;text-transform:none;letter-spacing:0;font-weight:700;white-space:normal;}
-.ttpShowZone{display:inline-block;position:relative;vertical-align:middle;}
+.ttpShowZone{display:inline-block;position:relative;vertical-align:middle; margin-bottom: .25rem;}
 .ttpShowZone__trigger{border:none;background:transparent;padding:0;color:var(--subColor,#f19812);cursor:pointer;font-size:1.15rem;line-height:1;}
 .ttpShowZone__trigger:hover,.ttpShowZone__trigger:focus{color:#ffc450;outline:none;}
 .ttpShowZone.active .ttpShowZone__trigger{color:#ffc450;}
-.ttpShow{display:none;position:absolute;left:100%;top:100%;z-index:200;padding:15px 50px 15px 15px;min-width:280px;max-width:min(500px,90vw);text-align:left;background:#fffbeb;color:#000;border-radius:.25rem;box-shadow:0 0 1rem rgba(0,0,0,.25);white-space:normal;font-size:.875rem;font-weight:400;line-height:1.55;}
+.ttpShow{display:none;position:absolute;left:100%;top:100%;z-index:200;padding: 15px 25px 15px 15px;min-width:280px;max-width:min(500px,90vw);text-align:left;background:#fffbeb;color: var(--cl-gray-900);border-radius:.25rem;box-shadow:0 0 1rem rgba(0,0,0,.25);white-space:normal;font-size:.875rem;font-weight:400;line-height:1.55;}
 .ttpShow--right{left:auto;right:0;margin-top:.5rem;}
 .ttpShowZone.active .ttpShow{display:block;}
-.ttpShow__closeBtn{position:absolute;right:0;bottom:100%;display:inline-block;width:1.25rem;height:1.25rem;border:none;border-radius:50%;background:#000;color:#fff;font-size:.8rem;font-weight:700;line-height:1.25rem;text-align:center;cursor:pointer;transform:translate(50%,50%);}
+.ttpShow__closeBtn{position:absolute;right:0;bottom:100%;display:inline-block;width:1.25rem;height:1.25rem;border:none;border-radius:50%;background:#000;color:#fff;font-size: .75rem;font-weight: 800;line-height:1.25rem;text-align:center;cursor:pointer;transform:translate(50%,50%);display: flex;justify-content: center;align-items: center;}
 .ttpShow__closeBtn:hover{background:rgba(176,114,15,.85);}
 /* 表單欄位說明（webset answer-box 等） */
 .editView__formLabel .ttpShowZone--field,
@@ -832,6 +832,44 @@ a.breadcrumb__item.breadcrumb__link:hover{color:var(--cl-main);}
 .pageTitle{font-size:1.5rem;font-weight:700;color:var(--cl-gray-900);letter-spacing:-0.025em;}
 .pageTitle__badge{background-color:var(--cl-white);border:1px solid var(--cl-gray-200);color:var(--cl-gray-400);font-family:monospace;}
 
+/* 首頁形象 banner預覽 */
+.preview-container{width: 50%;}
+.banner-preview {
+    width: 100%;
+    aspect-ratio: 16/9;
+    padding: 30px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    background-color: var(--cl-gray-200);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* 垂直居中 */
+	position:relative;
+}
+.banner-preview::before{content:'';display:block;width:100%;height:100%;background:#000;position:absolute;top:0;left:0;opacity:.25;}
+.banner-title {
+    font-size: 28px;
+	font-weight:500;
+    margin-bottom: 10px;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    word-break: break-all;
+	position:relative;
+	z-index:1;
+}
+.banner-desc {
+    font-size: 15px;
+	font-weight:400;
+    color: #eeeeee;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    word-break: break-all;
+	position:relative;
+	z-index:1;
+}
+
 /* Filter 篩選 Block */
 .filterWrap{margin-bottom:1.5rem;}
 .filterWrap__content{display:flex;flex-direction:column;gap:1rem;}
@@ -878,7 +916,7 @@ a.breadcrumb__item.breadcrumb__link:hover{color:var(--cl-main);}
 .editView__section{display:flex;flex-direction:column;gap: 1rem;width:100%;}
 .editView__section .formGrid{width:100%;}
 .editView__section .inputGroup.col--10{width:100%;min-width:0;}
-.editView__section .inputGroup.row{flex-direction: row;}
+.editView__section .inputGroup.row{flex-direction: row;align-items: center;}
 .editView__section .inputGroup.row input[type="button"]:last-of-type {margin-right: .75rem;}
 .editView__section:first-child .editView__sectionTitle{padding-top:0;}
 .editView__sectionTitle{font-size: 1.25rem;font-weight: 700;text-transform:uppercase;letter-spacing:0.05em;border-bottom: 1px solid var(--cl-gray-300);display:flex;align-items:center;gap:0.5rem;margin: 0;padding: 1.5rem 0;}

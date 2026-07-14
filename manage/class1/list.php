@@ -78,7 +78,7 @@ $listGridClass = manage_list_grid_with_lang($listGridClass, (bool)($listShowLang
 			<div class="filterWrap__content">
 				<div class="filterWrap__grid">
 					<div class="inputGroup">
-						<label class="inputLabel" for="Keywords">智慧語意搜尋</label>
+						<label class="inputLabel" for="Keywords">智慧語意搜尋<?php echo manage_render_field_help('支援自然語言查詢，系統會自動理解您的搜尋意圖，不限於傳統關鍵字比對。'); ?></label>
 						<div class="inputWrapper">
 							<input type="text" name="Keywords" id="Keywords"
 								value="<?php echo e($Keywords); ?>"
