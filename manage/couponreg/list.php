@@ -56,6 +56,7 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                         <div class="card">
                             <?php
                             $showListSort = false;
+                            $showListUpload = false;
                             require_once '../_select.php';
                             ?>
 

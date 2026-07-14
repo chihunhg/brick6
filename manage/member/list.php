@@ -122,6 +122,7 @@ $clearUrl = ($WorkFile ?? 'list.php')
                         <div class="card">
                             <?php
                             $showListSort = false;
+                            $showListUpload = false;
                             require_once '../_select.php';
                             ?>
                             <button type="button" class="btnStyle btnStyle--outline btnStyle--sm"

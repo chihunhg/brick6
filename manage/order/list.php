@@ -127,10 +127,7 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
                         </div>
 
                         <div class="card">
-                            <?php
-                            $showListSort = false;
-                            require_once '../_select.php';
-                            ?>
+                            <?php require_once '../_select.php'; ?>
                             <button type="button" class="btnStyle btnStyle--outline btnStyle--sm"
                                 data-manage-action="order-export" data-form-id="form1">
                                 <i class="bi bi-file-earmark-excel"></i> 匯出訂單

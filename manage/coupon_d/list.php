@@ -142,6 +142,7 @@ $layout_container_class = manage_list_layout_container_class($detailConfig);
 $showListAdd = false;
 
 $showListSort = false;
+$showListUpload = false;
 
 ?>
 

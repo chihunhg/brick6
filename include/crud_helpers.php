@@ -2847,6 +2847,85 @@ if (!function_exists('manage_list_layout_container_class')) {
     }
 }
 
+if (!function_exists('manage_list_toolbar_flags')) {
+    /**
+     * 列表工具列顯示旗標（優先：list.php 覆寫 → _config → has_sort 預設排序）
+     *
+     * _config 可用鍵：
+     * - list_show_add / list_show_sort / list_show_upload / list_show_delete
+     * - list_show_sort 未設時，若有 has_sort 則沿用 has_sort
+     *
+     * @param array<string, mixed> $config
+     * @param array{
+     *   showListAdd?: bool|null,
+     *   showListSort?: bool|null,
+     *   showListUpload?: bool|null,
+     *   showListDelete?: bool|null
+     * } $overrides list.php 明確覆寫（null＝不覆寫）
+     * @return array{
+     *   showListAdd: bool,
+     *   showListSort: bool,
+     *   showListUpload: bool,
+     *   showListDelete: bool,
+     *   showBatchActions: bool
+     * }
+     */
+    function manage_list_toolbar_flags(array $config = [], array $overrides = []): array
+    {
+        $resolve = static function (
+            string $configKey,
+            bool $useHasSortFallback,
+            mixed $override,
+            bool $default
+        ) use ($config): bool {
+            if ($override !== null) {
+                return (bool)$override;
+            }
+            if (array_key_exists($configKey, $config)) {
+                return (bool)$config[$configKey];
+            }
+            if ($useHasSortFallback && array_key_exists('has_sort', $config)) {
+                return (bool)$config['has_sort'];
+            }
+
+            return $default;
+        };
+
+        $showListAdd = $resolve(
+            'list_show_add',
+            false,
+            array_key_exists('showListAdd', $overrides) ? $overrides['showListAdd'] : null,
+            true
+        );
+        $showListSort = $resolve(
+            'list_show_sort',
+            true,
+            array_key_exists('showListSort', $overrides) ? $overrides['showListSort'] : null,
+            true
+        );
+        $showListUpload = $resolve(
+            'list_show_upload',
+            false,
+            array_key_exists('showListUpload', $overrides) ? $overrides['showListUpload'] : null,
+            true
+        );
+        $showListDelete = $resolve(
+            'list_show_delete',
+            false,
+            array_key_exists('showListDelete', $overrides) ? $overrides['showListDelete'] : null,
+            true
+        );
+
+        return [
+            'showListAdd'      => $showListAdd,
+            'showListSort'     => $showListSort,
+            'showListUpload'   => $showListUpload,
+            'showListDelete'   => $showListDelete,
+            'showBatchActions' => $showListDelete || $showListUpload,
+        ];
+    }
+}
+
 if (!function_exists('crud_lang_row_is_show_on')) {
     /** 語系子表 isShow 是否視為啟用（Y/1/Yes 等） */
     function crud_lang_row_is_show_on($value): bool {

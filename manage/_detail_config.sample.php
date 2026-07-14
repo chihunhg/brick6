@@ -17,7 +17,13 @@ return [
     'fk'            => 'News_PKey',   // 子表外鍵欄位（指向主檔 PKey）
     'module_pk_col' => 'Module_PKey', // 主檔所屬模組欄位
     'csrf'          => 'news_addin',  // addin 表單 CSRF key
-    'has_sort'      => false,         // 是否顯示/儲存順序欄位
+    'has_sort'         => false,         // 是否顯示/儲存順序欄位（編輯表單）；未設 list_show_sort 時列表排序鈕也沿用此值
+    // 列表工具列（manage_list_toolbar_flags／_select.php 讀取）：
+    //   'list_show_sort'   => false,  // 隱藏確認更新排序
+    //   'list_show_upload' => false,  // 隱藏批次發佈／批次下架
+    //   'list_show_add'    => false,  // 隱藏新增
+    //   'list_show_delete' => false,  // 隱藏批次刪除
+    // 亦可於 list.php 在 require _select.php 前覆寫：$showListSort = false;
     'img_slot_max'  => 7,             // 圖片/檔案欄位總數
     'img_file_from' => 8,             // 檔案欄起始序號
     'forder_prefix' => 'news_',       // 上傳檔案目錄前綴

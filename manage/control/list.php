@@ -97,6 +97,7 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                         <div class="card">
                             <?php
                             $showListSort = false;
+                            $showListUpload = false;
                             require_once '../_select.php';
                             ?>
 
