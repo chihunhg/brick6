@@ -859,7 +859,7 @@ function elfinder_ensure_under_main_root(string $mainRoot, string $path): void {
 /** 建構回收桶根節點資訊 */
 function elfinder_trash_root_info(string $trashPhysical): array {
     return [
-        'name'     => TRASH_DIR_NAME,
+        'name'     => '垃圾桶',
         'hash'     => hash_path('', TRASH_VOL_PREFIX),
         'phash'    => null,
         'mime'     => 'directory',
@@ -871,7 +871,7 @@ function elfinder_trash_root_info(string $trashPhysical): array {
         'locked'   => 0,
         'volumeid' => TRASH_VOL_PREFIX,
         'isroot'   => true,
-        'alias'    => 'Trash',
+        'alias'    => '垃圾桶',
         'csscls'   => 'elfinder-navbar-root-trash',
     ];
 }
