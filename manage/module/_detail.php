@@ -391,29 +391,66 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">模組選擇</label>
                                     <div class="col--10 inputGroup">
-                                        <ul class="moduleProgramList">
                                         <?php
-                                        $progIdx = 0;
-                                        $rs = new recordset('SELECT PKey, strName, MaxLayer FROM program ORDER BY Sort');
+                                        $programTypeLabels = [
+                                            1 => '基本',
+                                            2 => '進階',
+                                            3 => '行銷',
+                                            4 => '其它',
+                                        ];
+                                        $programsByType = [];
+                                        $rs = new recordset(
+                                            "SELECT PKey, strName, MaxLayer, intType FROM program WHERE Upload = 'Yes' ORDER BY intType, Sort"
+                                        );
                                         while (!$rs->eof) {
-                                            $progIdx++;
-                                            $pid = (int)$rs->field('PKey');
-                                            $checked = ($pid === (int)$intUse) ? ' checked' : '';
-                                            ?>
-                                            <li class="moduleProgramList__item">
-                                                <label class="formCheck">
-                                                    <input type="radio" name="intUse" id="intUse<?php echo $progIdx; ?>"
-                                                        value="<?php echo $pid; ?>"<?php echo $checked; ?>
-                                                        data-max-layer="<?php echo (int)$rs->field('MaxLayer'); ?>">
-                                                    <?php echo e((string)$rs->field('strName')); ?>
-                                                </label>
-                                            </li>
-                                            <?php
+                                            $typeKey = (int)$rs->field('intType');
+                                            if ($typeKey < 1) {
+                                                $typeKey = 1;
+                                            }
+                                            if (!isset($programsByType[$typeKey])) {
+                                                $programsByType[$typeKey] = [];
+                                            }
+                                            $programsByType[$typeKey][] = [
+                                                'PKey'     => (int)$rs->field('PKey'),
+                                                'strName'  => (string)$rs->field('strName'),
+                                                'MaxLayer' => (int)$rs->field('MaxLayer'),
+                                            ];
                                             $rs->movenext();
                                         }
                                         $rs->close();
+
+                                        $progIdx = 0;
+                                        foreach ($programTypeLabels as $typeKey => $typeLabel) {
+                                            $typeRows = $programsByType[$typeKey] ?? [];
+                                            if ($typeRows === []) {
+                                                continue;
+                                            }
+                                            ?>
+                                        <div class="moduleProgramGroup">
+                                            <h5 class="moduleProgramGroup__title"><?php echo e($typeLabel); ?></h5>
+                                            <ul class="moduleProgramList">
+                                            <?php
+                                            foreach ($typeRows as $prog) {
+                                                $progIdx++;
+                                                $pid = (int)$prog['PKey'];
+                                                $checked = ($pid === (int)$intUse) ? ' checked' : '';
+                                                ?>
+                                                <li class="moduleProgramList__item">
+                                                    <label class="formCheck">
+                                                        <input type="radio" name="intUse" id="intUse<?php echo $progIdx; ?>"
+                                                            value="<?php echo $pid; ?>"<?php echo $checked; ?>
+                                                            data-max-layer="<?php echo (int)$prog['MaxLayer']; ?>">
+                                                        <?php echo e((string)$prog['strName']); ?>
+                                                    </label>
+                                                </li>
+                                                <?php
+                                            }
+                                            ?>
+                                            </ul>
+                                        </div>
+                                            <?php
+                                        }
                                         ?>
-                                        </ul>
                                         <input type="hidden" name="chkUse" id="chkUse" value="<?php echo (int)$intUse; ?>">
                                         <span id="chkUse_txt" class="input__errorTxt"></span>
                                     </div>

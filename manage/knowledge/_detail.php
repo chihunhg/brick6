@@ -118,74 +118,86 @@ $(function () {
                 <ul id="formErrorList"></ul>
               </div>
             </div>
-            <div class="table-container">
-              <table cellspacing="0" cellpadding="0" width="100%" border="0" class="detail">
-                <tr>
-                  <td>順序 <span class="inputLabel__required">*</span></td>
-                  <td>
-                    <input name="Sort" type="text" class="formInput" id="Sort" style="width:50px; text-align:center;" value="<?php echo e((string)($Sort ?? '')); ?>" maxlength="4" />
-                    &nbsp;限輸入數字
-                  </td>
-                </tr>
+            <div class="editView__body">
+              <div class="editView__section">
+
+                <div class="formGrid">
+                    <label class="col--2 inputLabel editView__formLabel" for="Sort">
+                        順序 <span class="inputLabel__required">*</span>
+                    </label>
+                    <div class="col--10 inputGroup">
+                        <input name="Sort" id="Sort" type="number" inputmode="numeric"
+                            min="0" step="1" class="formInput editView__sortInput"
+                            value="<?php echo $Sort; ?>" maxlength="4" autocomplete="off">
+                        <span id="Sort_txt" class="input__errorTxt"></span>
+                    </div>
+                </div>
 
                 <?php if ($layer > 1) { ?>
-                <tr>
-                  <td><?php echo e($classLabel); ?>名稱 <span class="inputLabel__required">*</span></td>
-                  <td>
-                    <select name="Class1" id="Class1" class="m-select">
-                      <option value="">請選擇</option>
-                      <?php
-                        $sql = 'SELECT PKey, strName FROM dbclass1 WHERE Module_PKey = :Module_PKey ORDER BY Sort';
-                        $classRows = crud_fetch_all($sql, ['Module_PKey' => (int)($Module_PKey ?? 0)]);
-                        foreach ($classRows as $cRow) {
-                            $p = (int)($cRow['PKey'] ?? 0);
-                            $n = (string)($cRow['strName'] ?? '');
-                            $sel = ((int)$Class1 === $p) ? ' selected="selected"' : '';
-                            echo '<option value="' . e((string)$p) . '"' . $sel . '>' . e($n) . '</option>';
-                        }
-                      ?>
-                    </select>
-                  </td>
-                </tr>
+                <div class="formGrid">
+                  <label class="col--2 inputLabel editView__formLabel" for="Class1"><?php echo e($classLabel); ?>名稱 <span class="inputLabel__required">*</span></label>
+                    <div class="col--10">
+
+                      <select name="Class1" id="Class1" class="formSelect">
+                        <option value="">請選擇</option>
+                        <?php
+                          $sql = 'SELECT PKey, strName FROM dbclass1 WHERE Module_PKey = :Module_PKey ORDER BY Sort';
+                          $classRows = crud_fetch_all($sql, ['Module_PKey' => (int)($Module_PKey ?? 0)]);
+                          foreach ($classRows as $cRow) {
+                              $p = (int)($cRow['PKey'] ?? 0);
+                              $n = (string)($cRow['strName'] ?? '');
+                              $sel = ((int)$Class1 === $p) ? ' selected="selected"' : '';
+                              echo '<option value="' . e((string)$p) . '"' . $sel . '>' . e($n) . '</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                </div>
                 <?php } ?>
 
-                <tr>
-                  <td>標題 <span class="inputLabel__required">*</span></td>
-                  <td>
-                    <input type="text" name="strName" id="strName" value="<?php echo e($strName); ?>" class="formInput" maxlength="50" />
-                  </td>
-                </tr>
+                <div class="formGrid">
+                  <label class="col--2 inputLabel editView__formLabel" for="strName">
+                    標題 <span class="inputLabel__required">*</span>
+                  </label>
+                  <div class="col--10 inputGroup">
+                      <input type="text" name="strName" id="strName" value="<?php echo e($strName); ?>" class="formInput" maxlength="50" />
+                  </div>
+                </div>
 
-                <tr>
-                  <td>內容</td>
-                  <td>
+                <div class="formGrid">
+                  <label class="col--2 inputLabel editView__formLabel">
+                    內容
+                  </label>
+                  <div class="col--10 inputGroup">
                     <?php
                     $editorAiFieldId = 'Contents1';
                     require dirname(__DIR__) . '/_detail_ckeditor_ai_button.php';
                     ?>
                     <textarea name="Contents1" id="Contents1" class="ckeditor formInput"><?php echo e_editor_html($Contents1 ?? ''); ?></textarea>
-                  </td>
-                </tr>
+                  </div>
+                </div>
 
-                <tr>
-                  <td>上傳檔案<span class="inputLabel__required">*</span></td>
-                  <td>
+                <div class="formGrid">
+                  <label class="col--2 inputLabel editView__formLabel">
+                    上傳檔案<span class="inputLabel__required">*</span>
+                  </label>
+                  <div class="col--10 inputGroup">
                     <div class="photo-upload">
-                      <div class="radio_box">
-                        <input name="intLink" id="intLink1" type="radio" class="formInput" value="1"<?php echo ((int)$intLink === 1) ? ' checked="checked"' : ''; ?> />
+                      <div class="flex flex--itCenter gap--2 editView__radioLabel">
+                        <input name="intLink" id="intLink1" type="radio" class="" value="1"<?php echo ((int)$intLink === 1) ? ' checked="checked"' : ''; ?> />
                         <label for="intLink1"><span></span>連結路徑：</label>
                       </div>
-                      <input name="strLink" type="text" id="strLink" class="formInput" maxlength="200" style="width:60%;" value="<?php echo e($strLink); ?>" />
+                      <input name="strLink" type="text" id="strLink" class="formInput" value="<?php echo e($strLink); ?>" />
                     </div>
 
-                    <div class="photo-upload" style="margin-top:8px;">
-                      <div class="radio_box">
-                        <input name="intLink" id="intLink2" type="radio" class="formInput" value="2"<?php echo ((int)$intLink === 1) ? '' : ' checked="checked"'; ?> />
+                    <div class="photo-upload">
+                      <div class="flex flex--itCenter gap--2 editView__radioLabel">
+                        <input name="intLink" id="intLink2" type="radio" class="" value="2"<?php echo ((int)$intLink === 1) ? '' : ' checked="checked"'; ?> />
                         <label for="intLink2"><span></span>上傳檔案：</label>
                       </div>
 
-                      <div class="upload-box" style="margin-bottom:0">
-                        <div class="photo file">
+                      <div class="uploadBox w--auto">
+                        <div class="uploadBox__picBx">
                           <?php if (!empty($Photo[1])) { ?>
                           <?php
                             switch ($extLower) {
@@ -227,7 +239,7 @@ $(function () {
                           <?php } ?>
                         </div>
 
-                        <div class="file-upload">
+                        <div class="uploadBox__fileBx">
                           <label for="Photo1">
                             <input
                               name="Photo1"
@@ -243,19 +255,25 @@ $(function () {
                       </div>
                     </div>
 
-                    <ul class="set-tips">
-                      <?php echo $remark_file1 . $remark_save2; ?>
-                    </ul>
-                  </td>
-                </tr>
+                    <div class="notes">
+                      <ul class="notes__list">
+                        <?php echo $remark_file1 . $remark_save2; ?>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
 
                 <?php if (!$isAdd) { ?>
-                <tr>
-                  <td>修改日期</td>
-                  <td><?php require_once '../_modify.php'; ?></td>
-                </tr>
+                <div class="formGrid">
+                  <label class="col--2 inputLabel editView__formLabel">
+                    修改日期
+                  </label>
+                  <div class="col--10">
+                    <span class="dateSpan"><?php require_once '../_modify.php'; ?></span>
+                  </div>
+                </div>
                 <?php } ?>
-              </table>
+              </div>
             </div>
 
             <?php

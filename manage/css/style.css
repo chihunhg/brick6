@@ -527,6 +527,9 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .tableRow__data.tableGrid--language{grid-template-columns:50px 80px 1fr 100px 120px;}
 .tableHeader.tableGrid--language-compact,
 .tableRow__data.tableGrid--language-compact{grid-template-columns:50px 80px 1fr 100px 120px;}
+.moduleProgramGroup{margin:0 0 1rem;}
+.moduleProgramGroup:last-child{margin-bottom:0;}
+.moduleProgramGroup__title{margin:0 0 .5rem;font-size:.95rem;font-weight:600;color:var(--cl-gray-700);}
 .moduleProgramList{display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;list-style:none;margin:0;padding:0;}
 .moduleProgramList__item{margin:0;}
 .moduleLayerList{margin-top:1rem;}
@@ -619,7 +622,7 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .ttpShowZone__trigger{border:none;background:transparent;padding:0;color:var(--subColor,#f19812);cursor:pointer;font-size:1.15rem;line-height:1;}
 .ttpShowZone__trigger:hover,.ttpShowZone__trigger:focus{color:#ffc450;outline:none;}
 .ttpShowZone.active .ttpShowZone__trigger{color:#ffc450;}
-.ttpShow{display:none;position:absolute;left:100%;top:100%;z-index:200;padding:15px 50px 15px 15px;min-width:280px;max-width:min(500px,90vw);text-align:left;background:#fffbeb;color:#000;border-radius:.75rem;box-shadow:0 0 1rem rgba(0,0,0,.25);white-space:normal;font-size:.875rem;font-weight:400;line-height:1.55;}
+.ttpShow{display:none;position:absolute;left:100%;top:100%;z-index:200;padding:15px 50px 15px 15px;min-width:280px;max-width:min(500px,90vw);text-align:left;background:#fffbeb;color:#000;border-radius:.25rem;box-shadow:0 0 1rem rgba(0,0,0,.25);white-space:normal;font-size:.875rem;font-weight:400;line-height:1.55;}
 .ttpShow--right{left:auto;right:0;margin-top:.5rem;}
 .ttpShowZone.active .ttpShow{display:block;}
 .ttpShow__closeBtn{position:absolute;right:0;bottom:100%;display:inline-block;width:1.25rem;height:1.25rem;border:none;border-radius:50%;background:#000;color:#fff;font-size:.8rem;font-weight:700;line-height:1.25rem;text-align:center;cursor:pointer;transform:translate(50%,50%);}
@@ -672,6 +675,13 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .tableHeader.tableGrid--coupon-d-list-compact,
 .tableRow__data.tableGrid--coupon-d-list-compact{
   grid-template-columns:50px minmax(110px,1fr) 90px minmax(140px,1.2fr) minmax(90px,1fr) minmax(110px,0.95fr);
+  width:100%;
+}
+.tableHeader.tableGrid--discount-list,
+.tableRow__data.tableGrid--discount-list,
+.tableHeader.tableGrid--discount-list-compact,
+.tableRow__data.tableGrid--discount-list-compact{
+  grid-template-columns:50px minmax(120px,1.2fr) 90px minmax(180px,1.6fr) minmax(100px,0.9fr) minmax(100px,0.9fr) minmax(140px,1fr);
   width:100%;
 }
 .tableHeader.tableGrid--epaper-list,
