@@ -17,7 +17,7 @@ if (!function_exists('coupon_d_view_select_sql')) {
     function coupon_d_view_select_sql(): string
     {
         return 'SELECT d.PKey, d.Coupon_PKey, d.Coupon_Code, d.Member_PKey, d.Order_PKey,'
-            . ' d.OrderNo, d.OpenDate, d.EndDate, d.dtDate,'
+            . ' d.OrderNo, d.dtDate,'
             . ' m.EMail AS Email, m.EMail AS EMail, m.strName AS Member_Name,'
             . ' cp.Price, cp.OpenDate AS OpenDate, cp.EndDate AS EndDate,'
             . ' cp.OpenDate AS Coupon_OpenDate, cp.EndDate AS Coupon_EndDate,'
