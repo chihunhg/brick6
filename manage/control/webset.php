@@ -285,10 +285,10 @@ function fieldCheck0(theForm) {
                                     <div class="col--10">
                                         <div class="formGrid">
                                             <div class="col--6">
-                                                <input type="text" name="GeoLat" id="GeoLat" class="formInput" value="<?php echo e($GeoLat); ?>" maxlength="20" placeholder="緯度 latitude（例：25.033964）">
+                                                <input type="text" name="GeoLat" id="GeoLat" class="formInput" value="<?php echo e($GeoLat); ?>" maxlength="50" placeholder="緯度 latitude（例：25.033964）">
                                             </div>
                                             <div class="col--6">
-                                                <input type="text" name="GeoLng" id="GeoLng" class="formInput" value="<?php echo e($GeoLng); ?>" maxlength="20" placeholder="經度 longitude（例：121.564468）">
+                                                <input type="text" name="GeoLng" id="GeoLng" class="formInput" value="<?php echo e($GeoLng); ?>" maxlength="50" placeholder="經度 longitude（例：121.564468）">
                                             </div>
                                         </div>
                                     </div>

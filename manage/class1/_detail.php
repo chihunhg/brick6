@@ -130,10 +130,10 @@ function fieldCheck0(theForm) {
                                     <label class="col--2 inputLabel editView__formLabel" for="Sort">
                                     顯示語系 <span class="inputLabel__required">*</span>
                                     </label>
-                                    <div class="col--10 inputGroup">
-                                        <input name="button" type="button" class="btn btn-outline-secondary" value="全選"
+                                    <div class="col--10 inputGroup row">
+                                        <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="all">
-                                        <input name="button2" type="button" class="btn btn-outline-secondary" value="取消全選"
+                                        <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="none">
                                         <?php for($i=1;$i<=count($array_lang);$i++){?>
                                             <label for="Show<?php echo $i?>">
