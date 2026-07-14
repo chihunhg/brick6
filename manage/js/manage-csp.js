@@ -1187,6 +1187,10 @@
     });
 
     function syncCkeditorToForm(form) {
+        if (window.ManageEditor && typeof window.ManageEditor.syncToForm === 'function') {
+            window.ManageEditor.syncToForm(form);
+            return;
+        }
         if (typeof CKEDITOR === 'undefined' || !form) {
             return;
         }

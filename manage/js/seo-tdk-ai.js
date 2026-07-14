@@ -90,6 +90,12 @@
     }
 
     function readFieldText(fieldId) {
+        if (window.ManageEditor && typeof window.ManageEditor.getHtml === 'function') {
+            var fromMe = window.ManageEditor.getHtml(fieldId);
+            if (fromMe !== '' && fromMe != null) {
+                return stripHtml(fromMe);
+            }
+        }
         if (window.CKEDITOR && CKEDITOR.instances[fieldId]) {
             return stripHtml(CKEDITOR.instances[fieldId].getData());
         }

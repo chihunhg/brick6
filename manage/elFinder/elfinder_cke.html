@@ -69,6 +69,17 @@
 			  return;
 			}
 
+			// A2) ManageEditor 相容層（Summernote / 統一 insertImage）
+			if (w && w.ManageEditor && typeof w.ManageEditor.insertImage === 'function') {
+			  var editorKeyA2 = (function(){
+			    var m = location.search.match(/[?&]CKEditor=([^&]+)/i);
+			    return m ? decodeURIComponent(m[1]) : '';
+			  })();
+			  w.ManageEditor.insertImage(url, editorKeyA2);
+			  window.close();
+			  return;
+			}
+
 			// B) 備援：若 URL 沒帶 CKEditorFuncNum，但有指定 instance 名稱，直接插入
 			var editorKey = (function(){
 			  var m = location.search.match(/[?&]CKEditor=([^&]+)/i);
