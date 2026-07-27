@@ -168,7 +168,6 @@ function fieldCheck0(theForm) {
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel" for="Price">折抵金額 <span class="inputLabel__required">*</span></label>
                                     <div class="col--10 inputGroup">
-                                        <span>折抵運費 $</span>
                                         <input name="Price" type="number" id="Price" class="formInput editView__sortInput"
                                             min="0" step="1" maxlength="4"
                                             value="<?php echo $priceVal; ?>">

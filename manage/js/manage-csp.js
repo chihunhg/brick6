@@ -757,6 +757,13 @@
         });
     }
 
+    function runControlPermissionSelect(el, mode) {
+        var checked = mode === 'all';
+        document.querySelectorAll('input[name="FunctionName[]"]').forEach(function (cb) {
+            cb.checked = checked;
+        });
+    }
+
     function runClass1LangToggle(el) {
         var idx = parseInt(el.getAttribute('data-lang-index') || '0', 10);
         if (typeof window.selLange === 'function' && idx > 0) {
@@ -1010,6 +1017,9 @@
                 break;
             case 'class1-lang-select':
                 runClass1LangAction(el, el.getAttribute('data-lang-mode') || 'all');
+                break;
+            case 'control-permission-select':
+                runControlPermissionSelect(el, el.getAttribute('data-permission-mode') || 'all');
                 break;
             case 'class1-lang-toggle':
                 runClass1LangToggle(el);

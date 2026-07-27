@@ -128,14 +128,6 @@ function genStrongPassword(minComplexity, minLen, maxLen) {
   return chars.join('');
 }
 
-function controlSelectAll() {
-  $('input[name="FunctionName[]"]').prop('checked', true);
-}
-
-function controlSelectNone() {
-  $('input[name="FunctionName[]"]').prop('checked', false);
-}
-
 document.addEventListener('DOMContentLoaded', function () {
   const btnGen = document.getElementById('btn-gen');
   if (btnGen) {
@@ -152,8 +144,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
-  document.getElementById('btn-fn-all')?.addEventListener('click', controlSelectAll);
-  document.getElementById('btn-fn-none')?.addEventListener('click', controlSelectNone);
 });
 <?php echo script_close(); ?>
 </head>
@@ -164,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     ?>
 
+                    <section class="editView">
                     <form action="addin.php" method="post" enctype="multipart/form-data" name="form1" id="form1" novalidate data-manage-validate="fieldCheck0">
                         <div class="errorArea is-hidden" id="formErrorArea" aria-live="polite">
                             <div class="errorArea__header">錯誤訊息</div>
@@ -171,24 +162,34 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <ul id="formErrorList"></ul>
                             </div>
                         </div>
-                        <div class="table-container">
-                            <table cellspacing="0" cellpadding="0" width="100%" border="0" class="detail">
-                                <tr>
-                                    <td>管理者名稱<span class="inputLabel__required">*</span></td>
-                                    <td>
-                                        <input type="text" name="strName" id="strName" class="formInput" value="<?php echo e($strName); ?>" size="20" maxlength="20">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>帳號<span class="inputLabel__required">*</span></td>
-                                    <td>
-                                        <input name="strID" type="text" id="strID" class="formInput" value="<?php echo e($strID); ?>" maxlength="20" placeholder="帳號長度2~20碼"<?php echo $isAdd ? '' : ' readonly'; ?>>
+
+                        <article class="editView__body">
+                            <div class="editView__section">
+                                <h4 class="editView__sectionTitle">帳號設定</h4>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="strName">
+                                        管理者名稱 <span class="inputLabel__required">*</span>
+                                    </label>
+                                    <div class="col--10">
+                                        <input type="text" name="strName" id="strName" class="formInput"
+                                            value="<?php echo e($strName); ?>" size="20" maxlength="20">
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="strID">
+                                        帳號 <span class="inputLabel__required">*</span>
+                                    </label>
+                                    <div class="col--10">
+                                        <input name="strID" type="text" id="strID" class="formInput"
+                                            value="<?php echo e($strID); ?>" maxlength="20" placeholder="帳號長度2~20碼"<?php echo $isAdd ? '' : ' readonly'; ?>>
                                         <input name="oldID" type="hidden" id="oldID" value="<?php echo e($strID); ?>">
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>密碼<?php echo $isAdd ? '<span class="inputLabel__required">*</span>' : ''; ?></td>
-                                    <td>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="strPW">
+                                        密碼<?php echo $isAdd ? ' <span class="inputLabel__required">*</span>' : ''; ?>
+                                    </label>
+                                    <div class="col--10">
                                         <div class="passwordInput">
                                             <input type="password" name="strPW" id="strPW" class="formInput" value=""
                                                 autocomplete="new-password"
@@ -215,45 +216,50 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <li>編輯時密碼留白表示不變更。</li>
                                             <?php } ?>
                                         </ul>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>權限範圍<span class="inputLabel__required">*</span></td>
-                                    <td>
-                                        <div class="menuSelect none">
-                                            <button type="button" id="btn-fn-all" class="btnStyle btnStyle--outline btnStyle--sm">全選</button>
-                                            <button type="button" id="btn-fn-none" class="btnStyle btnStyle--outline btnStyle--sm">取消全選</button>
-                                            <ul>
-                                                <?php
-                                                $i = 0;
-                                                $sql = "SELECT PKey, strName FROM module_p WHERE Upload = 'Yes' AND intType = 1 ORDER BY Home DESC, Sort";
-                                                $moduleRows = crud_fetch_all($sql);
-                                                foreach ($moduleRows as $mRow) {
-                                                    $i++;
-                                                    $pk = (int)($mRow['PKey'] ?? 0);
-                                                    $nm = (string)($mRow['strName'] ?? '');
-                                                    $checked = in_array($pk, (array)$M1, true);
-                                                    ?>
-                                                <li>
-                                                    <input name="FunctionName[]" id="f-menu<?php echo $i; ?>" type="checkbox"
-                                                        value="<?php echo $pk; ?>|<?php echo e($nm); ?>"<?php echo $checked ? ' checked' : ''; ?>>
-                                                    <label for="f-menu<?php echo $i; ?>"><span></span><?php echo e($nm); ?></label>
-                                                </li>
-                                                <?php } ?>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">
+                                        權限範圍 <span class="inputLabel__required">*</span>
+                                    </label>
+                                    <div class="col--10 inputGroup row">
+                                        <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
+                                            data-manage-action="control-permission-select" data-permission-mode="all">
+                                        <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
+                                            data-manage-action="control-permission-select" data-permission-mode="none">
+                                        <?php
+                                        $i = 0;
+                                        $sql = "SELECT PKey, strName FROM module_p WHERE Upload = 'Yes' AND intType = 1 ORDER BY Home DESC, Sort";
+                                        $moduleRows = crud_fetch_all($sql);
+                                        foreach ($moduleRows as $mRow) {
+                                            $i++;
+                                            $pk = (int)($mRow['PKey'] ?? 0);
+                                            $nm = (string)($mRow['strName'] ?? '');
+                                            $checked = in_array($pk, (array)$M1, true);
+                                            ?>
+                                        <label for="f-menu<?php echo $i; ?>">
+                                            <input name="FunctionName[]" type="checkbox" id="f-menu<?php echo $i; ?>"
+                                                value="<?php echo $pk; ?>|<?php echo e($nm); ?>"<?php echo $checked ? ' checked' : ''; ?>>
+                                            <?php echo e($nm); ?>
+                                        </label>
+                                        <?php } ?>
+                                    </div>
+                                </div>
                                 <?php if (!$isAdd) { ?>
-                                <tr>
-                                    <td>修改日期</td>
-                                    <td><?php require_once '../_modify.php'; ?></td>
-                                </tr>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">修改日期</label>
+                                    <div class="col--10">
+                                        <span class="dateSpan"><?php require_once '../_modify.php'; ?></span>
+                                    </div>
+                                </div>
                                 <?php } ?>
-                            </table>
-                        </div>
+                            </div>
+                        </article>
+
                         <?php require_once '../_submit.php'; ?>
                     </form>
+                    </section>
+                    <div class="notes__spacer"></div>
 <?php require_once '../_layout_body_close.php'; ?>
 <?php require_once '../_in_code_bottom.php'; ?>
 </body>
