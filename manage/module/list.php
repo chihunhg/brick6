@@ -28,8 +28,8 @@ crud_csrf_guard_list($listCsrfKey);
 $csrf_token = crud_csrf_ensure($listCsrfKey);
 
 $listRows = crud_fetch_all(
-    'SELECT * FROM ' . $table_name . ' ORDER BY Home DESC, Sort ASC, PKey ASC',
-    []
+    'SELECT * FROM ' . $table_name . ' WHERE intType = :intType ORDER BY Home DESC, Sort ASC, PKey ASC',
+    ['intType' => 1]
 );
 $listRows = module_list_enrich_rows($listRows);
 
@@ -65,6 +65,7 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                                 <div class="textCenter">順序</div>
                                 <div>單元名稱</div>
                                 <?php manage_list_render_lang_header((bool)($listShowLangColumn ?? false)); ?>
+                                <div>模組類別</div>
                                 <div>單元型態</div>
                                 <div>功能模組</div>
                                 <div class="textCenter">階層</div>
@@ -124,6 +125,7 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                                             <?php } ?>
                                         </div>
                                         <?php manage_list_render_lang_cell($rowPKey, (bool)($listShowLangColumn ?? false), is_array($listLangMap ?? null) ? $listLangMap : []); ?>
+                                        <div><?php echo e((string)($row['module_class_name'] ?? '')); ?></div>
                                         <div><?php echo e((string)($row['type_label'] ?? '')); ?></div>
                                         <div><?php echo e((string)($row['program_name'] ?? '')); ?></div>
                                         <div class="textCenter"><?php echo e((string)($row['layer_label'] ?? '')); ?></div>

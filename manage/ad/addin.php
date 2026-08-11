@@ -11,6 +11,8 @@ require_once '../_module.php';
 $detailConfig = require __DIR__ . '/_config.php';
 manage_detail_set_config($detailConfig);
 
+require_once __DIR__ . '/_form_data.php';
+
 $tables     = manage_detail_tables();
 $table_name = $tables['master'];
 $table_lang = (string)($tables['lang'] ?? '');
@@ -179,8 +181,11 @@ $data_array = [
     'UserID'    => SqlFilter($Login_ID, 'tab'),
 ];
 
-if (isset($filter_array['Color']) && trim((string)$filter_array['Color']) !== '') {
-    $data_array['Color'] = SqlFilter((string)$filter_array['Color'], 'tab');
+if (crud_table_has_column($table_name, 'Color')) {
+    $colorVal = ad_normalize_banner_color(
+        (string)($filter_array['Color'] ?? $filter_array['banner_alignment'] ?? 'flex-start')
+    );
+    $data_array['Color'] = SqlFilter($colorVal, 'tab');
 }
 
 /* ── 寫入 ───────────────────────────────────────────── */

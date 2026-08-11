@@ -527,13 +527,17 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .tableHeader.tableGrid--class3-compact,
 .tableRow__data.tableGrid--class3-compact{grid-template-columns:50px 80px minmax(80px,120px) minmax(80px,120px) 1fr 100px 140px 120px;}
 .tableHeader.tableGrid--module,
-.tableRow__data.tableGrid--module{grid-template-columns:50px 50px 70px minmax(90px,1fr) 80px minmax(100px,1fr) 50px 90px 100px;}
+.tableRow__data.tableGrid--module{grid-template-columns:50px 50px 70px minmax(90px,1fr) minmax(80px,120px) 80px minmax(100px,1fr) 50px 90px 100px;}
 .tableHeader.tableGrid--module-compact,
-.tableRow__data.tableGrid--module-compact{grid-template-columns:50px 70px minmax(90px,1fr) 80px minmax(100px,1fr) 50px 90px 100px;}
+.tableRow__data.tableGrid--module-compact{grid-template-columns:50px 70px minmax(90px,1fr) minmax(80px,120px) 80px minmax(100px,1fr) 50px 90px 100px;}
 .tableHeader.tableGrid--language,
 .tableRow__data.tableGrid--language{grid-template-columns:50px 80px 1fr 100px 120px;}
 .tableHeader.tableGrid--language-compact,
 .tableRow__data.tableGrid--language-compact{grid-template-columns:50px 80px 1fr 100px 120px;}
+.tableHeader.tableGrid--module-class,
+.tableRow__data.tableGrid--module-class{grid-template-columns:50px 80px 1fr 100px 120px;}
+.tableHeader.tableGrid--module-class-compact,
+.tableRow__data.tableGrid--module-class-compact{grid-template-columns:50px 80px 1fr 100px 120px;}
 .moduleProgramGroup{margin:0 0 1rem;}
 .moduleProgramGroup:last-child{margin-bottom:0;}
 .moduleProgramGroup__title{margin:0 0 .5rem;font-size:.95rem;font-weight:600;color:var(--cl-gray-700);}
@@ -1189,9 +1193,9 @@ a.breadcrumb__item.breadcrumb__link:hover{color:var(--cl-main);}
 .tableHeader.tableGrid--ad.tableGrid--has-lang,
 .tableRow__data.tableGrid--ad.tableGrid--has-lang{grid-template-columns:50px 50px 80px minmax(100px,160px) 1fr minmax(68px,96px) 100px 140px 120px;}
 .tableHeader.tableGrid--module-compact.tableGrid--has-lang,
-.tableRow__data.tableGrid--module-compact.tableGrid--has-lang{grid-template-columns:50px 70px minmax(90px,1fr) minmax(68px,96px) 80px minmax(100px,1fr) 50px 90px 100px;}
+.tableRow__data.tableGrid--module-compact.tableGrid--has-lang{grid-template-columns:50px 70px minmax(90px,1fr) minmax(68px,96px) minmax(80px,120px) 80px minmax(100px,1fr) 50px 90px 100px;}
 .tableHeader.tableGrid--module.tableGrid--has-lang,
-.tableRow__data.tableGrid--module.tableGrid--has-lang{grid-template-columns:50px 50px 70px minmax(90px,1fr) minmax(68px,96px) 80px minmax(100px,1fr) 50px 90px 100px;}
+.tableRow__data.tableGrid--module.tableGrid--has-lang{grid-template-columns:50px 50px 70px minmax(90px,1fr) minmax(68px,96px) minmax(80px,120px) 80px minmax(100px,1fr) 50px 90px 100px;}
 .tableHeader.tableGrid--news-l1-compact.tableGrid--has-lang:not(.tableGrid--has-home),
 .tableRow__data.tableGrid--news-l1-compact.tableGrid--has-lang:not(.tableGrid--has-home){grid-template-columns:50px 80px 1fr minmax(68px,96px) 110px 110px 72px 120px;}
 .tableHeader.tableGrid--news-l1-compact.tableGrid--has-lang.tableGrid--has-home,

@@ -41,6 +41,9 @@ $Photo   = $imgData['Photo'];
 $PhotoS  = $imgData['PhotoS'];
 $PhotoM  = $imgData['PhotoM'];
 
+require_once __DIR__ . '/_form_data.php';
+$Color = ad_normalize_banner_color((string)($row['Color'] ?? ''));
+
 $detailConfig = require __DIR__ . '/_config.php';
 $__csrf_key = (string)($detailConfig['csrf'] ?? 'dbad_addin');
 $csrf_token = crud_csrf_ensure_page($__csrf_key);

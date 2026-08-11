@@ -79,6 +79,7 @@ $layouts = frontend_fetch_content_layouts($PKey);
 
 $links  = frontend_fetch_detail_links($PKey);
 $ytSrc  = youtube_embed_src($Movielink);
+$aiSummary = frontend_lang_summary($detailRow);
 $ldjson = frontend_breadcrumb_ldjson();
 $backHref = frontend_list_href();
 ?>
@@ -104,6 +105,7 @@ $backHref = frontend_list_href();
                     <div class="dateTxt"><?php echo e_attr(date_en($strDate, 1)); ?></div>
                     <?php } ?>
                 </div>
+                <?php require('_article_ai_summary.php'); ?>
                 <div class="articleMain">
                     <?php
                     for ($i = 1; $i < 7; $i++) {

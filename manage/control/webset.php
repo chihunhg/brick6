@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * 網站 SEO 基本設定（主表 webset，依 intLang 分語系列）
+ * 網站 SEO/GEO 基本設定（主表 webset，依 intLang 分語系列）
  */
 
 require_once '../_inc.php';
@@ -11,7 +11,7 @@ $websetConfig = require __DIR__ . '/webset_config.php';
 $csrfKey      = (string)($websetConfig['csrf'] ?? 'webset_form');
 
 $subitem = 's1';
-$Module_Name = $Module_Name ?? '網站SEO設定';
+$Module_Name = $Module_Name ?? '網站SEO/GEO設定';
 
 $returnUrl = (string)($WorkFile ?? 'webset.php');
 [$__manNo, $__subNo] = crud_addin_resolve_man_sub_no();
@@ -103,7 +103,7 @@ $priceRangeOptions = ['' => '未設定', '$' => '$ 低價', '$$' => '$$ 中價',
 $breadcrumbs = [
     ['label' => '單元管理'],
     ['label' => '網站管理'],
-    ['label' => 'SEO基本設定'],
+    ['label' => 'SEO/GEO基本設定'],
 ];
 $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
 ?>

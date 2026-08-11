@@ -94,89 +94,188 @@
                 }
             };
 
-            // 網站管理
-            if (!empty(array_intersect($web_array, $Left_Menu)) || $Login_ID === 'Admin') {
-                $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND PKey IN (' . $in_list($web_array) . ') ORDER BY Sort, PKey';
-                $rs  = new recordset($sql, ['Upload' => 'Yes']);
-                if (!$rs->eof) {
-                    $sidebarMenu[] = ['type' => 'HEADER', 'label' => '網站管理'];
-                    while (!$rs->eof) {
-                        $navPKey  = (int)$rs->field('PKey');
-                        $navName  = (string)$rs->field('strName');
-                        $navLink  = $sanitize_link($rs->field('strLink'));
-                        $navLayer = (int)$rs->field('intLayer');
-                        if ($canSee($navPKey)) {
-                            $urlLink = '../' . $navLink . '/list.php?manNo=' . $navPKey;
-                            if ($navPKey === 5) {
-                                $urlLink = '../control/webset.php?manNo=' . $navPKey;
-                            }
-                            $appendModuleRow($sidebarMenu, $navPKey, $navName, $navLink, $navLayer, $urlLink, $manNo, $subNo, $sanitize_link);
+            $appendModuleRowsFromRs = static function (
+                recordset $rs,
+                array &$menu,
+                int $manNo,
+                int $subNo,
+                callable $canSee,
+                callable $appendModuleRow,
+                callable $sanitize_link
+            ): void {
+                while (!$rs->eof) {
+                    $navPKey  = (int)$rs->field('PKey');
+                    $navName  = (string)$rs->field('strName');
+                    $navLink  = $sanitize_link($rs->field('strLink'));
+                    $navLayer = (int)$rs->field('intLayer');
+                    if ($canSee($navPKey)) {
+                        $urlLink = '../' . $navLink . '/list.php?manNo=' . $navPKey;
+                        if ($navPKey === 5) {
+                            $urlLink = '../control/webset.php?manNo=' . $navPKey;
                         }
-                        $rs->movenext();
+                        $appendModuleRow($menu, $navPKey, $navName, $navLink, $navLayer, $urlLink, $manNo, $subNo, $sanitize_link);
+                    }
+                    $rs->movenext();
+                }
+            };
+
+            $appendSystemManagementLinks = static function (
+                array &$menu,
+                array $control_array,
+                array $Left_Menu,
+                string $loginId,
+                int $modulePKey,
+                int $manNo,
+                string $subitem
+            ): void {
+                if (!empty(array_intersect($control_array, $Left_Menu)) || $loginId === 'Admin') {
+                    $menu[] = [
+                        'type'     => 'LINK',
+                        'label'    => '權限管理',
+                        'link'     => '../control/list.php?manNo=3',
+                        'isActive' => $modulePKey === 3,
+                    ];
+                }
+                if ($loginId === 'Admin') {
+                    $menu[] = [
+                        'type'     => 'LINK',
+                        'label'    => (string)($GLOBALS['Array_MU_Name'][97] ?? '語系設定'),
+                        'link'     => '../language/list.php?manNo=97',
+                        'isActive' => $manNo === 97,
+                    ];
+                }
+                $menu[] = [
+                    'type'     => 'LINK',
+                    'label'    => '變更密碼',
+                    'link'     => '../control/chgpw.php',
+                    'isActive' => $subitem === 's5',
+                ];
+            };
+
+            $systemModuleClassPKey = 4;
+
+            $useModuleClassMenu = function_exists('crud_table_has_column')
+                && crud_table_has_column('module_p', 'Class1_PKey')
+                && function_exists('chkTable')
+                && chkTable('module_class');
+
+            if ($useModuleClassMenu) {
+                $rsClass = new recordset(
+                    'SELECT PKey, strName FROM module_class WHERE Upload = :Upload ORDER BY Sort ASC, PKey ASC',
+                    ['Upload' => 'Yes']
+                );
+                while (!$rsClass->eof) {
+                    $classPKey = (int)$rsClass->field('PKey');
+                    $className = trim((string)$rsClass->field('strName'));
+                    if ($className === '') {
+                        $className = '模組類別';
+                    }
+
+                    $rsModSql = 'SELECT * FROM module_p WHERE Upload = :Upload AND Class1_PKey = :Class1_PKey';
+                    $rsModParams = ['Upload' => 'Yes', 'Class1_PKey' => $classPKey];
+                    if ($classPKey === $systemModuleClassPKey) {
+                        $rsModSql .= ' AND PKey NOT IN (3, 97)';
+                    }
+                    $rsModSql .= ' ORDER BY Sort ASC, PKey ASC';
+
+                    $rsMod = new recordset($rsModSql, $rsModParams);
+                    $sectionMenu = [];
+                    $appendModuleRowsFromRs(
+                        $rsMod,
+                        $sectionMenu,
+                        $manNo,
+                        $subNo,
+                        $canSee,
+                        $appendModuleRow,
+                        $sanitize_link
+                    );
+                    $rsMod->close();
+
+                    if ($classPKey === $systemModuleClassPKey) {
+                        $appendSystemManagementLinks(
+                            $sectionMenu,
+                            $control_array,
+                            $Left_Menu,
+                            $Login_ID,
+                            $Module_PKey,
+                            $manNo,
+                            $subitem
+                        );
+                    }
+
+                    if ($sectionMenu !== []) {
+                        $sidebarMenu[] = ['type' => 'HEADER', 'label' => $className];
+                        foreach ($sectionMenu as $entry) {
+                            $sidebarMenu[] = $entry;
+                        }
+                    }
+                    $rsClass->movenext();
+                }
+                $rsClass->close();
+
+                $rsUncat = new recordset(
+                    'SELECT * FROM module_p WHERE Upload = :Upload AND (Class1_PKey IS NULL OR Class1_PKey = 0)'
+                    . ' AND PKey NOT IN (' . $in_list($control_array) . ') ORDER BY Sort ASC, PKey ASC',
+                    ['Upload' => 'Yes']
+                );
+                $uncatMenu = [];
+                $appendModuleRowsFromRs(
+                    $rsUncat,
+                    $uncatMenu,
+                    $manNo,
+                    $subNo,
+                    $canSee,
+                    $appendModuleRow,
+                    $sanitize_link
+                );
+                $rsUncat->close();
+                if ($uncatMenu !== []) {
+                    $sidebarMenu[] = ['type' => 'HEADER', 'label' => '未分類'];
+                    foreach ($uncatMenu as $entry) {
+                        $sidebarMenu[] = $entry;
                     }
                 }
-            }
-
-            // 首頁管理
-            if (!empty(array_intersect($home_array, $Left_Menu)) || $Login_ID === 'Admin') {
-                $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND PKey IN (' . $in_list($home_array) . ') ORDER BY Sort, PKey';
-                $rs  = new recordset($sql, ['Upload' => 'Yes']);
-                if (!$rs->eof) {
-                    $sidebarMenu[] = ['type' => 'HEADER', 'label' => '首頁管理'];
-                    while (!$rs->eof) {
-                        $navPKey  = (int)$rs->field('PKey');
-                        $navName  = (string)$rs->field('strName');
-                        $navLink  = $sanitize_link($rs->field('strLink'));
-                        $navLayer = (int)$rs->field('intLayer');
-                        if ($canSee($navPKey)) {
-                            $urlLink = '../' . $navLink . '/list.php?manNo=' . $navPKey;
-                            $appendModuleRow($sidebarMenu, $navPKey, $navName, $navLink, $navLayer, $urlLink, $manNo, $subNo, $sanitize_link);
-                        }
-                        $rs->movenext();
+            } else {
+                // 網站管理（legacy：未啟用 module_class / Class1_PKey 時）
+                if (!empty(array_intersect($web_array, $Left_Menu)) || $Login_ID === 'Admin') {
+                    $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND PKey IN (' . $in_list($web_array) . ') ORDER BY Sort, PKey';
+                    $rs  = new recordset($sql, ['Upload' => 'Yes']);
+                    if (!$rs->eof) {
+                        $sidebarMenu[] = ['type' => 'HEADER', 'label' => '網站管理'];
+                        $appendModuleRowsFromRs($rs, $sidebarMenu, $manNo, $subNo, $canSee, $appendModuleRow, $sanitize_link);
                     }
+                    $rs->close();
                 }
-            }
 
-            // 單元管理
-            $sidebarMenu[] = ['type' => 'HEADER', 'label' => '單元管理'];
-            $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND intType = :intType AND PKey NOT IN (' . $in_list($menu_array) . ') ORDER BY Sort, PKey';
-            $rs  = new recordset($sql, ['Upload' => 'Yes', 'intType' => 1]);
-            while (!$rs->eof) {
-                $navPKey  = (int)$rs->field('PKey');
-                $navName  = (string)$rs->field('strName');
-                $navLink  = $sanitize_link($rs->field('strLink'));
-                $navLayer = (int)$rs->field('intLayer');
-                if ($canSee($navPKey)) {
-                    $urlLink = '../' . $navLink . '/list.php?manNo=' . $navPKey;
-                    $appendModuleRow($sidebarMenu, $navPKey, $navName, $navLink, $navLayer, $urlLink, $manNo, $subNo, $sanitize_link);
+                // 首頁管理
+                if (!empty(array_intersect($home_array, $Left_Menu)) || $Login_ID === 'Admin') {
+                    $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND PKey IN (' . $in_list($home_array) . ') ORDER BY Sort, PKey';
+                    $rs  = new recordset($sql, ['Upload' => 'Yes']);
+                    if (!$rs->eof) {
+                        $sidebarMenu[] = ['type' => 'HEADER', 'label' => '首頁管理'];
+                        $appendModuleRowsFromRs($rs, $sidebarMenu, $manNo, $subNo, $canSee, $appendModuleRow, $sanitize_link);
+                    }
+                    $rs->close();
                 }
-                $rs->movenext();
-            }
 
-            // 系統管理
-            $sidebarMenu[] = ['type' => 'HEADER', 'label' => '系統管理'];
-            if (!empty(array_intersect($control_array, $Left_Menu)) || $Login_ID === 'Admin') {
-                $sidebarMenu[] = [
-                    'type'     => 'LINK',
-                    'label'    => '權限管理',
-                    'link'     => '../control/list.php?manNo=3',
-                    'isActive' => $Module_PKey === 3,
-                ];
+                // 單元管理
+                $sidebarMenu[] = ['type' => 'HEADER', 'label' => '單元管理'];
+                $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND intType = :intType AND PKey NOT IN (' . $in_list($menu_array) . ') ORDER BY Sort, PKey';
+                $rs  = new recordset($sql, ['Upload' => 'Yes', 'intType' => 1]);
+                $appendModuleRowsFromRs($rs, $sidebarMenu, $manNo, $subNo, $canSee, $appendModuleRow, $sanitize_link);
+                $rs->close();
+
+                $sidebarMenu[] = ['type' => 'HEADER', 'label' => '系統管理'];
+                $appendSystemManagementLinks(
+                    $sidebarMenu,
+                    $control_array,
+                    $Left_Menu,
+                    $Login_ID,
+                    $Module_PKey,
+                    $manNo,
+                    $subitem
+                );
             }
-            if ($Login_ID === 'Admin') {
-                $sidebarMenu[] = [
-                    'type'     => 'LINK',
-                    'label'    => (string)($Array_MU_Name[97] ?? '語系設定'),
-                    'link'     => '../language/list.php?manNo=97',
-                    'isActive' => $manNo === 97,
-                ];
-            }
-            $sidebarMenu[] = [
-                'type'     => 'LINK',
-                'label'    => '變更密碼',
-                'link'     => '../control/chgpw.php',
-                'isActive' => $subitem === 's5',
-            ];
 
             // 其他
             $sidebarMenu[] = ['type' => 'HEADER', 'label' => '其他'];

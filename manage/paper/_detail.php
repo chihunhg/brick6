@@ -405,6 +405,7 @@ function fieldCheck0(theForm) {
                                         </div>
                                     </div>
                                     <?php } ?>
+                                    <?php require dirname(__DIR__) . '/_detail_lang_summary_field.php'; ?>
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="Movielink<?php echo $i?>">
                                             影音連結

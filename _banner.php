@@ -20,13 +20,14 @@ if ($pageName == "index") { ?>
                     $titleText   = safe_inline_html((string)crud_row_val($row, 'strName'), ['p', 'span', 'br']);
                     $subjectText = safe_inline_html((string)crud_row_val($row, 'Subject'), ['p', 'span', 'br']);
                     $altText     = $titleText !== '' ? $titleText : (string)($Web_Name ?? '');
+                    $alignClass  = frontend_banner_text_align_class((string)crud_row_val($row, 'Color'));
 				?>
 				<div class="swiper-slide banner__box">
 					<picture class="bnPic">
 						<source srcset="<?php echo e_attr($slideImgUrl); ?>" type="image/jpg" media="(max-width: 768px)">
 						<img src="<?php echo e_attr($slideImgUrl); ?>" alt="<?php echo e_attr($altText); ?>" class="img-fluid" loading="eager" fetchpriority="high" width="1920" height="900">
 					</picture>
-					<div class="bnTxt__box">
+					<div class="bnTxt__box <?php echo e($alignClass); ?>">
 						<div class="container">
 							<h4 class="bnTit" data-splitting><?php echo $titleText; ?></h4>
 							<p class="bnTxt" data-splitting><?php echo $subjectText; ?></p>

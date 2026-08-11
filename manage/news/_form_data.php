@@ -88,6 +88,7 @@ if (!function_exists('class1_detail_init_defaults')) {
             'language'    => [],
             'strName'     => [],
             'Interview'   => [],
+            'Summary'     => [],
             'Title'       => [],
             'Link'        => [],
             'Movielink'   => [],
@@ -107,6 +108,7 @@ if (!function_exists('class1_detail_init_defaults')) {
             $GLOBALS['class1_form_vars']['isShow'][$i] = '';
             $GLOBALS['class1_form_vars']['strName'][$i] = '';
             $GLOBALS['class1_form_vars']['Interview'][$i] = '';
+            $GLOBALS['class1_form_vars']['Summary'][$i] = '';
             $GLOBALS['class1_form_vars']['Movielink'][$i] = '';
             $GLOBALS['class1_form_vars']['strURL'][$i]    = '';
             $GLOBALS['class1_form_vars']['intLink'][$i]   = 2;
@@ -261,6 +263,9 @@ if (!function_exists('class1_detail_load_children')) {
             }
             foreach ($langData['Subject'] as $i => $subj) {
                 $v['Interview'][$i] = (string)$subj;
+            }
+            foreach ($langData['Summary'] ?? [] as $i => $sum) {
+                $v['Summary'][$i] = (string)$sum;
             }
             foreach ($langData['Description'] ?? [] as $i => $desc) {
                 $v['Description'][$i] = (string)$desc;

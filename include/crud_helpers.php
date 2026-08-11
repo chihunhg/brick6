@@ -263,6 +263,7 @@ if (!function_exists('crud_trusted_module_tables')) {
             'dbad_lang',
             'webset',
             'language',
+            'module_class',
             // 前台瀏覽記錄
             'frontend_visit_log',
             // 前台模組實體表
@@ -714,7 +715,7 @@ if (!function_exists('crud_lang_table_select_meta')) {
         }
         $select = [];
         foreach ([
-            'Sort', 'intLang', 'isShow', 'strName', 'strNote', 'Title', 'Description', 'Keywords', 'Movielink', 'Contents',
+            'Sort', 'intLang', 'isShow', 'strName', 'strNote', 'Title', 'Description', 'Keywords', 'Summary', 'Movielink', 'Contents',
             'intLink', 'strLink', 'strURL', 'Target', 'FileName', 'FileSize', 'Forder',
         ] as $col) {
             if (crud_table_has_column($tableLang, $col)) {
@@ -757,6 +758,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
         $Description = [];
         $Keywords = [];
         $Movielink = [];
+        $Summary   = [];
         $strNote   = [];
         $Contents  = [];
         $intLink   = [];
@@ -776,6 +778,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
             'Subject'     => $Subject,
             'Description' => $Description,
             'Keywords'    => $Keywords,
+            'Summary'     => $Summary,
             'Movielink'   => $Movielink,
             'Contents'    => $Contents,
             'intLink'     => $intLink,
@@ -821,6 +824,9 @@ if (!function_exists('crud_load_lang_slots_data')) {
             if (crud_table_has_column($tableLang, 'Keywords')) {
                 $Keywords[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Keywords') : ($r['Keywords'] ?? ''));
             }
+            if (crud_table_has_column($tableLang, 'Summary')) {
+                $Summary[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Summary') : ($r['Summary'] ?? ''));
+            }
             if (crud_table_has_column($tableLang, 'Movielink')) {
                 $Movielink[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Movielink') : ($r['Movielink'] ?? ''));
             }
@@ -861,6 +867,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
             'Subject'     => $Subject,
             'Description' => $Description,
             'Keywords'    => $Keywords,
+            'Summary'     => $Summary,
             'Movielink'   => $Movielink,
             'Contents'    => $Contents,
             'intLink'     => $intLink,
@@ -948,6 +955,14 @@ if (!function_exists('crud_module_p_before_delete')) {
                 $sqlLog = $pdo->getLastSql() . "\nModule_PKey=" . $id;
                 if (function_exists('manage_history')) {
                     manage_history($ctx['Module_PKey'], $ctx['Module_Name'] ?: '單元設定', $sqlLog, $ctx['WorkFile'], $ctx['Login_ID'], '刪除 module_lang');
+                }
+            }
+
+            if (function_exists('chkTable') && chkTable('module_qa')) {
+                $pdo->delete('module_qa', ' Module_PKey = :Module_PKey', ['Module_PKey' => $id]);
+                $sqlLog = $pdo->getLastSql() . "\nModule_PKey=" . $id;
+                if (function_exists('manage_history')) {
+                    manage_history($ctx['Module_PKey'], $ctx['Module_Name'] ?: '單元設定', $sqlLog, $ctx['WorkFile'], $ctx['Login_ID'], '刪除 module_qa');
                 }
             }
 
@@ -4372,6 +4387,9 @@ if (!function_exists('crud_save_lang_slots')) {
             if (isset($filter['Description' . $n]) && crud_table_has_column($tableLang, 'Description')) {
                 $row['Description'] = SqlFilter((string)$filter['Description' . $n], 'tab');
             }
+            if (isset($filter['Summary' . $n]) && crud_table_has_column($tableLang, 'Summary')) {
+                $row['Summary'] = SqlFilter((string)$filter['Summary' . $n], 'tab');
+            }
             if (crud_table_has_column($tableLang, 'Keywords')) {
                 $row['Keywords'] = SqlFilter(crud_collect_lang_keywords_from_filter($filter, $n), 'tab');
             }
@@ -4510,14 +4528,21 @@ if (!function_exists('crud_save_module_lang_slots')) {
                 continue;
             }
 
-            $descKey = 'Description' . $n;
-            $kwKey   = 'Keywords' . $n;
-            $nameKey = 'strName' . $n;
-            $hasShow = isset($filter['Show' . $n]);
-            $hasDesc = isset($filter[$descKey]);
-            $hasKw   = isset($filter[$kwKey]);
-            $hasName = isset($filter[$nameKey]);
-            if (!$hasShow && !$hasDesc && !$hasKw && !$hasName) {
+            $descKey  = 'Description' . $n;
+            $titleKey = 'Title' . $n;
+            $nameKey  = 'strName' . $n;
+            $hasShow  = isset($filter['Show' . $n]);
+            $hasDesc  = isset($filter[$descKey]);
+            $hasTitle = isset($filter[$titleKey]);
+            $hasName  = isset($filter[$nameKey]);
+            $hasKw    = false;
+            for ($k = 1; $k <= 5; $k++) {
+                if (isset($filter['Keyword' . $k . '_' . $n])) {
+                    $hasKw = true;
+                    break;
+                }
+            }
+            if (!$hasShow && !$hasDesc && !$hasTitle && !$hasKw && !$hasName) {
                 continue;
             }
 
@@ -4528,9 +4553,14 @@ if (!function_exists('crud_save_module_lang_slots')) {
                 'isShow'      => SqlFilter((string)($filter['Show' . $n] ?? ''), 'tab'),
                 'strName'     => SqlFilter((string)($filter[$nameKey] ?? ''), 'tab'),
                 'Description' => SqlFilter((string)($filter[$descKey] ?? ''), 'tab'),
-                'Keywords'    => SqlFilter((string)($filter[$kwKey] ?? ''), 'tab'),
                 'dtDate'      => date('Y-m-d H:i:s'),
             ];
+            if ($hasTitle && crud_table_has_column($tableLang, 'Title')) {
+                $row['Title'] = SqlFilter((string)$filter[$titleKey], 'tab');
+            }
+            if (crud_table_has_column($tableLang, 'Keywords')) {
+                $row['Keywords'] = SqlFilter(crud_collect_lang_keywords_from_filter($filter, $n), 'tab');
+            }
 
             $existing = crud_fetch_one(
                 "SELECT PKey FROM {$tableLang} WHERE Module_PKey = :fk AND intLang = :lang",
@@ -4566,6 +4596,127 @@ if (!function_exists('crud_save_module_lang_slots')) {
                     $ctx['Login_ID'],
                     $action
                 );
+            }
+        }
+    }
+}
+
+if (!function_exists('crud_save_module_qa_slots')) {
+    /**
+     * 儲存 module_qa（Question{sort}_{lang}、Answer{sort}_{lang}，每語系 5 組）
+     */
+    function crud_save_module_qa_slots(
+        string $tableQa,
+        int $modulePKey,
+        array $filter,
+        ?array $langIndexes = null,
+        int $slotMax = 0
+    ): void {
+        if ($modulePKey <= 0 || !function_exists('chkTable') || !chkTable($tableQa)) {
+            return;
+        }
+
+        $slotMax = $slotMax > 0
+            ? $slotMax
+            : (function_exists('module_qa_slot_max') ? module_qa_slot_max() : 5);
+
+        $langs = $langIndexes ?? array_keys((array)($GLOBALS['array_lang'] ?? []));
+        if ($langs === []) {
+            $langs = range(1, 6);
+        }
+
+        foreach ($langs as $lang) {
+            $lang = (int)$lang;
+            if ($lang <= 0) {
+                continue;
+            }
+
+            for ($sort = 1; $sort <= $slotMax; $sort++) {
+                $qKey = function_exists('module_qa_field_question')
+                    ? module_qa_field_question($sort, $lang)
+                    : ('Question' . $sort . '_' . $lang);
+                $aKey = function_exists('module_qa_field_answer')
+                    ? module_qa_field_answer($sort, $lang)
+                    : ('Answer' . $sort . '_' . $lang);
+
+                if (!isset($filter[$qKey]) && !isset($filter[$aKey])) {
+                    continue;
+                }
+
+                $question = mb_substr(trim((string)($filter[$qKey] ?? '')), 0, 100, 'UTF-8');
+                $answer   = mb_substr(trim((string)($filter[$aKey] ?? '')), 0, 500, 'UTF-8');
+
+                $existing = crud_fetch_one(
+                    "SELECT PKey FROM {$tableQa} WHERE Module_PKey = :fk AND intLang = :lang AND Sort = :sort LIMIT 1",
+                    ['fk' => $modulePKey, 'lang' => $lang, 'sort' => $sort]
+                );
+
+                if ($question === '' && $answer === '') {
+                    if ($existing !== null) {
+                        $childPk = (int)($existing['PKey'] ?? 0);
+                        $pdo = new dbPDO();
+                        $pdo->delete($tableQa, 'PKey', $childPk);
+                        $sqlLog = $pdo->getLastSql() . "\nPKey=" . $childPk;
+                        $err = method_exists($pdo, 'getErrorMessage') ? (string)$pdo->getErrorMessage() : '';
+                        $pdo->close();
+                        if ($err !== '') {
+                            crud_fail_db($sqlLog, $err, ['PKey' => $childPk], true);
+                        }
+                        $ctx = crud_module_ctx();
+                        if (function_exists('manage_history')) {
+                            manage_history(
+                                $ctx['Module_PKey'],
+                                $ctx['Module_Name'] ?: '美工頁面',
+                                $sqlLog,
+                                $ctx['WorkFile'],
+                                $ctx['Login_ID'],
+                                'FAQ' . $sort . '語系' . $lang . '刪除成功'
+                            );
+                        }
+                    }
+                    continue;
+                }
+
+                $row = [
+                    'Module_PKey' => SqlFilter($modulePKey, 'int'),
+                    'intLang'     => SqlFilter($lang, 'int'),
+                    'Sort'        => SqlFilter($sort, 'int'),
+                    'isShow'      => SqlFilter((string)($filter['Show' . $lang] ?? ''), 'tab'),
+                    'Question'    => SqlFilter($question, 'tab'),
+                    'Answer'      => SqlFilter($answer, 'tab'),
+                    'dtDate'      => date('Y-m-d H:i:s'),
+                ];
+
+                $pdo = new dbPDO();
+                if ($existing !== null) {
+                    $childPk = (int)($existing['PKey'] ?? 0);
+                    $pdo->update($tableQa, $row, 'PKey', $childPk);
+                    $sqlLog = $pdo->getLastSql() . "\nPKey=" . $childPk;
+                    $action = 'FAQ' . $sort . '語系' . $lang . '修改成功';
+                } else {
+                    $pdo->insert($tableQa, $row);
+                    $childPk = (int)$pdo->getLastId();
+                    $sqlLog = $pdo->getLastSql() . "\nPKey=" . $childPk;
+                    $action = 'FAQ' . $sort . '語系' . $lang . '新增成功';
+                }
+                $err = method_exists($pdo, 'getErrorMessage') ? (string)$pdo->getErrorMessage() : '';
+                $pdo->close();
+
+                if ($err !== '') {
+                    crud_fail_db($sqlLog, $err, $row, true);
+                }
+
+                $ctx = crud_module_ctx();
+                if (function_exists('manage_history')) {
+                    manage_history(
+                        $ctx['Module_PKey'],
+                        $ctx['Module_Name'] ?: '美工頁面',
+                        $sqlLog,
+                        $ctx['WorkFile'],
+                        $ctx['Login_ID'],
+                        $action
+                    );
+                }
             }
         }
     }

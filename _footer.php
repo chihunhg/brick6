@@ -4,6 +4,7 @@
  *
  * 聯絡資訊、社群連結、版權聲明。
  */
+require __DIR__ . '/_module_art_faq.php';
 ?>
 
 <footer class="footer">

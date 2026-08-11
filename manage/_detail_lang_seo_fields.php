@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * 語系 SEO 欄位（*_lang.Title / Description / Keywords）
+ * 語系 SEO/GEO 欄位（*_lang.Title / Description / Keywords）
  * 需由父層提供迴圈變數 $i
  */
 $seoLangSlot = (int)($i ?? 0);
@@ -12,9 +12,10 @@ $SeoTitle = is_array($SeoTitle ?? null) ? $SeoTitle : [];
 $Description = is_array($Description ?? null) ? $Description : [];
 $Keywords = is_array($Keywords ?? null) ? $Keywords : [];
 $seoDescPlaceholder = (string)($seoDescPlaceholder ?? '請輸入160字元內的網站描述');
+$seoFieldsEnableAi = (bool)($seoFieldsEnableAi ?? true);
 
 static $manageSeoTdkAiAssetsLoaded = false;
-if (!$manageSeoTdkAiAssetsLoaded) {
+if ($seoFieldsEnableAi && !$manageSeoTdkAiAssetsLoaded) {
     $manageSeoTdkAiAssetsLoaded = true;
     if (!function_exists('gemini_normalize_industry')) {
         require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
@@ -30,22 +31,29 @@ if (!$manageSeoTdkAiAssetsLoaded) {
     echo script_src_tag('../js/content-tdk-ai.js?ver=' . $__contentTdkJsVer);
 }
 
-$tdkAiIndustry = gemini_normalize_industry((string)($tdkAiIndustry ?? $editorAiIndustry ?? 'general'));
-$tdkAiIndustryOptions = gemini_industry_options();
-$tdkAiFormatMode = gemini_normalize_format_mode((string)($tdkAiFormatMode ?? 'auto'));
-$tdkAiFormatOptions = gemini_format_mode_options();
-$combinedEditorTarget = 'Contents1_' . $seoLangSlot;
 global $array_lang;
 $seoLangLabel = trim((string)($array_lang[$seoLangSlot] ?? ''));
 
-static $manageSeoTdkIndustrySelectRendered = false;
-$showTdkIndustrySelect = !$manageSeoTdkIndustrySelectRendered;
-if ($showTdkIndustrySelect) {
-    $manageSeoTdkIndustrySelectRendered = true;
+if ($seoFieldsEnableAi) {
+    if (!function_exists('gemini_normalize_industry')) {
+        require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+    }
+    $tdkAiIndustry = gemini_normalize_industry((string)($tdkAiIndustry ?? $editorAiIndustry ?? 'general'));
+    $tdkAiIndustryOptions = gemini_industry_options();
+    $tdkAiFormatMode = gemini_normalize_format_mode((string)($tdkAiFormatMode ?? 'auto'));
+    $tdkAiFormatOptions = gemini_format_mode_options();
+    $combinedEditorTarget = 'Contents1_' . $seoLangSlot;
+
+    static $manageSeoTdkIndustrySelectRendered = false;
+    $showTdkIndustrySelect = !$manageSeoTdkIndustrySelectRendered;
+    if ($showTdkIndustrySelect) {
+        $manageSeoTdkIndustrySelectRendered = true;
+    }
 }
 ?>
+                                    <?php if ($seoFieldsEnableAi) { ?>
                                     <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel">SEO 工具</label>
+                                        <label class="col--2 inputLabel editView__formLabel">SEO/GEO 工具</label>
                                         <div class="col--10 flex flex-wrap items-center gap--2">
                                             <?php if ($showTdkIndustrySelect) { ?>
                                             <label class="text-muted mb-0" style="font-size:13px;" for="seoTdkIndustry">產業別</label>
@@ -89,12 +97,13 @@ if ($showTdkIndustrySelect) {
                                                 data-seo-tdk-industry="<?php echo e($tdkAiIndustry); ?>">
                                                 <i class="bi bi-stars" aria-hidden="true"></i> AI 產生 TDK
                                             </button>
-                                            <span class="text-muted" style="font-size:13px;">同步產生會填入 SEO 欄位與「內容1」；建議先填寫標題</span>
+                                            <span class="text-muted" style="font-size:13px;">同步產生會填入 SEO/GEO 欄位與「內容1」；建議先填寫標題</span>
                                         </div>
                                     </div>
+                                    <?php } ?>
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="Title<?php echo $seoLangSlot; ?>">
-                                            SEO標題<?php echo manage_render_field_help('結構化使用：顯示於 <title> 標籤'); ?>
+                                            SEO/GEO標題<?php echo manage_render_field_help('結構化使用：顯示於 <title> 標籤'); ?>
                                         </label>
                                         <div class="col--10">
                                             <input name="Title<?php echo $seoLangSlot; ?>" type="text"
@@ -104,7 +113,7 @@ if ($showTdkIndustrySelect) {
                                     </div>
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="Description<?php echo $seoLangSlot; ?>">
-                                            SEO內文<?php echo manage_render_field_help('顯示於 meta 的 description。搜尋時，瀏覽器會顯示的默認文字。一段時間後，則由搜索引擎自行判斷該頁面重要的內文予以顯示；屆時此欄位的權重會降低。'); ?>
+                                            SEO/GEO內文<?php echo manage_render_field_help('顯示於 meta 的 description。搜尋時，瀏覽器會顯示的默認文字。一段時間後，則由搜索引擎自行判斷該頁面重要的內文予以顯示；屆時此欄位的權重會降低。'); ?>
                                         </label>
                                         <div class="col--10">
                                             <textarea name="Description<?php echo $seoLangSlot; ?>" id="Description<?php echo $seoLangSlot; ?>"
@@ -113,7 +122,7 @@ if ($showTdkIndustrySelect) {
                                         </div>
                                     </div>
                                     <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel">SEO關鍵字<?php echo manage_render_field_help('顯示於 meta 的 keywords。搜索引擎以公布降低此權重；改以實際內容之文案為主。'); ?></label>
+                                        <label class="col--2 inputLabel editView__formLabel">SEO/GEO關鍵字<?php echo manage_render_field_help('顯示於 meta 的 keywords。搜索引擎以公布降低此權重；改以實際內容之文案為主。'); ?></label>
                                         <div class="col--10 flex gap--2">
                                             <?php for ($n = 0; $n < 5; $n++) {
                                                 $kwName = 'Keyword' . ($n + 1) . '_' . $seoLangSlot;

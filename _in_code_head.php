@@ -26,15 +26,24 @@ $fb_description = $m_description ?? '';
 $pageTitle      = $Web_Name; // 預設覆蓋
 $fb_img         = $web_url . 'images/default/default_fb.jpg';
 
-// -------------------- 依單元頁覆蓋 --------------------
+// -------------------- 依單元頁覆蓋（module_lang TDK） --------------------
 if ($pageName !== 'index') {
-    if (!empty($Array_MU_Description[$Module_PKey])) {
-        $fb_description = $Array_MU_Description[$Module_PKey];
+    $modulePKey = (int)($Module_PKey ?? 0);
+    if ($modulePKey <= 0 && !empty($page_link) && function_exists('frontend_module_pkey_for_link')) {
+        $modulePKey = frontend_module_pkey_for_link((string)$page_link);
     }
-    $moduleSeoTitle = trim((string)($Array_MU_SeoTitle[$Module_PKey] ?? $Array_MU_Name[$Module_PKey] ?? ''));
-    if ($moduleSeoTitle !== '') {
-        $pageTitle = $moduleSeoTitle . '∣' . $Web_Name;
+
+    $moduleTdk = function_exists('frontend_apply_module_lang_tdk')
+        ? frontend_apply_module_lang_tdk($modulePKey > 0 ? $modulePKey : null)
+        : frontend_module_lang_tdk($modulePKey > 0 ? $modulePKey : null);
+
+    if ($moduleTdk['description'] !== '') {
+        $fb_description = $moduleTdk['description'];
     }
+    if ($moduleTdk['title'] !== '') {
+        $pageTitle = $moduleTdk['title'] . '∣' . $Web_Name;
+    }
+
     $detailSeoTitle = '';
     if (isset($seoTitle)) {
         $detailSeoTitle = trim((string)$seoTitle);
@@ -50,6 +59,14 @@ if ($pageName !== 'index') {
     }
     // OG 圖：列表圖 → 內容圖 → default_fb.jpg
     $fb_img = frontend_head_image_url();
+}
+
+$m_description = frontend_meta_description_with_summary_fallback(
+    isset($m_description) ? (string)$m_description : '',
+    isset($aiSummary) ? (string)$aiSummary : ''
+);
+if ($m_description !== '') {
+    $fb_description = $m_description;
 }
 
 ?>
@@ -104,6 +121,16 @@ if ($professional_service_ld !== null) {
 $article_ld = frontend_article_ldjson($fb_img);
 if ($article_ld !== null) {
     echo json_ld_script_tag($article_ld);
+}
+
+$product_ld = frontend_product_ldjson($fb_img);
+if ($product_ld !== null) {
+    echo json_ld_script_tag($product_ld);
+}
+
+$faqpage_ld = frontend_faqpage_ldjson();
+if ($faqpage_ld !== null) {
+    echo json_ld_script_tag($faqpage_ld);
 }
 
 if (!empty($Web_Address)) {

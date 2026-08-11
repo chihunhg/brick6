@@ -24,6 +24,16 @@ if (!function_exists('ad_lang_is_show_on')) {
     }
 }
 
+if (!function_exists('ad_normalize_banner_color')) {
+    /** Banner 文字對齊（dbad.Color：flex-start / center / flex-end） */
+    function ad_normalize_banner_color(?string $value): string
+    {
+        $value = trim((string)$value);
+        $allowed = ['flex-start', 'center', 'flex-end'];
+        return in_array($value, $allowed, true) ? $value : 'flex-start';
+    }
+}
+
 if (!function_exists('ad_detail_defaults')) {
     /** @return array<string, mixed> */
     function ad_detail_defaults(): array
@@ -42,6 +52,7 @@ if (!function_exists('ad_detail_defaults')) {
             'presentMode'  => 1,
             'Movielink'    => '',
             'Upload'       => 'Yes',
+            'Color'        => 'flex-start',
             'langIsShow'   => [],
             'strName'      => [],
             'Subject'      => [],
@@ -93,6 +104,7 @@ if (!function_exists('ad_detail_apply_master')) {
         $v['presentMode'] = ($present === 2) ? 2 : 1;
         $v['Movielink']   = (string)($row['Movielink'] ?? '');
         $v['Upload']      = (string)($row['Upload'] ?? 'Yes');
+        $v['Color']       = ad_normalize_banner_color((string)($row['Color'] ?? ''));
 
         $target = trim($v['Target']);
         if ($target !== '_self') {

@@ -55,6 +55,7 @@ if (!function_exists('module_detail_init_defaults')) {
             'copySourcePKey' => 0,
             'Sort'         => 0,
             'strName'      => '',
+            'Class1_PKey'  => 0,
             'langStrName'  => [],
             'Home'         => '',
             'intType'      => 1,
@@ -67,8 +68,11 @@ if (!function_exists('module_detail_init_defaults')) {
             'Upload'       => 'Yes',
             'dtUDate'      => '',
             'UserID'       => '',
+            'SeoTitle'     => [],
             'Description'  => [],
             'Keywords'     => [],
+            'Question'     => [],
+            'Answer'       => [],
             'isShow'       => [],
             'layerNames'   => [],
             'MaxLayer'     => 0,
@@ -78,8 +82,15 @@ if (!function_exists('module_detail_init_defaults')) {
         for ($i = 1; $i <= $langCount; $i++) {
             $GLOBALS['module_form_vars']['isShow'][$i] = '';
             $GLOBALS['module_form_vars']['langStrName'][$i] = '';
+            $GLOBALS['module_form_vars']['SeoTitle'][$i] = '';
             $GLOBALS['module_form_vars']['Description'][$i] = '';
-            $GLOBALS['module_form_vars']['Keywords'][$i] = '';
+            for ($k = 0; $k < 5; $k++) {
+                $GLOBALS['module_form_vars']['Keywords'][$k][$i] = '';
+            }
+            for ($q = 1; $q <= module_qa_slot_max(); $q++) {
+                $GLOBALS['module_form_vars']['Question'][$q][$i] = '';
+                $GLOBALS['module_form_vars']['Answer'][$q][$i] = '';
+            }
         }
 
         module_detail_export_vars();
@@ -119,6 +130,7 @@ if (!function_exists('module_detail_apply_master')) {
         $v['Module_PKey'] = $pkey;
         $v['Sort']        = (int)($row['Sort'] ?? 0);
         $v['strName']     = (string)($row['strName'] ?? '');
+        $v['Class1_PKey'] = (int)($row['Class1_PKey'] ?? 0);
         $v['Home']        = (string)($row['Home'] ?? '');
         $v['intType']     = (int)($row['intType'] ?? 1);
         $v['intUse']      = (int)($row['intUse'] ?? 0);
@@ -191,8 +203,12 @@ if (!function_exists('module_detail_load_children')) {
         }
 
         if (($tables['lang'] ?? '') !== '' && function_exists('chkTable') && chkTable($tables['lang'])) {
+            $langSelect = 'Sort, intLang, isShow, strName, Description, Keywords';
+            if (function_exists('crud_table_has_column') && crud_table_has_column($tables['lang'], 'Title')) {
+                $langSelect = 'Sort, intLang, isShow, strName, Title, Description, Keywords';
+            }
             $rows = crud_fetch_all(
-                'SELECT Sort, intLang, isShow, strName, Description, Keywords FROM ' . $tables['lang']
+                'SELECT ' . $langSelect . ' FROM ' . $tables['lang']
                 . ' WHERE Module_PKey = :fk ORDER BY Sort',
                 ['fk' => $modulePKey]
             );
@@ -203,12 +219,71 @@ if (!function_exists('module_detail_load_children')) {
                 }
                 $v['isShow'][$i] = (string)($r['isShow'] ?? '');
                 $v['langStrName'][$i] = (string)($r['strName'] ?? '');
+                $v['SeoTitle'][$i] = (string)($r['Title'] ?? '');
                 $v['Description'][$i] = (string)($r['Description'] ?? '');
-                $v['Keywords'][$i] = (string)($r['Keywords'] ?? '');
+                $kwRaw = trim((string)($r['Keywords'] ?? ''));
+                if ($kwRaw !== '') {
+                    foreach (explode(',', $kwRaw) as $idx => $word) {
+                        if ($idx >= 5) {
+                            break;
+                        }
+                        $v['Keywords'][$idx][$i] = trim($word);
+                    }
+                }
             }
         }
 
+        module_detail_load_qa($modulePKey, $langCount);
+
         module_detail_export_vars();
+    }
+}
+
+if (!function_exists('module_qa_slot_max')) {
+    /** 美工頁每語系 FAQ 組數 */
+    function module_qa_slot_max(): int
+    {
+        return 5;
+    }
+}
+
+if (!function_exists('module_qa_field_question')) {
+    function module_qa_field_question(int $sort, int $lang): string
+    {
+        return 'Question' . $sort . '_' . $lang;
+    }
+}
+
+if (!function_exists('module_qa_field_answer')) {
+    function module_qa_field_answer(int $sort, int $lang): string
+    {
+        return 'Answer' . $sort . '_' . $lang;
+    }
+}
+
+if (!function_exists('module_detail_load_qa')) {
+    /** 載入 module_qa（Question / Answer，依 Sort × intLang） */
+    function module_detail_load_qa(int $modulePKey, int $langCount): void
+    {
+        if ($modulePKey <= 0 || !function_exists('chkTable') || !chkTable('module_qa')) {
+            return;
+        }
+
+        $v = &$GLOBALS['module_form_vars'];
+        $slotMax = module_qa_slot_max();
+        $rows = crud_fetch_all(
+            'SELECT Sort, intLang, Question, Answer FROM module_qa WHERE Module_PKey = :fk ORDER BY intLang, Sort',
+            ['fk' => $modulePKey]
+        );
+        foreach ($rows as $r) {
+            $lang = (int)($r['intLang'] ?? 0);
+            $sort = (int)($r['Sort'] ?? 0);
+            if ($lang < 1 || $lang > $langCount || $sort < 1 || $sort > $slotMax) {
+                continue;
+            }
+            $v['Question'][$sort][$lang] = (string)($r['Question'] ?? '');
+            $v['Answer'][$sort][$lang] = (string)($r['Answer'] ?? '');
+        }
     }
 }
 
@@ -272,6 +347,29 @@ if (!function_exists('module_list_program_meta')) {
             }
         }
 
+        $classIds = array_values(array_unique(array_filter(array_map(
+            static fn(array $r): int => (int)($r['Class1_PKey'] ?? 0),
+            $rows
+        ))));
+
+        $moduleClasses = [];
+        if ($classIds !== [] && function_exists('chkTable') && chkTable('module_class')) {
+            $ph = [];
+            $params = [];
+            foreach ($classIds as $idx => $id) {
+                $k = 'c' . $idx;
+                $ph[] = ':' . $k;
+                $params[$k] = $id;
+            }
+            $classRows = crud_fetch_all(
+                'SELECT PKey, strName FROM module_class WHERE PKey IN (' . implode(',', $ph) . ')',
+                $params
+            );
+            foreach ($classRows as $cr) {
+                $moduleClasses[(int)$cr['PKey']] = (string)($cr['strName'] ?? '');
+            }
+        }
+
         foreach ($rows as &$row) {
             $use = (int)($row['intUse'] ?? 0);
             $prog = $programs[$use] ?? null;
@@ -279,6 +377,8 @@ if (!function_exists('module_list_program_meta')) {
             $row['type_label']   = ((int)($row['intType'] ?? 0) === 2) ? '美工頁面' : '功能頁面';
             $layer = (int)($row['intLayer'] ?? 0);
             $row['layer_label'] = $layer > 1 ? $layer . '層' : '';
+            $classPKey = (int)($row['Class1_PKey'] ?? 0);
+            $row['module_class_name'] = $classPKey > 0 ? (string)($moduleClasses[$classPKey] ?? '') : '';
         }
         unset($row);
 
@@ -404,6 +504,32 @@ if (!function_exists('module_addin_validate')) {
     }
 }
 
+if (!function_exists('module_class_fetch_options')) {
+    /**
+     * 模組類別下拉選單（module_class，僅上架）
+     *
+     * @return list<array{PKey:int,strName:string}>
+     */
+    function module_class_fetch_options(): array
+    {
+        if (!function_exists('chkTable') || !chkTable('module_class')) {
+            return [];
+        }
+        $rows = crud_fetch_all(
+            'SELECT PKey, strName FROM module_class WHERE Upload = :upload ORDER BY Sort ASC, PKey ASC',
+            ['upload' => 'Yes']
+        );
+        $options = [];
+        foreach ($rows as $row) {
+            $options[] = [
+                'PKey'    => (int)($row['PKey'] ?? 0),
+                'strName' => (string)($row['strName'] ?? ''),
+            ];
+        }
+        return $options;
+    }
+}
+
 if (!function_exists('module_addin_build_master_data')) {
     /** @return array<string,mixed> */
     function module_addin_build_master_data(array $filter): array {
@@ -431,6 +557,10 @@ if (!function_exists('module_addin_build_master_data')) {
 
         if ($prog['strLink'] !== 'none') {
             $data['strLink'] = SqlFilter($prog['strLink'], 'tab');
+        }
+
+        if (function_exists('crud_table_has_column') && crud_table_has_column('module_p', 'Class1_PKey')) {
+            $data['Class1_PKey'] = SqlFilter(max(0, safe_int($filter['Class1_PKey'] ?? 0)), 'int');
         }
 
         return $data;

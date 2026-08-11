@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * SEO TDK 產生 API（SSE 串流）
+ * SEO/GEO TDK 產生 API（SSE 串流）
  */
 $manage_binary_export = true;
 

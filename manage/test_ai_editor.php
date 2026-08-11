@@ -71,7 +71,7 @@ $cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
     </form>
 
     <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-        <h2 class="text-lg font-semibold">SEO TDK 欄位</h2>
+        <h2 class="text-lg font-semibold">SEO/GEO TDK 欄位</h2>
         <div class="grid gap-3">
             <div>
                 <label for="seo_title" class="block text-sm font-medium mb-1">Title</label>

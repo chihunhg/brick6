@@ -903,7 +903,7 @@ if (!function_exists('frontend_article_ldjson')) {
     function frontend_article_ldjson(?string $imageUrl = null): ?array
     {
         global $PKey, $strName, $seoTitle, $m_description, $web_url, $page_link;
-        global $OpenDate, $strDate, $dtUDate, $detailRow;
+        global $OpenDate, $strDate, $dtUDate, $detailRow, $aiSummary;
 
         $headline = frontend_article_headline_text(
             isset($seoTitle) ? (string)$seoTitle : '',
@@ -912,6 +912,11 @@ if (!function_exists('frontend_article_ldjson')) {
 
         $pkey = (int)($PKey ?? 0);
         if ($headline === '' || $pkey <= 0) {
+            return null;
+        }
+
+        $cfg = frontend_module_config();
+        if ((string)($cfg['master'] ?? '') === 'product') {
             return null;
         }
 
@@ -931,7 +936,10 @@ if (!function_exists('frontend_article_ldjson')) {
             'image' => frontend_article_image_urls($pkey, $imageUrl),
         ];
 
-        $description = trim(strip_tags((string)($m_description ?? '')));
+        $description = frontend_meta_description_with_summary_fallback(
+            isset($m_description) ? (string)$m_description : '',
+            isset($aiSummary) ? (string)$aiSummary : ''
+        );
         if ($description !== '') {
             $ld['description'] = $description;
         }
@@ -961,6 +969,289 @@ if (!function_exists('frontend_article_ldjson')) {
         }
 
         return $ld;
+    }
+}
+
+if (!function_exists('frontend_product_image_urls')) {
+    /**
+     * Product image 陣列（列表圖 → 明細圖 → 預設圖，絕對 URL）
+     *
+     * @return list<string>
+     */
+    function frontend_product_image_urls(int $pkey, ?string $fallbackImageUrl = null): array
+    {
+        global $web_url;
+
+        $urls = [];
+        $seen = [];
+        $append = static function (?string $url) use (&$urls, &$seen): void {
+            $url = trim((string)($url ?? ''));
+            if ($url === '') {
+                return;
+            }
+
+            $absolute = frontend_absolute_public_url($url);
+            if ($absolute === '#' || isset($seen[$absolute])) {
+                return;
+            }
+
+            $seen[$absolute] = true;
+            $urls[] = $absolute;
+        };
+
+        $append($fallbackImageUrl);
+
+        $cfg = frontend_module_config();
+        if ($pkey > 0) {
+            $append(frontend_module_list_image_url($pkey, $cfg));
+            foreach (frontend_fetch_product_gallery_images($pkey, $cfg) as $image) {
+                $append((string)($image['url'] ?? ''));
+            }
+        }
+
+        if ($urls === []) {
+            $append(rtrim((string)$web_url, '/') . '/images/default/default_fb.jpg');
+        }
+
+        return $urls;
+    }
+}
+
+if (!function_exists('frontend_product_ldjson')) {
+    /**
+     * 產品內頁 Product 結構化資料（schema.org 規範）
+     *
+     * @return array<string,mixed>|null
+     */
+    function frontend_product_ldjson(?string $fallbackImageUrl = null): ?array
+    {
+        global $PKey, $strName, $seoTitle, $m_description, $aiSummary, $strNo, $interview, $web_url, $page_link;
+
+        $cfg = frontend_module_config();
+        if ((string)($cfg['master'] ?? '') !== 'product') {
+            return null;
+        }
+
+        $name = frontend_article_headline_text(
+            isset($seoTitle) ? (string)$seoTitle : '',
+            (string)($strName ?? '')
+        );
+        $pkey = (int)($PKey ?? 0);
+        if ($pkey <= 0 || $name === '') {
+            return null;
+        }
+
+        $pageUrl = safe_href((string)($web_url . ($page_link ?? '')));
+        $brandName = trim((string)($GLOBALS['Web_Name'] ?? ''));
+
+        $ld = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'Product',
+            'name'     => $name,
+            'url'      => $pageUrl,
+        ];
+
+        $description = frontend_meta_description_with_summary_fallback(
+            isset($m_description) ? (string)$m_description : '',
+            isset($aiSummary) ? (string)$aiSummary : ''
+        );
+        if ($description === '') {
+            $description = trim(strip_tags((string)($interview ?? '')));
+        }
+        if ($description !== '') {
+            $ld['description'] = $description;
+        }
+
+        $sku = trim((string)($strNo ?? ''));
+        if ($sku !== '') {
+            $ld['sku'] = $sku;
+        }
+
+        if ($brandName !== '') {
+            $ld['brand'] = [
+                '@type' => 'Brand',
+                'name'  => $brandName,
+            ];
+        }
+
+        $images = frontend_product_image_urls($pkey, $fallbackImageUrl);
+        if ($images !== []) {
+            $ld['image'] = count($images) === 1 ? $images[0] : $images;
+        }
+
+        $ld['offers'] = [
+            '@type'         => 'Offer',
+            'url'           => $pageUrl,
+            'priceCurrency' => 'TWD',
+            'price'         => '0',
+            'availability'  => 'https://schema.org/InStock',
+        ];
+
+        return $ld;
+    }
+}
+
+if (!function_exists('frontend_module_is_art_page')) {
+    /** 是否為美工頁面單元（module_p.intType = 2 且已上架） */
+    function frontend_module_is_art_page(int $modulePKey): bool
+    {
+        if ($modulePKey <= 0) {
+            return false;
+        }
+
+        $row = crud_fetch_one(
+            'SELECT intType FROM module_p WHERE PKey = :pk AND Upload = :upload LIMIT 1',
+            ['pk' => $modulePKey, 'upload' => 'Yes']
+        );
+
+        return $row !== null && (int)($row['intType'] ?? 0) === 2;
+    }
+}
+
+if (!function_exists('frontend_fetch_module_qa')) {
+    /**
+     * 讀取美工頁 FAQ（module_qa）
+     *
+     * @return list<array{question:string, answer:string}>
+     */
+    function frontend_fetch_module_qa(int $modulePKey, ?int $lang = null): array
+    {
+        global $this_lang;
+
+        $lang = (int)($lang ?? $this_lang ?? 1);
+        if ($modulePKey <= 0 || $lang <= 0 || !function_exists('chkTable') || !chkTable('module_qa')) {
+            return [];
+        }
+
+        $sql = 'SELECT Sort, Question, Answer, isShow FROM module_qa'
+            . ' WHERE Module_PKey = :fk AND intLang = :lang'
+            . ' ORDER BY Sort';
+
+        $items = [];
+        foreach (crud_fetch_all($sql, ['fk' => $modulePKey, 'lang' => $lang]) as $row) {
+            if ((string)($row['isShow'] ?? '') === 'No') {
+                continue;
+            }
+
+            $question = trim(strip_tags((string)crud_row_val($row, 'Question')));
+            $answer   = trim(strip_tags((string)crud_row_val($row, 'Answer')));
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+
+            $items[] = [
+                'question' => $question,
+                'answer'   => $answer,
+            ];
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('frontend_faqpage_ldjson')) {
+    /**
+     * 美工頁 FAQPage 結構化資料（schema.org，來源 module_qa）
+     *
+     * @return array<string,mixed>|null
+     */
+    function frontend_faqpage_ldjson(?int $modulePKey = null): ?array
+    {
+        global $Module_PKey, $this_lang;
+
+        $modulePKey = (int)($modulePKey ?? $Module_PKey ?? 0);
+        if ($modulePKey <= 0 || !frontend_module_is_art_page($modulePKey)) {
+            return null;
+        }
+
+        $qaItems = frontend_fetch_module_qa($modulePKey, (int)($this_lang ?? 1));
+        if ($qaItems === []) {
+            return null;
+        }
+
+        $mainEntity = [];
+        foreach ($qaItems as $item) {
+            $mainEntity[] = [
+                '@type'          => 'Question',
+                'name'           => $item['question'],
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text'  => $item['answer'],
+                ],
+            ];
+        }
+
+        return [
+            '@context'   => 'https://schema.org',
+            '@type'      => 'FAQPage',
+            'mainEntity' => $mainEntity,
+        ];
+    }
+}
+
+if (!function_exists('frontend_module_lang_tdk')) {
+    /**
+     * 依 Module_PKey 從 module_lang（_inc 載入的 view_module_lang）取得 TDK
+     *
+     * @return array{title:string, description:string, keywords:string}
+     */
+    function frontend_module_lang_tdk(?int $modulePKey = null): array
+    {
+        global $Array_MU_SeoTitle, $Array_MU_Name, $Array_MU_Description, $Array_MU_Keywords;
+        global $Module_PKey, $page_link;
+
+        $pk = (int)($modulePKey ?? $Module_PKey ?? 0);
+        if ($pk <= 0 && !empty($page_link) && function_exists('frontend_module_pkey_for_link')) {
+            $pk = frontend_module_pkey_for_link((string)$page_link);
+        }
+
+        if ($pk <= 0) {
+            return ['title' => '', 'description' => '', 'keywords' => ''];
+        }
+
+        return [
+            'title'       => trim((string)($Array_MU_SeoTitle[$pk] ?? $Array_MU_Name[$pk] ?? '')),
+            'description' => trim((string)($Array_MU_Description[$pk] ?? '')),
+            'keywords'    => trim((string)($Array_MU_Keywords[$pk] ?? '')),
+        ];
+    }
+}
+
+if (!function_exists('frontend_apply_module_lang_tdk')) {
+    /**
+     * 美工頁／單元列表頁：將 module_lang TDK 套入頁面變數（不覆蓋內容層 SEO）
+     *
+     * @return array{title:string, description:string, keywords:string}
+     */
+    function frontend_apply_module_lang_tdk(?int $modulePKey = null, bool $allowContentOverride = true): array
+    {
+        global $seoTitle, $m_description, $m_keywords;
+
+        $tdk = frontend_module_lang_tdk($modulePKey);
+
+        $detailSeoTitle = '';
+        if ($allowContentOverride && isset($seoTitle)) {
+            $detailSeoTitle = trim((string)$seoTitle);
+        }
+        if ($allowContentOverride && $detailSeoTitle === '' && (!empty($GLOBALS['strName']) || isset($GLOBALS['Title']))) {
+            $detailSeoTitle = crud_lang_seo_title([
+                'Title'   => $GLOBALS['Title'] ?? '',
+                'strName' => $GLOBALS['strName'] ?? '',
+            ]);
+        }
+
+        if ($detailSeoTitle !== '') {
+            return $tdk;
+        }
+
+        if ($tdk['description'] !== '') {
+            $m_description = $tdk['description'];
+        }
+        if ($tdk['keywords'] !== '') {
+            $m_keywords = $tdk['keywords'];
+        }
+
+        return $tdk;
     }
 }
 
@@ -1834,6 +2125,28 @@ if (!function_exists('frontend_investor_items_from_rows')) {
     }
 }
 
+if (!function_exists('frontend_normalize_banner_color')) {
+    /** Banner 文字對齊（dbad.Color：flex-start / center / flex-end） */
+    function frontend_normalize_banner_color(?string $value): string
+    {
+        $value = trim((string)$value);
+        $allowed = ['flex-start', 'center', 'flex-end'];
+        return in_array($value, $allowed, true) ? $value : 'flex-start';
+    }
+}
+
+if (!function_exists('frontend_banner_text_align_class')) {
+    /** 依 dbad.Color 回傳 bnTxt__box 修飾 class */
+    function frontend_banner_text_align_class(?string $color): string
+    {
+        return match (frontend_normalize_banner_color($color)) {
+            'center'   => 'bnTxt__box--align-center',
+            'flex-end' => 'bnTxt__box--align-end',
+            default    => 'bnTxt__box--align-start',
+        };
+    }
+}
+
 if (!function_exists('frontend_banner_rows')) {
     /**
      * 首頁 Banner 列表（優先 view_dbad，無 view 時改查 dbad 主檔）
@@ -2069,6 +2382,60 @@ if (!function_exists('frontend_lang_seo_title')) {
     function frontend_lang_seo_title(array $row): string
     {
         return crud_lang_seo_title($row);
+    }
+}
+
+if (!function_exists('frontend_lang_summary')) {
+    /** 讀取目前語系 AI 搜尋核心摘要（view 或 *_lang.Summary） */
+    function frontend_lang_summary(array $row, ?array $cfg = null): string
+    {
+        global $this_lang;
+
+        $summary = trim(strip_tags((string)crud_row_val($row, 'Summary')));
+        if ($summary !== '') {
+            return $summary;
+        }
+
+        $cfg = $cfg ?? frontend_module_config();
+        $tableLang = trim((string)($cfg['lang'] ?? ''));
+        $fkCol     = trim((string)($cfg['fk'] ?? ''));
+        $pkey      = crud_row_int($row, 'PKey');
+        $lang      = (int)($this_lang ?? 1);
+
+        if (
+            $pkey <= 0
+            || $tableLang === ''
+            || $fkCol === ''
+            || !crud_is_safe_sql_identifier($tableLang)
+            || !crud_is_safe_sql_identifier($fkCol)
+            || !function_exists('crud_table_has_column')
+            || !crud_table_has_column($tableLang, 'Summary')
+        ) {
+            return '';
+        }
+
+        $langRow = crud_fetch_one(
+            "SELECT Summary FROM {$tableLang} WHERE {$fkCol} = :pk AND intLang = :lang LIMIT 1",
+            ['pk' => $pkey, 'lang' => $lang]
+        );
+        if ($langRow === null) {
+            return '';
+        }
+
+        return trim(strip_tags((string)crud_row_val($langRow, 'Summary')));
+    }
+}
+
+if (!function_exists('frontend_meta_description_with_summary_fallback')) {
+    /** SEO Description 為空時改用 AI 摘要 */
+    function frontend_meta_description_with_summary_fallback(?string $description, ?string $aiSummary): string
+    {
+        $description = trim(strip_tags((string)($description ?? '')));
+        if ($description !== '') {
+            return $description;
+        }
+
+        return trim(strip_tags((string)($aiSummary ?? '')));
     }
 }
 

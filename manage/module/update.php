@@ -25,6 +25,11 @@ if (!module_detail_load($editPKey)) {
     exit;
 }
 
+if ((int)($GLOBALS['intType'] ?? 0) === 2) {
+    manage_alert_script('此單元為美工頁面，請至美工頁面列表編輯。', '../module2/update.php?PKey=' . $editPKey);
+    exit;
+}
+
 $breadcrumbs = [
     ['label' => '單元管理'],
     ['label' => '單元設定', 'href' => 'list.php'],

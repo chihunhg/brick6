@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * 同步產生 CKEditor HTML 與 SEO TDK（SSE 串流）
+ * 同步產生 CKEditor HTML 與 SEO/GEO TDK（SSE 串流）
  */
 $manage_binary_export = true;
 

@@ -520,5 +520,18 @@ $lang_text["mail_send_ok"] = array(//alert
 	1=>"謝謝您的來信，我們將儘速為您服務",
 	2=>"Thank you for the inquiry, we will contact you asap.",
 );
+
+$lang_text['module_art_faq'] = [
+	1 => [
+		'title_prefix' => 'SEO、AEO、GEO',
+		'title_accent' => '常見問題',
+		'lead'         => '規劃 AI 搜尋優化、結構化資料或 GEO 友善架構時，決策與行銷單位最常釐清的方向與疑慮。',
+	],
+	2 => [
+		'title_prefix' => 'SEO, AEO, GEO',
+		'title_accent' => 'FAQ',
+		'lead'         => 'Common questions from decision-makers and marketing teams about AI search optimization, structured data, and GEO-friendly architecture.',
+	],
+];
 //------------------------------------------------------------------------
 //***此檔案，後端管理系統也有用到，所以請不要亂放Code***

@@ -329,6 +329,29 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                                     </div>
                                 </div>
                                 <?php } ?>
+                                <?php
+                                $moduleClassOptions = module_class_fetch_options();
+                                $selectedClass1PKey = (int)($Class1_PKey ?? 0);
+                                ?>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="Class1_PKey">模組類別</label>
+                                    <div class="col--10">
+                                        <select name="Class1_PKey" id="Class1_PKey" class="formSelect">
+                                            <option value="">請選擇</option>
+                                            <?php foreach ($moduleClassOptions as $classOpt) {
+                                                $optId = (int)($classOpt['PKey'] ?? 0);
+                                                $optName = (string)($classOpt['strName'] ?? '');
+                                                if ($optId <= 0) {
+                                                    continue;
+                                                }
+                                                ?>
+                                            <option value="<?php echo $optId; ?>"<?php echo $selectedClass1PKey === $optId ? ' selected' : ''; ?>>
+                                                <?php echo e($optName); ?>
+                                            </option>
+                                            <?php } ?>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel" for="Upload">上下架</label>
                                     <div class="col--10">

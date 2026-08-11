@@ -20,6 +20,10 @@ $Photo = is_array($Photo ?? null) ? $Photo : [];
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
 $Sort = $Sort ?? '';
 $Upload = (string)($Upload ?? 'Yes');
+if (!function_exists('ad_normalize_banner_color')) {
+    require_once __DIR__ . '/_form_data.php';
+}
+$Color = ad_normalize_banner_color((string)($Color ?? 'flex-start'));
 $strLink = (string)($strLink ?? '');
 $Target = (string)($Target ?? '');
 if ($Target === '') {
@@ -379,15 +383,15 @@ $(function () {
                                         
                                         <div class="flex row gap--2">
                                             <label class="flex flex--itCenter gap--2 editView__radioLabel">
-                                                <input type="radio" name="banner_alignment" value="flex-start" checked>
+                                                <input type="radio" name="Color" value="flex-start"<?php echo $Color === 'flex-start' ? ' checked' : ''; ?>>
                                                 <span class="editView__radioText">置左</span>
                                             </label>
                                             <label class="flex flex--itCenter gap--2 editView__radioLabel">
-                                                <input type="radio" name="banner_alignment" value="center">
+                                                <input type="radio" name="Color" value="center"<?php echo $Color === 'center' ? ' checked' : ''; ?>>
                                                 <span class="editView__radioText">置中</span>
                                             </label>
                                             <label class="flex flex--itCenter gap--2 editView__radioLabel">
-                                                <input type="radio" name="banner_alignment" value="flex-end">
+                                                <input type="radio" name="Color" value="flex-end"<?php echo $Color === 'flex-end' ? ' checked' : ''; ?>>
                                                 <span class="editView__radioText">置右</span>
                                             </label>
                                         </div>
@@ -413,13 +417,11 @@ $(function () {
                         <!-- 及時預覽的JS -->
                         <script>
                             document.addEventListener('DOMContentLoaded', function() {
-                                console.log("【終極預覽系統】啟動中...");
-
                                 const previewBanner = document.getElementById('previewBanner');
                                 const textContainer = document.getElementById('textContainer');
                                 const previewTitle = document.getElementById('previewTitle');
                                 const previewDesc = document.getElementById('previewDesc');
-                                const radioAlignments = document.getElementsByName('banner_alignment');
+                                const radioAlignments = document.getElementsByName('Color');
 
                                 // ==========================================
                                 // 1. 文字與對齊同步
@@ -460,33 +462,22 @@ $(function () {
                                 // 就算原本的 JS 寫了 stopPropagation() 也擋不住這個監聽器！
                                 // ==========================================
                                 document.addEventListener('change', function(event) {
-                                    // 判斷是不是我們圖片上傳的 input
                                     if (event.target && event.target.type === 'file' && event.target.name.startsWith('Photo')) {
-                                        console.log("【捕獲成功】偵測到檔案選取！", event.target.id);
                                         const file = event.target.files[0];
                                         if (file) {
                                             const reader = new FileReader();
                                             reader.onload = function(e) {
                                                 const base64Url = e.target.result;
-                                                
-                                                // 同步給大 Banner
                                                 if (previewBanner) {
                                                     previewBanner.style.backgroundImage = `url('${base64Url}')`;
-                                                    console.log("【同步成功】大 Banner 已更換背景！");
                                                 }
                                             };
                                             reader.readAsDataURL(file);
                                         }
                                     }
-                                }, true); // <--- 這個 true 就是「捕獲階段」，能穿透所有阻擋！
+                                }, true);
 
-
-                                // ==========================================
-                                // 3. 終極絕招 B：監聽「所有」上傳框內的 <img> 屬性變化
-                                // 不管你的 ID 叫 preview0 還是 preview_xxx，只要 src 變了，大 Banner 就跟著變
-                                // ==========================================
                                 const allPreviewImages = document.querySelectorAll('.uploadBox__picBx img');
-                                console.log(`【系統偵測】畫面上共有 ${allPreviewImages.length} 個小縮圖框`);
 
                                 allPreviewImages.forEach((img, index) => {
                                     // 初始化：如果進頁面時，第一個縮圖本來就有舊圖，直接塞給大 Banner 當預設背景
@@ -502,7 +493,6 @@ $(function () {
                                                 // 只要任何一個縮圖（通常是第一個 index === 0）變更，就同步給大 Banner
                                                 if (newSrc && previewBanner && index === 0) {
                                                     previewBanner.style.backgroundImage = `url('${newSrc}')`;
-                                                    console.log(`【監聽成功】偵測到第 ${index} 個縮圖 src 改變，已同步大 Banner！`);
                                                 }
                                             }
                                         }
@@ -528,6 +518,7 @@ $(function () {
                             <li>網站前台顯示順序，依照「順序」由小至大排序；順序相同，依照「修改日期」由新至舊排序。</li>
                             <li>呈現方式為「圖檔」時，桌機圖片必填；為「影音」時須填寫 Youtube 影片代碼。</li>
                             <li>手機圖片為選填；編輯時若已有圖片可不必重新選擇。</li>
+                            <li>預覽區「置左／置中／置右」寫入 dbad.Color，供前台 Banner 文字對齊使用。</li>
                             <li>按鈕連結可搭配「另開視窗」或「本頁開啟」設定。</li>
                         </ul>
                     </section>

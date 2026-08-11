@@ -388,6 +388,12 @@ a.navLink{cursor:pointer}
 .banner__box .bnPic img{width:auto;height:100%;object-fit: cover;transition:transform 9s linear;}
 .bnTxt__box{width: 50%;height:100%;letter-spacing:.25rem;position:absolute;left: 0;bottom:0;color: white;text-shadow: 0 0 1rem black; display:flex;flex-direction:column;justify-content:end;z-index:10;padding-bottom:var(--blockHeight);padding-top:var(--headerH);}
 .bnTxt__box>.container{padding:0;padding-left: calc( var(--container) + var(--container--hd));}
+.bnTxt__box--align-start{align-items:flex-start;}
+.bnTxt__box--align-start>.container{text-align:left;}
+.bnTxt__box--align-center{left:0;right:0;width:100%;align-items:center;}
+.bnTxt__box--align-center>.container{text-align:center;padding-left:calc(var(--container) + var(--container--hd));padding-right:calc(var(--container) + var(--container--hd));}
+.bnTxt__box--align-end{left:auto;right:0;align-items:flex-end;}
+.bnTxt__box--align-end>.container{text-align:right;padding-left:0;padding-right:calc(var(--container) + var(--container--hd));}
 .bnTit{font-size: var(--titleBN-L);font-weight: var(--bold);line-height: var(--lineHeight--title);text-wrap:wrap;--lineSpace:clamp(1rem,2vw,2rem);margin-bottom: var(--lineSpace);padding-bottom: var(--lineSpace);position:relative;}
 .bnTxt{font-size: var(--titleBN-S);font-weight: var(--bold);line-height: var(--lineHeight--txt);text-wrap:wrap;margin-bottom: clamp(2rem,3.5vw,3.5rem);}
 .bnTit::before{content:'';display:block;width:0;height: 1px;background:white;position:absolute;bottom:0;z-index:2;transition: width 3s ease-in-out;}
@@ -707,6 +713,9 @@ body.albumViewer-open{overflow:hidden;}
 
 
 .articleTop{margin-bottom: 1rem;display: flex;flex-direction: column;gap: 0.5rem;}
+.articleSummary{margin-bottom:1rem;padding:1rem 1.25rem;background:rgba(63,87,104,.06);border-left:3px solid var(--mjColor);}
+.articleSummary__label{margin:0 0 .5rem;font-size:.875rem;font-weight:var(--bold,700);color:var(--mjColor);letter-spacing:.05em;line-height:1.4;}
+.articleSummary__text{margin:0;line-height:1.65;color:var(--dark);}
 .articleMain{--bdStyle:1px solid #ddd;padding: 1.5rem 0;border-top: var(--bdStyle);border-bottom: var(--bdStyle);}
 .articleTt{margin-bottom:0;}
 .dateTxt{position: relative;display: flex;gap: 0.25rem;align-items: center;}
@@ -818,6 +827,8 @@ body.albumViewer-open{overflow:hidden;}
 
   /* !====banner */
   .bnTxt__box{width: 60%;}
+  .bnTxt__box--align-center{width:100%;left:0;right:0;}
+  .bnTxt__box--align-end{left:auto;right:0;}
 
   /* !991====首頁 服務流程==== */
   .blockHeight--ixProcess{position: relative;padding:0;}
@@ -866,6 +877,7 @@ body.albumViewer-open{overflow:hidden;}
 	.navSubLink{padding-left:1.5rem;}
   /* !====banner */
   .bnTxt__box>.container{padding: 0 var(--container) ;}
+  .bnTxt__box--align-center>.container{padding:0 var(--container);}
 
   /* !====首頁 關於承遠==== */
   .ixAboutWrap__mj{font-size: var(--textS);text-align: center;}  
@@ -943,6 +955,26 @@ body.albumViewer-open{overflow:hidden;}
 .faqItem__pic img{display:block;max-width:100%;height:auto;}
 .faqItem__text{font-size:var(--text,1rem);line-height:1.8;}
 .faqItem__text p:last-child{margin-bottom:0;}
+
+/* 美工頁 FAQ（module_qa） */
+.blockHeight--moduleFaq{background:var(--gray-lx2);padding:var(--blockHeight) 0;}
+.moduleFaqHead{margin-bottom:clamp(1.25rem,2vw,2rem);}
+.moduleFaqHead__title{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem .5rem;margin:0 0 .75rem;padding-left:calc(.625rem + 1rem);font-size:var(--titleM);font-weight:var(--bold);line-height:var(--lineHeight--title);color:var(--dark);position:relative;}
+.moduleFaqHead__title:before{content:'';position:absolute;left:0;top:.35em;width:.625rem;height:.625rem;background:var(--red);}
+.moduleFaqHead__prefix{color:var(--dark);}
+.moduleFaqHead__accent{color:var(--red);}
+.moduleFaqHead__lead{margin:0;max-width:52rem;font-size:var(--text);line-height:1.8;color:var(--gray-d);}
+.faqList--moduleArt{gap:1rem;}
+.faqList--moduleArt .faqItem{border:0;border-radius:.625rem;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.faqList--moduleArt .faqItem__q{padding:1.125rem 1.5rem;gap:1rem;}
+.faqList--moduleArt .faqItem__q:hover,.faqList--moduleArt .faqItem.is-open .faqItem__q{background:#fff;}
+.faqList--moduleArt .faqItem__mark{display:none;}
+.faqList--moduleArt .faqItem__title{font-size:var(--text);font-weight:var(--bold);}
+.faqList--moduleArt .faqItem__icon--chevron{width:.55rem;height:.55rem;margin-top:.35rem;border-right:2px solid var(--red);border-bottom:2px solid var(--red);transform:rotate(45deg);transition:transform .2s ease;}
+.faqList--moduleArt .faqItem__icon--chevron:before,.faqList--moduleArt .faqItem__icon--chevron:after{display:none;}
+.faqList--moduleArt .faqItem.is-open .faqItem__icon--chevron{transform:rotate(-135deg);margin-top:.65rem;}
+.faqList--moduleArt .faqItem__a{border-top:1px solid var(--gray-l);}
+.faqList--moduleArt .faqItem__aInner{padding:0 1.5rem 1.25rem;}
 
 /* 檔案下載 */
 .blockHeight--download{padding:var(--blockHeight) 0;}
