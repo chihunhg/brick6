@@ -338,6 +338,192 @@
         updateToolbar();
     }
 
+    function updateDragListSortInputs(list) {
+        var items = list.querySelectorAll('.drag-item');
+        items.forEach(function (item, index) {
+            var sortInput = item.querySelector('.tableRow__sortInput');
+            if (sortInput) {
+                sortInput.value = String(index + 1);
+            }
+        });
+    }
+
+    function listHeaderHasDragColumn(header) {
+        if (!header) {
+            return false;
+        }
+        if (header.dataset.manageDragHeader === '1') {
+            return true;
+        }
+        var cells = header.children;
+        for (var i = 0; i < cells.length; i++) {
+            if ((cells[i].textContent || '').trim() === '拖曳') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function prependDragGridColumn(el) {
+        if (!el || el.dataset.manageDragGrid === '1') {
+            return;
+        }
+        var computed = window.getComputedStyle(el).gridTemplateColumns;
+        if (!computed || computed === 'none') {
+            return;
+        }
+        el.style.gridTemplateColumns = '50px ' + computed;
+        el.dataset.manageDragGrid = '1';
+    }
+
+    function insertDragHeaderCell(header) {
+        if (!header || listHeaderHasDragColumn(header)) {
+            return;
+        }
+        var cell = document.createElement('div');
+        cell.className = 'textCenter manageListDragHeader';
+        cell.textContent = '拖曳';
+        var children = header.children;
+        var insertBefore = children.length ? children[0] : null;
+        if (insertBefore && insertBefore.textContent && insertBefore.textContent.trim() === '開合') {
+            insertBefore = children.length > 1 ? children[1] : null;
+        }
+        if (insertBefore) {
+            header.insertBefore(cell, insertBefore);
+        } else {
+            header.appendChild(cell);
+        }
+        header.dataset.manageDragHeader = '1';
+        prependDragGridColumn(header);
+    }
+
+    function insertDragHandleCell(rowData) {
+        if (!rowData || rowData.querySelector('.drag-handle')) {
+            return false;
+        }
+        var cell = document.createElement('div');
+        cell.className = 'flex flex--jtCenter manageListDragHandle';
+        cell.innerHTML = '<span class="drag-handle" title="拖曳排序">☰</span>';
+        var children = rowData.children;
+        var insertBefore = children.length ? children[0] : null;
+        if (insertBefore && insertBefore.querySelector('.tableRow__expandBtn')) {
+            insertBefore = children.length > 1 ? children[1] : null;
+        }
+        if (insertBefore) {
+            rowData.insertBefore(cell, insertBefore);
+        } else {
+            rowData.insertBefore(cell, rowData.firstChild);
+        }
+        prependDragGridColumn(rowData);
+        return true;
+    }
+
+    function bindDragListEvents(list) {
+        if (!list || list.dataset.manageDragBound === '1') {
+            return;
+        }
+        list.dataset.manageDragBound = '1';
+
+        list.addEventListener('mousedown', function (e) {
+            var item = e.target.closest('.drag-item');
+            if (!item) {
+                return;
+            }
+            var isHandle = e.target.classList.contains('drag-handle')
+                || (e.target.closest && e.target.closest('.drag-handle'));
+            if (isHandle) {
+                item.setAttribute('draggable', 'true');
+            } else {
+                item.removeAttribute('draggable');
+            }
+        });
+
+        list.addEventListener('dragstart', function (e) {
+            var target = e.target.closest('.drag-item');
+            if (!target) {
+                return;
+            }
+            Promise.resolve().then(function () {
+                target.classList.add('dragging');
+            });
+            if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+            }
+        });
+
+        list.addEventListener('dragend', function () {
+            list.querySelectorAll('.drag-item.dragging').forEach(function (item) {
+                item.classList.remove('dragging');
+                item.removeAttribute('draggable');
+            });
+            updateDragListSortInputs(list);
+            handleOrderChange();
+        });
+
+        list.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            var draggingItem = list.querySelector('.drag-item.dragging');
+            if (!draggingItem) {
+                return;
+            }
+            var siblings = Array.prototype.slice.call(
+                list.querySelectorAll('.drag-item:not(.dragging)')
+            );
+            var nextSibling = siblings.find(function (sibling) {
+                var rect = sibling.getBoundingClientRect();
+                return e.clientY <= rect.top + rect.height / 2;
+            });
+            if (nextSibling) {
+                list.insertBefore(draggingItem, nextSibling);
+            } else {
+                list.appendChild(draggingItem);
+            }
+        });
+    }
+
+    function prepareSortDragList(list) {
+        if (!list || !list.querySelector('.tableRow__sortInput')) {
+            return;
+        }
+        if (list.querySelector('.tableRow__sortInput--year')) {
+            return;
+        }
+
+        list.classList.add('drag-list');
+        list.querySelectorAll('.tableRow__item').forEach(function (item) {
+            item.classList.add('drag-item');
+            var rowData = item.querySelector('.tableRow__data');
+            if (rowData) {
+                insertDragHandleCell(rowData);
+            }
+        });
+
+        var card = list.closest('.card');
+        if (card) {
+            insertDragHeaderCell(card.querySelector('.tableHeader'));
+        }
+
+        bindDragListEvents(list);
+    }
+
+    /** 所有含 .tableRow__sortInput 的列表啟用拖曳排序（CSP 相容） */
+    function initDragListSort() {
+        var forms = document.querySelectorAll('#form1, form[name="form1"]');
+        forms.forEach(function (form) {
+            if (!form.querySelector('.tableRow__sortInput')) {
+                return;
+            }
+            form.querySelectorAll('.tableRow').forEach(function (list) {
+                prepareSortDragList(list);
+            });
+        });
+
+        document.querySelectorAll('.tableRow.drag-list').forEach(function (list) {
+            bindDragListEvents(list);
+        });
+    }
+
     function getListForm() {
         return document.getElementById('form1') || document.forms['form1'];
     }
@@ -1291,6 +1477,7 @@
         bindCustomFormValidation();
         bindCheckFileInputs();
         bindKeywordClear();
+        initDragListSort();
         if (typeof jQuery === 'undefined') {
             return;
         }
