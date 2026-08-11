@@ -364,57 +364,49 @@
         return false;
     }
 
-    function prependDragGridColumn(el) {
-        if (!el || el.dataset.manageDragGrid === '1') {
-            return;
+    function findDragHostCell(rowData) {
+        if (!rowData) {
+            return null;
         }
-        var computed = window.getComputedStyle(el).gridTemplateColumns;
-        if (!computed || computed === 'none') {
-            return;
+        var cells = rowData.children;
+        var i;
+        for (i = 0; i < cells.length; i++) {
+            if (cells[i].querySelector('.tableRow__expandBtn')) {
+                continue;
+            }
+            if (cells[i].querySelector('.checkboxWrapper') || cells[i].querySelector('.customCheckbox')) {
+                return cells[i];
+            }
         }
-        el.style.gridTemplateColumns = '50px ' + computed;
-        el.dataset.manageDragGrid = '1';
+        for (i = 0; i < cells.length; i++) {
+            if (!cells[i].querySelector('.tableRow__expandBtn')) {
+                return cells[i];
+            }
+        }
+        return null;
     }
 
     function insertDragHeaderCell(header) {
         if (!header || listHeaderHasDragColumn(header)) {
             return;
         }
-        var cell = document.createElement('div');
-        cell.className = 'textCenter manageListDragHeader';
-        cell.textContent = '拖曳';
-        var children = header.children;
-        var insertBefore = children.length ? children[0] : null;
-        if (insertBefore && insertBefore.textContent && insertBefore.textContent.trim() === '開合') {
-            insertBefore = children.length > 1 ? children[1] : null;
-        }
-        if (insertBefore) {
-            header.insertBefore(cell, insertBefore);
-        } else {
-            header.appendChild(cell);
-        }
         header.dataset.manageDragHeader = '1';
-        prependDragGridColumn(header);
     }
 
     function insertDragHandleCell(rowData) {
         if (!rowData || rowData.querySelector('.drag-handle')) {
             return false;
         }
-        var cell = document.createElement('div');
-        cell.className = 'flex flex--jtCenter manageListDragHandle';
-        cell.innerHTML = '<span class="drag-handle" title="拖曳排序">☰</span>';
-        var children = rowData.children;
-        var insertBefore = children.length ? children[0] : null;
-        if (insertBefore && insertBefore.querySelector('.tableRow__expandBtn')) {
-            insertBefore = children.length > 1 ? children[1] : null;
+        var hostCell = findDragHostCell(rowData);
+        if (!hostCell) {
+            return false;
         }
-        if (insertBefore) {
-            rowData.insertBefore(cell, insertBefore);
-        } else {
-            rowData.insertBefore(cell, rowData.firstChild);
-        }
-        prependDragGridColumn(rowData);
+        hostCell.classList.add('manageListDragCell');
+        var handle = document.createElement('span');
+        handle.className = 'drag-handle';
+        handle.title = '拖曳排序';
+        handle.textContent = '☰';
+        hostCell.insertBefore(handle, hostCell.firstChild);
         return true;
     }
 

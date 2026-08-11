@@ -500,7 +500,7 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .dateSpan{font-size: .9rem;color:var(--cl-gray-500);background-color: var(--cl-gray-100);padding:0.25rem 0.5rem;border-radius: 3em;}
 
 /* Table 表格 */
-.tableHeader{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;padding:0.75rem 1.5rem;background-color:rgba(249,250,251,0.5);border-bottom:1px solid var(--cl-gray-100);font-size: .9rem;font-weight:700;color:var(--cl-gray-500);text-transform:uppercase;letter-spacing:0.05em;}
+.tableHeader{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;padding:0.75rem 1.5rem;background-color:rgba(249,250,251,0.5);border-bottom:1px solid var(--cl-gray-100);font-size: .9rem;font-weight:700;color:var(--cl-gray-500);text-transform:uppercase;letter-spacing:0.05em;min-width:0;max-width:100%;box-sizing:border-box;}
 .tableRow{}
 .tableRow__item{border-bottom:1px solid var(--cl-gray-50);}
 
@@ -512,7 +512,7 @@ input[type="number"].formInput::-webkit-inner-spin-button{
 .tableRow__detail{background-color:var(--cl-gray-100); padding:1.5rem;  color:var(--gray-600); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);}
 
 /* 表格/欄位寬度模組 */
-.tableRow__data{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;padding:1rem 1.5rem;align-items:center;transition:background-color 0.2s;}
+.tableRow__data{display:grid;grid-template-columns:repeat(12,1fr);gap:1rem;padding:1rem 1.5rem;align-items:center;transition:background-color 0.2s;min-width:0;max-width:100%;box-sizing:border-box;}
 .tableRow__data:hover{background-color:var(--cl-gray-50);}
 .tableHeader.tableGrid--class1,
 .tableRow__data.tableGrid--class1{grid-template-columns:50px 50px 80px 1fr 100px 140px 120px;}
@@ -845,6 +845,18 @@ a.breadcrumb__item.breadcrumb__link:hover{color:var(--cl-main);}
         contain: layout;
         user-select: none;
         transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    .manageListDragCell{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:0.15rem;
+        min-width:0;
+    }
+    .manageListDragCell .drag-handle{
+        margin-right:0;
+        flex-shrink:0;
+        font-size:0.85rem;
     }
     /* 拖曳把手圖示 */
     .drag-handle {
