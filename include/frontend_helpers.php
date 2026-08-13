@@ -915,8 +915,8 @@ if (!function_exists('frontend_article_ldjson')) {
             return null;
         }
 
-        $cfg = frontend_module_config();
-        if ((string)($cfg['master'] ?? '') === 'product') {
+        $cfg = $GLOBALS['frontend_module_config'] ?? null;
+        if (!is_array($cfg) || (string)($cfg['master'] ?? '') === 'product') {
             return null;
         }
 
@@ -1017,18 +1017,41 @@ if (!function_exists('frontend_product_image_urls')) {
     }
 }
 
+if (!function_exists('frontend_ldjson_date_ymd')) {
+    /** 將日期字串轉為 JSON-LD 用的 YYYY-MM-DD */
+    function frontend_ldjson_date_ymd(?string $raw): string
+    {
+        $raw = trim((string)($raw ?? ''));
+        if ($raw === '') {
+            return '';
+        }
+
+        $ts = strtotime($raw);
+
+        return $ts !== false ? date('Y-m-d', $ts) : '';
+    }
+}
+
 if (!function_exists('frontend_product_ldjson')) {
     /**
      * 產品內頁 Product 結構化資料（schema.org 規範）
+     *
+     * 有售價（Price 大於 0）時輸出含 price / priceCurrency 等完整 Offer；
+     * 無售價時輸出 brand / manufacturer 與基本 Offer。
      *
      * @return array<string,mixed>|null
      */
     function frontend_product_ldjson(?string $fallbackImageUrl = null): ?array
     {
-        global $PKey, $strName, $seoTitle, $m_description, $aiSummary, $strNo, $interview, $web_url, $page_link;
+        global $PKey, $strName, $seoTitle, $m_description, $aiSummary, $interview, $strNo, $detailRow, $web_url, $page_link;
 
-        $cfg = frontend_module_config();
-        if ((string)($cfg['master'] ?? '') !== 'product') {
+        $pkey = (int)($PKey ?? 0);
+        if ($pkey <= 0) {
+            return null;
+        }
+
+        $cfg = $GLOBALS['frontend_module_config'] ?? null;
+        if (!is_array($cfg) || (string)($cfg['master'] ?? '') !== 'product') {
             return null;
         }
 
@@ -1036,20 +1059,27 @@ if (!function_exists('frontend_product_ldjson')) {
             isset($seoTitle) ? (string)$seoTitle : '',
             (string)($strName ?? '')
         );
-        $pkey = (int)($PKey ?? 0);
-        if ($pkey <= 0 || $name === '') {
+        if ($name === '') {
             return null;
         }
 
+        $row = is_array($detailRow ?? null) ? $detailRow : [];
+        $orgName = trim((string)($GLOBALS['Web_Name'] ?? $GLOBALS['pageTitle2'] ?? ''));
         $pageUrl = safe_href((string)($web_url . ($page_link ?? '')));
-        $brandName = trim((string)($GLOBALS['Web_Name'] ?? ''));
+        $price = max(0, (int)crud_row_val($row, 'Price'));
+        $mpn = trim((string)crud_row_val($row, 'MPN'));
+        $sku = trim((string)($strNo ?? crud_row_val($row, 'strNo')));
 
         $ld = [
-            '@context' => 'https://schema.org',
+            '@context' => 'https://schema.org/',
             '@type'    => 'Product',
             'name'     => $name,
-            'url'      => $pageUrl,
         ];
+
+        $images = frontend_product_image_urls($pkey, $fallbackImageUrl);
+        if ($images !== []) {
+            $ld['image'] = $images;
+        }
 
         $description = frontend_meta_description_with_summary_fallback(
             isset($m_description) ? (string)$m_description : '',
@@ -1062,30 +1092,70 @@ if (!function_exists('frontend_product_ldjson')) {
             $ld['description'] = $description;
         }
 
-        $sku = trim((string)($strNo ?? ''));
         if ($sku !== '') {
             $ld['sku'] = $sku;
         }
 
-        if ($brandName !== '') {
+        if ($price > 0) {
+            if ($mpn !== '') {
+                $ld['mpn'] = $mpn;
+            }
+
+            if ($orgName !== '') {
+                $ld['brand'] = [
+                    '@type' => 'Brand',
+                    'name'  => $orgName,
+                ];
+            }
+
+            $offers = [
+                '@type'         => 'Offer',
+                'url'           => $pageUrl,
+                'priceCurrency' => 'TWD',
+                'price'         => (string)$price,
+                'itemCondition' => 'https://schema.org/NewCondition',
+                'availability'  => 'https://schema.org/InStock',
+            ];
+
+            $priceValidUntil = frontend_ldjson_date_ymd((string)crud_row_val($row, 'EndDate'));
+            if ($priceValidUntil !== '') {
+                $offers['priceValidUntil'] = $priceValidUntil;
+            }
+
+            if ($orgName !== '') {
+                $offers['seller'] = [
+                    '@type' => 'Organization',
+                    'name'  => $orgName,
+                ];
+            }
+
+            $ld['offers'] = $offers;
+
+            return $ld;
+        }
+
+        if ($orgName !== '') {
             $ld['brand'] = [
                 '@type' => 'Brand',
-                'name'  => $brandName,
+                'name'  => $orgName,
+            ];
+            $ld['manufacturer'] = [
+                '@type' => 'Organization',
+                'name'  => $orgName,
             ];
         }
 
-        $images = frontend_product_image_urls($pkey, $fallbackImageUrl);
-        if ($images !== []) {
-            $ld['image'] = count($images) === 1 ? $images[0] : $images;
-        }
-
-        $ld['offers'] = [
-            '@type'         => 'Offer',
-            'url'           => $pageUrl,
-            'priceCurrency' => 'TWD',
-            'price'         => '0',
-            'availability'  => 'https://schema.org/InStock',
+        $offers = [
+            '@type'        => 'Offer',
+            'availability' => 'https://schema.org/InStock',
         ];
+        if ($orgName !== '') {
+            $offers['seller'] = [
+                '@type' => 'Organization',
+                'name'  => $orgName,
+            ];
+        }
+        $ld['offers'] = $offers;
 
         return $ld;
     }

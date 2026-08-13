@@ -1,4 +1,5 @@
 CKEDITOR.editorConfig = function( config ) {
+	config.language = 'zh';
 	config.toolbarGroups = [
 		{ name: 'document', groups: [ 'mode', 'document', 'doctools' ] },
 		{ name: 'clipboard', groups: [ 'clipboard', 'undo' ] },
@@ -9,7 +10,8 @@ CKEDITOR.editorConfig = function( config ) {
 		'/',
 		{ name: 'paragraph', groups: [ 'list', 'indent', 'blocks', 'align', 'paragraph' ] },
 		{ name: 'styles', groups: [ 'styles' ] },
-		{ name: 'colors', groups: [ 'colors' ] }
+		{ name: 'colors', groups: [ 'colors' ] },
+		{ name: 'tools', groups: [ 'tools' ] }
 	];
 
 	config.extraPlugins = 'youtube';
