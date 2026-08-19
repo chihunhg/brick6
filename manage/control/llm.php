@@ -110,7 +110,7 @@ function fieldCheck0(theForm) {
                                         <?php echo manage_render_field_help('description：核心優勢與服務簡介，可能出現在搜尋結果描述'); ?>
                                     </label>
                                     <div class="col--10">
-                                        <textarea name="llmit" id="llmit" class="formInput" rows="4" maxlength="1000" placeholder="例：30年經驗、客製化服務、資安處理…"><?php echo e($llmit); ?></textarea>
+                                        <textarea name="llmit" id="llmit" class="formInput" rows="10" placeholder="例：30年經驗、客製化服務、資安處理…"><?php echo e($llmit); ?></textarea>
                                     </div>
                                 </div>
                                 <div class="formGrid">
@@ -119,7 +119,7 @@ function fieldCheck0(theForm) {
                                         <?php echo manage_render_field_help('description：核心優勢與服務簡介，可能出現在搜尋結果描述'); ?>
                                     </label>
                                     <div class="col--10">
-                                        <textarea name="llms" id="llms" class="formInput" rows="4" maxlength="1000" placeholder="例：30年經驗、客製化服務、資安處理…"><?php echo e($llms); ?></textarea>
+                                        <textarea name="llms" id="llms" class="formInput" rows="10" placeholder="例：30年經驗、客製化服務、資安處理…"><?php echo e($llms); ?></textarea>
                                     </div>
                                 </div>
                             </div>

@@ -1532,16 +1532,7 @@ if (!function_exists('crud_load_llm_text_files')) {
 if (!function_exists('crud_validate_llm_text_from_filter')) {
     function crud_validate_llm_text_from_filter(array $filter): string
     {
-        $msg = '';
-        $llmit = (string)($filter['llmit'] ?? '');
-        $llms  = (string)($filter['llms'] ?? '');
-        if (strlen($llmit) > 1000) {
-            $msg .= "【llmit.txt】超過 1000 字元\n";
-        }
-        if (strlen($llms) > 1000) {
-            $msg .= "【llms.txt】超過 1000 字元\n";
-        }
-        return $msg;
+        return '';
     }
 }
 
