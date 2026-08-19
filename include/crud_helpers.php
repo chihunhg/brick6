@@ -1484,6 +1484,99 @@ if (!function_exists('crud_save_webset_from_filter')) {
     }
 }
 
+if (!function_exists('crud_llm_text_dir')) {
+    /** 前端根目錄（llmit.txt / llms.txt 預設位置） */
+    function crud_llm_text_dir(): string
+    {
+        if (defined('APP_PROJECT_ROOT')) {
+            return rtrim(str_replace('\\', '/', (string)APP_PROJECT_ROOT), '/');
+        }
+        return rtrim(str_replace('\\', '/', dirname(__DIR__)), '/');
+    }
+}
+
+if (!function_exists('crud_llm_text_file_path')) {
+    function crud_llm_text_file_path(string $basename): string
+    {
+        $name = strtolower(trim($basename));
+        if (!in_array($name, ['llmit.txt', 'llms.txt'], true)) {
+            throw new InvalidArgumentException('invalid llm text file');
+        }
+        return crud_llm_text_dir() . '/' . $name;
+    }
+}
+
+if (!function_exists('crud_read_llm_text_file')) {
+    function crud_read_llm_text_file(string $basename): string
+    {
+        $path = crud_llm_text_file_path($basename);
+        if (!is_file($path) || !is_readable($path)) {
+            return '';
+        }
+        $content = file_get_contents($path);
+        return is_string($content) ? $content : '';
+    }
+}
+
+if (!function_exists('crud_load_llm_text_files')) {
+    /** @return array{llmit: string, llms: string} */
+    function crud_load_llm_text_files(): array
+    {
+        return [
+            'llmit' => crud_read_llm_text_file('llmit.txt'),
+            'llms'  => crud_read_llm_text_file('llms.txt'),
+        ];
+    }
+}
+
+if (!function_exists('crud_validate_llm_text_from_filter')) {
+    function crud_validate_llm_text_from_filter(array $filter): string
+    {
+        $msg = '';
+        $llmit = (string)($filter['llmit'] ?? '');
+        $llms  = (string)($filter['llms'] ?? '');
+        if (strlen($llmit) > 1000) {
+            $msg .= "【llmit.txt】超過 1000 字元\n";
+        }
+        if (strlen($llms) > 1000) {
+            $msg .= "【llms.txt】超過 1000 字元\n";
+        }
+        return $msg;
+    }
+}
+
+if (!function_exists('crud_save_llm_text_files')) {
+    function crud_save_llm_text_files(array $filter): void
+    {
+        $llmit = (string)($filter['llmit'] ?? '');
+        $llms  = (string)($filter['llms'] ?? '');
+        $files = [
+            'llmit.txt' => $llmit,
+            'llms.txt'  => $llms,
+        ];
+        foreach ($files as $basename => $content) {
+            $path = crud_llm_text_file_path($basename);
+            $dir = dirname($path);
+            if (!is_dir($dir)) {
+                throw new RuntimeException('LLM 文字檔目錄不存在');
+            }
+            if (file_put_contents($path, $content, LOCK_EX) === false) {
+                throw new RuntimeException('無法寫入 ' . $basename);
+            }
+        }
+        if (function_exists('manage_history')) {
+            manage_history(
+                (int)($GLOBALS['Module_PKey'] ?? 0),
+                '網站LLM設定',
+                '更新 llmit.txt / llms.txt',
+                $_SERVER['PHP_SELF'] ?? 'llm.php',
+                (string)($_SESSION['Login_ID'] ?? 'system'),
+                '修改成功!'
+            );
+        }
+    }
+}
+
 if (!function_exists('crud_validate_webset_from_filter')) {
     /** webset 表單驗證（多語系網站名稱、寄件信箱） */
     function crud_validate_webset_from_filter(array $filter, ?array $langIndexes = null): string {
