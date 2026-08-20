@@ -108,11 +108,18 @@
                     $navName  = (string)$rs->field('strName');
                     $navLink  = $sanitize_link($rs->field('strLink'));
                     $navLayer = (int)$rs->field('intLayer');
-                    if ($canSee($navPKey)) {
-                        $urlLink = '../' . $navLink . '/list.php?manNo=' . $navPKey;
-                        if ($navPKey === 5) {
-                            $urlLink = '../control/webset.php?manNo=' . $navPKey;
-                        }
+                    if ($canSee($navPKey)) {                        
+						switch($navPKey){
+							case 5:
+								$urlLink = '../control/webset.php?manNo=' . $navPKey;
+								break;
+							case 6:
+								$urlLink = '../control/llm.php?manNo=' . $navPKey;
+								break;
+							default:
+								$urlLink = '../' . $navLink . '/list.php?manNo=' . $navPKey;
+								break;
+						}
                         $appendModuleRow($menu, $navPKey, $navName, $navLink, $navLayer, $urlLink, $manNo, $subNo, $sanitize_link);
                     }
                     $rs->movenext();
@@ -149,6 +156,12 @@
                     'label'    => '變更密碼',
                     'link'     => '../control/chgpw.php',
                     'isActive' => $subitem === 's5',
+                ];
+                $menu[] = [
+                    'type'     => 'LINK',
+                    'label'    => '雙因素驗證',
+                    'link'     => '../control/mfa_setup.php',
+                    'isActive' => $subitem === 's6',
                 ];
             };
 

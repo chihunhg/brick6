@@ -66,6 +66,19 @@ function fieldCheck0(theForm) {
   };
 
   if (isNew) {
+    if ($('#strEmail').length && $.trim($('#strEmail').val()) === '') {
+      errors.push('Email 不可空白（寄送 MFA 指引信）');
+      fields.push('strEmail');
+    } else if ($('#strEmail').length && typeof isEmail === 'function' && !isEmail($.trim($('#strEmail').val()))) {
+      errors.push('Email 格式錯誤');
+      fields.push('strEmail');
+    }
+  } else if ($('#strEmail').length && $.trim($('#strEmail').val()) !== '' && typeof isEmail === 'function' && !isEmail($.trim($('#strEmail').val()))) {
+    errors.push('Email 格式錯誤');
+    fields.push('strEmail');
+  }
+
+  if (isNew) {
     if (strPW === '') {
       errors.push('密碼不可空白');
       fields.push('strPW');
@@ -183,6 +196,17 @@ document.addEventListener('DOMContentLoaded', function () {
 						<input name="strID" type="text" id="strID" class="formInput"
 							value="<?php echo e($strID); ?>" maxlength="20" placeholder="帳號長度2~20碼"<?php echo $isAdd ? '' : ' readonly'; ?>>
 						<input name="oldID" type="hidden" id="oldID" value="<?php echo e($strID); ?>">
+					</div>
+				</div>
+				<div class="formGrid">
+					<label class="col--2 inputLabel editView__formLabel" for="strEmail">
+						Email<?php echo $isAdd ? ' <span class="inputLabel__required">*</span>' : ''; ?>
+					</label>
+					<div class="col--10">
+						<input type="email" name="strEmail" id="strEmail" class="formInput"
+							value="<?php echo e((string)($strEmail ?? '')); ?>" maxlength="100" autocomplete="email"
+							placeholder="用於寄送登入與 MFA 綁定指引信">
+						<p class="form-hint">新增帳號時建議填寫；密碼請另行告知使用者，本信不含密碼。</p>
 					</div>
 				</div>
 				<div class="formGrid">

@@ -25,6 +25,10 @@ if ($action === 'logout') {
 }
 
 // 已登入者開啟登入頁 → 導向直播訂單（勿導回首頁 index）
+if (function_exists('manage_mfa_pending_valid') && manage_mfa_pending_valid()) {
+    location_href($web_root . 'manage/login/mfa_verify.php');
+    exit;
+}
 if (isset($_SESSION['Manage'], $_SESSION['Login_ID'])
     && $_SESSION['Manage'] === 'Yes'
     && (string)$_SESSION['Login_ID'] !== '') {
@@ -32,8 +36,47 @@ if (isset($_SESSION['Manage'], $_SESSION['Login_ID'])
     exit;
 }
 
-// ---- 若無 Admin，依 .env ADMIN_INITIAL_PASSWORD 建立（不輸出敏感資訊）----
-manage_bootstrap_admin_account();
+// 依等級產生符合規則的初始密碼（僅建立帳號當下用一次）
+//$initial_secret = generate_initial_secret($POLICY, 12, 20);
+switch($Web_Secure){
+	case 1://免費專業方案
+		$initial_secret = 'brick4080';//預設值
+		break;
+	case 2://付費高階方案
+		$initial_secret = 'Brick4080';//預設值
+		break;
+	case 3://公家普級方案
+		$initial_secret = 'Aa@4080';//預設值
+		break;
+	default:
+		$initial_secret = 'Brick4080';//預設值
+		break;
+}
+// ---- 若無 Admin，建立預設管理者（不輸出敏感資訊）----
+$sql = 'SELECT PKey FROM webcontrol WHERE strID = :strID';
+$rs  = new recordset($sql, ['strID' => 'Admin']);
+if ($err = $rs->getErrorMessage()) {
+    $result = sql_error($sql.PHP_EOL.array_to_string(['Admin']), $err, $WorkFile, 'system');
+    echo '<pre>'; print_r($result); echo '</pre>'; exit;
+}
+if ($rs->eof) {
+    $sql_query  = new dbPDO();
+    $table_name = 'webcontrol';
+    $now        = date('Y-m-d H:i:s');
+    $data_array = [
+        'strName'    => '網站管理者',
+        'intType'    => '1',
+        'strID'      => 'Admin',
+        'strPW'      => hash_password($initial_secret),
+        'FunctionID' => '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15',
+        'UserID'     => 'Admin',
+        'dtUDate'    => $now,
+        'dtDate'     => $now,
+    ];
+    $sql_query->insert($table_name, $data_array);
+    $sql_query->close();
+}
+$rs->close();
 // reCAPTCHA（從 .env 讀）
 $site_key = $_ENV['RECAPTCHA_SITE_KEY'] ?? '';
 // ---- 30 分鐘解鎖 ----
@@ -118,14 +161,18 @@ if (!empty($submit) && $submit === '送出') {
         }
         // 驗證成功
         else {
-            // if (session_status() !== PHP_SESSION_ACTIVE) {
-				// session_start();
-			// }
-			// session_regenerate_id(true);
-            $_SESSION['Manage']     = 'Yes';
-            $_SESSION['UserName']   = $rs->field('strName');
-            $_SESSION['Login_ID']   = $rs->field('strID');
-            $_SESSION['FunctionID'] = $rs->field('FunctionID');
+            $userRow = [
+                'PKey'       => $PKey,
+                'strID'      => (string)$rs->field('strID'),
+                'strName'    => (string)$rs->field('strName'),
+                'FunctionID' => (string)$rs->field('FunctionID'),
+                'mfa_enabled' => 0,
+                'totp_secret' => '',
+            ];
+            if (function_exists('manage_mfa_schema_ready') && manage_mfa_schema_ready()) {
+                $userRow['mfa_enabled'] = (int)$rs->field('mfa_enabled');
+                $userRow['totp_secret'] = (string)$rs->field('totp_secret');
+            }
 
             // 清除錯誤與解除鎖定
             $pdo = new dbPDO();
@@ -136,11 +183,21 @@ if (!empty($submit) && $submit === '送出') {
             ], 'PKey', $PKey);
             $pdo->close();
 
+            if (function_exists('manage_mfa_schema_ready')
+                && manage_mfa_schema_ready()
+                && manage_mfa_is_enabled_for_user($userRow)) {
+                manage_mfa_begin_pending_login($userRow);
+                manage_history(3, $Module_Name, '密碼驗證成功，待 TOTP', $WorkFile, $strID, '待雙因素驗證');
+                location_href($web_root . 'manage/login/mfa_verify.php');
+                exit;
+            }
+
+            manage_mfa_establish_session($userRow);
+
             $show = '登入成功';
             manage_history(3, $Module_Name, '登入成功', $WorkFile, $strID, $show);
 
-            // 正常登入導頁（根相對路徑，子目錄部署亦可正確）
-            location_href($web_root . 'manage/login/login.php');
+            location_href(manage_mfa_post_login_url(manage_mfa_fetch_user_by_login($strID)));
             exit;
         }
     } else {

@@ -56,10 +56,33 @@ $hashPw = $isNew || trim((string)($filter_array['strPW'] ?? '')) !== '';
 $data_array = control_build_master_data($filter_array, $modulePKey, $Login_ID, $hashPw);
 if ($isNew) {
     $data_array['intType'] = SqlFilter(0, 'int');
+    if (function_exists('manage_mfa_onboard_schema_ready') && manage_mfa_onboard_schema_ready()) {
+        $data_array['mfa_setup_pending'] = 1;
+    }
 }
 
 try {
     $upsert = crud_upsert_master('webcontrol', $formPKey, $data_array);
+    if ($isNew) {
+        $newPKey = (int)($upsert['pkey'] ?? 0);
+        $notifyEmail = trim((string)($filter_array['strEmail'] ?? ''));
+        $notifyName = trim((string)($filter_array['strName'] ?? ''));
+        $notifyId = strtolower(trim((string)($filter_array['strID'] ?? '')));
+        if ($newPKey > 0
+            && $notifyEmail !== ''
+            && function_exists('manage_mfa_send_onboard_email')
+            && !manage_mfa_send_onboard_email($notifyName, $notifyEmail, $notifyId)
+            && function_exists('manage_history')) {
+            manage_history(
+                $modulePKey,
+                '帳號管理',
+                'MFA 指引信寄送失敗',
+                $WorkFile,
+                $Login_ID !== '' ? $Login_ID : 'system',
+                'to=' . $notifyEmail
+            );
+        }
+    }
     $actionShow = $upsert['action'];
     require_once '../_return_list.php';
     exit;

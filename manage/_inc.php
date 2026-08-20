@@ -18,6 +18,7 @@ app_configure_error_display();
 require_once dirname(dirname(__FILE__)).'/include/Conn.php';//引入文件
 require_once dirname(dirname(__FILE__)).'/include/dbclass.php';//引入文件
 require_once dirname(dirname(__FILE__)).'/include/Function.php';//引入文件
+require_once dirname(dirname(__FILE__)).'/include/mfa_helpers.php';//TOTP 多因素驗證
 require_once dirname(dirname(__FILE__)).'/include/log.php';//引入文件
 require_once dirname(dirname(__FILE__)).'/include/sec.php';//引入文件
 send_frame_options_header('DENY');
@@ -159,6 +160,7 @@ $s1='首頁單元設定';
 $s2='基本資料設定';
 $s3='語系設定';
 $s5='變更密碼';
+$s6='雙因素驗證';
 $divview='none';
 
 //預設變數
@@ -376,8 +378,24 @@ if(!$rs->eof){
 $rs->close();
 unset($Cond_Array);
 
+$__manageSelf = (string)($_SERVER['PHP_SELF'] ?? '');
+$__mfaPending = function_exists('manage_mfa_pending_valid') && manage_mfa_pending_valid();
+$__isLoginIndex = stripos($__manageSelf, '/login/index.php') !== false;
+$__isMfaVerify = stripos($__manageSelf, '/login/mfa_verify.php') !== false;
+
+if ($__mfaPending && !$__isMfaVerify && !$__isLoginIndex) {
+	if (!stristr($WorkFile ?? '', 'index.php')) {
+		if (!empty($manage_binary_export)) {
+			require_once dirname(dirname(__FILE__)) . '/include/json_response.php';
+			json_out(['success' => false, 'error' => '請先完成雙因素驗證'], 401);
+		}
+		location_href($web_root . 'manage/login/mfa_verify.php');
+		exit;
+	}
+}
+
 if((isset($_SESSION['Manage']) and $_SESSION['Manage'] != 'Yes') || empty($_SESSION['Login_ID'])){
-	if(! stristr($WorkFile,'index.php')) {
+	if(! stristr($WorkFile ?? '', 'index.php') && !($__isMfaVerify && $__mfaPending)) {
 		if (!empty($manage_binary_export)) {
 			require_once dirname(dirname(__FILE__)) . '/include/json_response.php';
 			json_out(['success' => false, 'error' => '未登入或登入已逾時，請重新登入'], 401);
@@ -389,6 +407,11 @@ if((isset($_SESSION['Manage']) and $_SESSION['Manage'] != 'Yes') || empty($_SESS
 		exit;
 	}
 }
+
+if (function_exists('manage_mfa_redirect_setup_if_needed')) {
+    manage_mfa_redirect_setup_if_needed();
+}
+
 $Login = '';
 if(!empty($_SESSION['Login_ID'])){
 	$Login_ID = htmlspecialchars($_SESSION['Login_ID'],ENT_QUOTES);

@@ -8,6 +8,7 @@ if (!function_exists('control_detail_defaults')) {
             'Update_PKey' => 0,
             'strID'       => '',
             'strName'     => '',
+            'strEmail'    => '',
             'strPW'       => '',
             'M1'          => [],
             'dtUDate'     => '',
@@ -60,6 +61,7 @@ if (!function_exists('control_detail_load')) {
             'Update_PKey' => $pkey,
             'strID'       => (string)($row['strID'] ?? ''),
             'strName'     => (string)($row['strName'] ?? ''),
+            'strEmail'    => (string)($row['strEmail'] ?? ''),
             'strPW'       => '',
             'M1'          => $fnIds,
             'dtUDate'     => (string)($row['dtUDate'] ?? ''),
@@ -199,6 +201,19 @@ if (!function_exists('control_validate_form')) {
             }
         }
 
+        $strEmail = trim((string)($filter['strEmail'] ?? ''));
+        if ($strEmail !== '' && function_exists('CheckMail') && !CheckMail($strEmail)) {
+            $msg .= "【Email】格式錯誤\n";
+        }
+        if ($isNew
+            && function_exists('manage_mfa_onboard_email_enabled')
+            && manage_mfa_onboard_email_enabled()
+            && function_exists('manage_mfa_onboard_schema_ready')
+            && manage_mfa_onboard_schema_ready()
+            && $strEmail === '') {
+            $msg .= "【Email】新增帳號請填寫，以便寄送 MFA 綁定指引信\n";
+        }
+
         return $msg;
     }
 }
@@ -232,6 +247,10 @@ if (!function_exists('control_build_master_data')) {
             'dtUDate'      => date('Y-m-d H:i:s'),
             'UserID'       => SqlFilter($loginId, 'tab'),
         ];
+
+        if (function_exists('manage_mfa_onboard_schema_ready') && manage_mfa_onboard_schema_ready()) {
+            $data['strEmail'] = SqlFilter(trim((string)($filter['strEmail'] ?? '')), 'tab');
+        }
 
         if ($hashPassword) {
             $data['strPW']    = crud_hash_password(trim((string)($filter['strPW'] ?? '')));
