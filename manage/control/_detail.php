@@ -282,6 +282,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		<?php require_once '../_submit.php'; ?>
 	</form>
+
+		<?php if (!$isAdd && (int)($Update_PKey ?? 0) > 0) { ?>
+		<article class="editView__body mt-3">
+			<div class="editView__section">
+				<h4 class="editView__sectionTitle">雙因素驗證通知信</h4>
+				<p class="text-muted">對尚未完成 MFA 綁定的帳號，可重發綁定指引信，並再次標記為待綁定狀態。</p>
+				<?php if (trim((string)($strEmail ?? '')) === '') { ?>
+				<p class="text-warning mb-0">請先填寫並儲存 Email，才能重發綁定指引信。</p>
+				<?php } else { ?>
+				<p class="mb-2">收件 Email：<strong><?php echo e((string)$strEmail); ?></strong></p>
+				<form action="mfa_resend_mail.php" method="post" class="d-inline"
+					data-manage-confirm="確定要重發 MFA 綁定指引信嗎？">
+					<input type="hidden" name="csrf_token" value="<?php echo e((string)($csrf_token ?? '')); ?>">
+					<input type="hidden" name="PKey" value="<?php echo (int)($Update_PKey ?? 0); ?>">
+					<input type="hidden" name="manNo" value="<?php echo (int)($manNo ?? 0); ?>">
+					<input type="hidden" name="subNo" value="<?php echo (int)($subNo ?? 0); ?>">
+					<button type="submit" class="btnStyle btnStyle--outline">
+						<i class="bi bi-envelope"></i> 重發 MFA 綁定指引信
+					</button>
+				</form>
+				<?php } ?>
+			</div>
+		</article>
+		<?php } ?>
+
 	</section>
 	<div class="notes__spacer"></div>
 <?php require_once '../_layout_body_close.php'; ?>

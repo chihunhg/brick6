@@ -68,22 +68,39 @@ try {
         $notifyEmail = trim((string)($filter_array['strEmail'] ?? ''));
         $notifyName = trim((string)($filter_array['strName'] ?? ''));
         $notifyId = strtolower(trim((string)($filter_array['strID'] ?? '')));
-        if ($newPKey > 0
-            && $notifyEmail !== ''
-            && function_exists('manage_mfa_send_onboard_email')
-            && !manage_mfa_send_onboard_email($notifyName, $notifyEmail, $notifyId)
-            && function_exists('manage_history')) {
-            manage_history(
-                $modulePKey,
-                '帳號管理',
-                'MFA 指引信寄送失敗',
-                $WorkFile,
-                $Login_ID !== '' ? $Login_ID : 'system',
-                'to=' . $notifyEmail
-            );
+        if ($newPKey > 0 && $notifyEmail !== '' && function_exists('manage_mfa_send_onboard_email')) {
+            $mailResult = manage_mfa_send_onboard_email($notifyName, $notifyEmail, $notifyId);
+            if (!($mailResult['skipped'] ?? false)) {
+                if (($mailResult['ok'] ?? false) && function_exists('manage_history')) {
+                    manage_history(
+                        $modulePKey,
+                        '帳號管理',
+                        'MFA 指引信寄送成功',
+                        $WorkFile,
+                        $Login_ID !== '' ? $Login_ID : 'system',
+                        (string)($mailResult['message'] ?? '')
+                    );
+                } elseif (!($mailResult['ok'] ?? false) && function_exists('manage_history')) {
+                    manage_history(
+                        $modulePKey,
+                        '帳號管理',
+                        'MFA 指引信寄送失敗',
+                        $WorkFile,
+                        $Login_ID !== '' ? $Login_ID : 'system',
+                        (string)($mailResult['message'] ?? '')
+                    );
+                }
+                if ($mailResult['ok'] ?? false) {
+                    $actionShow = ($upsert['action'] ?? '新增成功!') . "\n" . (string)($mailResult['message'] ?? '');
+                } else {
+                    $actionShow = ($upsert['action'] ?? '新增成功!') . "\n（注意：" . (string)($mailResult['message'] ?? '寄信失敗') . '）';
+                }
+            }
         }
     }
-    $actionShow = $upsert['action'];
+    if (!isset($actionShow)) {
+        $actionShow = $upsert['action'];
+    }
     require_once '../_return_list.php';
     exit;
 } catch (Throwable $e) {

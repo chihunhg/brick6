@@ -1401,6 +1401,12 @@
         if (!form || form.tagName !== 'FORM') {
             return;
         }
+        var confirmMsg = form.getAttribute('data-manage-confirm');
+        if (confirmMsg && !window.confirm(confirmMsg)) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         syncCkeditorToForm(form);
         var validateFn = form.getAttribute('data-manage-validate');
         if (!validateFn || typeof window[validateFn] !== 'function') {

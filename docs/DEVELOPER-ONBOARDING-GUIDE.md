@@ -2,7 +2,8 @@
 
 > 本文件協助第一次接觸 brick6 的 PHP 開發人員，快速理解前後端架構、日常維運，以及如何進行局部功能修改（後台欄位增減、複製模組、前台調整）。
 >
-> **第一週實戰練習**（Day 6 / Day 7 可執行 patch）另見：`docs/ONBOARDING-WEEK1.md`
+> **第一週實戰練習**（Day 6 / Day 7 可執行 patch）另見：`docs/ONBOARDING-WEEK1.md`  
+> **後台 TOTP 雙因素驗證移植**（migration + 逐檔 patch）另見：`docs/manage-mfa-setup.md`
 
 ---
 

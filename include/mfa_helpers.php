@@ -564,14 +564,18 @@ if (!function_exists('manage_mfa_post_login_url')) {
 }
 
 if (!function_exists('manage_mfa_send_onboard_email')) {
-    function manage_mfa_send_onboard_email(string $userName, string $email, string $loginId): bool
+    /** @return array{ok: bool, message: string, skipped: bool} */
+    function manage_mfa_send_onboard_email(string $userName, string $email, string $loginId): array
     {
         $email = trim($email);
         if ($email === '' || !function_exists('CheckMail') || !CheckMail($email)) {
-            return false;
+            return ['ok' => false, 'message' => '收件 Email 格式不正確', 'skipped' => false];
         }
-        if (!manage_mfa_onboard_email_enabled() || !function_exists('SendMail')) {
-            return false;
+        if (!manage_mfa_onboard_email_enabled()) {
+            return ['ok' => true, 'message' => '已略過寄信（MANAGE_MFA_ONBOARD_EMAIL 關閉）', 'skipped' => true];
+        }
+        if (!function_exists('SendMail')) {
+            return ['ok' => false, 'message' => 'SendMail 函式不存在', 'skipped' => false];
         }
 
         $siteName = trim((string)($GLOBALS['WebName'] ?? '後台管理系統'));
@@ -584,7 +588,7 @@ if (!function_exists('manage_mfa_send_onboard_email')) {
             $fromMail = trim((string)($GLOBALS['Web_Mail'] ?? ''));
         }
         if ($fromMail === '' || !CheckMail($fromMail)) {
-            return false;
+            return ['ok' => false, 'message' => '寄件信箱未設定或格式錯誤（請至 SEO/GEO 基本設定）', 'skipped' => false];
         }
 
         $loginUrl = manage_mfa_manage_base_url() . '/manage/login/index.php';
@@ -605,8 +609,17 @@ if (!function_exists('manage_mfa_send_onboard_email')) {
             . '<p>首次登入未完成綁定前，系統將引導您至雙因素驗證設定頁。</p>'
             . '<p style="color:#666;font-size:12px;">本信由系統自動發送，請勿回覆。</p>';
 
-        SendMail($userName, $email, $fromName, $fromMail, $subject, $body);
-        return true;
+        $resp = SendMail($userName, $email, $fromName, $fromMail, $subject, $body);
+        $ok = function_exists('sendmail_response_is_success') && sendmail_response_is_success($resp);
+        $detail = function_exists('sendmail_response_message')
+            ? sendmail_response_message($resp)
+            : '未知錯誤';
+
+        if ($ok) {
+            return ['ok' => true, 'message' => 'MFA 綁定指引信已寄至 ' . $email, 'skipped' => false];
+        }
+
+        return ['ok' => false, 'message' => 'MFA 指引信寄送失敗：' . $detail, 'skipped' => false];
     }
 }
 
@@ -622,5 +635,62 @@ if (!function_exists('manage_mfa_mark_setup_pending')) {
             'dtUDate' => date('Y-m-d H:i:s'),
         ], 'PKey', $pkey);
         $pdo->close();
+    }
+}
+
+if (!function_exists('manage_mfa_resend_onboard_mail')) {
+    /** @return array{ok: bool, message: string, skipped: bool} */
+    function manage_mfa_resend_onboard_mail(int $pkey): array
+    {
+        if ($pkey <= 0) {
+            return ['ok' => false, 'message' => '帳號 PKey 無效', 'skipped' => false];
+        }
+
+        $row = crud_fetch_one(
+            'SELECT PKey, strID, strName, intType' . manage_mfa_user_extra_select_sql()
+            . ' FROM webcontrol WHERE PKey = :pk LIMIT 1',
+            ['pk' => $pkey]
+        );
+        if ($row === null || (int)($row['intType'] ?? -1) !== 0) {
+            return ['ok' => false, 'message' => '查無帳號或無權限', 'skipped' => false];
+        }
+
+        if (manage_mfa_is_enabled_for_user($row)) {
+            return ['ok' => false, 'message' => '此帳號已完成 MFA 綁定，無需重發綁定信', 'skipped' => false];
+        }
+
+        $email = trim((string)($row['strEmail'] ?? ''));
+        if ($email === '') {
+            return ['ok' => false, 'message' => '此帳號未設定 Email，請先編輯儲存 Email 後再重發', 'skipped' => false];
+        }
+
+        if (manage_mfa_onboard_schema_ready()) {
+            manage_mfa_mark_setup_pending($pkey);
+        }
+
+        $result = manage_mfa_send_onboard_email(
+            (string)($row['strName'] ?? ''),
+            $email,
+            (string)($row['strID'] ?? '')
+        );
+
+        if (($result['skipped'] ?? false) === true) {
+            return $result;
+        }
+
+        if ($result['ok'] ?? false) {
+            if (function_exists('manage_history')) {
+                manage_history(
+                    (int)($GLOBALS['Module_PKey'] ?? 3),
+                    '帳號管理',
+                    '重發 MFA 綁定指引信',
+                    $_SERVER['PHP_SELF'] ?? 'mfa_resend_mail.php',
+                    (string)($_SESSION['Login_ID'] ?? 'system'),
+                    (string)($result['message'] ?? '')
+                );
+            }
+        }
+
+        return $result;
     }
 }

@@ -883,17 +883,108 @@ function IPCountry($ip=''){
     return $obj->data->ip ?? '';
 }
 
+if (!function_exists('mail_api_resolve_ssl_verify')) {
+    /**
+     * MAIL API cURL SSL：false=略過、true=系統預設、string=CA 路徑
+     * 環境變數 MAIL_API_SSL_VERIFY（0/false=略過；.pem 路徑=指定 CA）
+     * 未設定時 APP_ENV=local/dev/development 自動略過（本機 WAMP 自簽憑證）
+     */
+    function mail_api_resolve_ssl_verify(): bool|string
+    {
+        $raw = trim((string)($_ENV['MAIL_API_SSL_VERIFY'] ?? getenv('MAIL_API_SSL_VERIFY') ?: ''));
+        if ($raw !== '') {
+            if (in_array(strtolower($raw), ['0', 'false', 'no', 'off'], true)) {
+                return false;
+            }
+            if (is_file($raw)) {
+                return $raw;
+            }
+            return true;
+        }
+        $appEnv = strtolower(trim((string)($_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'production')));
+        if (in_array($appEnv, ['local', 'dev', 'development'], true)) {
+            return false;
+        }
+        return true;
+    }
+}
+
+if (!function_exists('mail_api_apply_curl_ssl_options')) {
+    function mail_api_apply_curl_ssl_options($curl): void
+    {
+        $verify = mail_api_resolve_ssl_verify();
+        if ($verify === false) {
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+            return;
+        }
+        if (is_string($verify)) {
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+            curl_setopt($curl, CURLOPT_CAINFO, $verify);
+            return;
+        }
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+    }
+}
+
+/** 解析 webmail API 回應是否成功 */
+function sendmail_response_is_success(mixed $resp): bool
+{
+    if (!is_object($resp)) {
+        return false;
+    }
+    $result = strtolower(trim((string)($resp->Result ?? '')));
+    if ($result !== '') {
+        if (in_array($result, ['ok', 'success', 'y', 'yes', '1', 'true', 'sent'], true)) {
+            return true;
+        }
+        if (in_array($result, ['fail', 'failed', 'error', 'n', 'no', '0', 'false'], true)) {
+            return false;
+        }
+    }
+    $message = (string)($resp->Message ?? '');
+    if ($message !== '' && preg_match('/成功|success|sent|ok/i', $message)) {
+        return true;
+    }
+    if ($message !== '' && preg_match('/失敗|fail|error|invalid|拒絕|無法/i', $message)) {
+        return false;
+    }
+    return false;
+}
+
+/** 取得 webmail API 回應訊息文字 */
+function sendmail_response_message(mixed $resp): string
+{
+    if (!is_object($resp)) {
+        return '寄信 API 無回應';
+    }
+    $message = trim((string)($resp->Message ?? ''));
+    $result  = trim((string)($resp->Result ?? ''));
+    if ($message !== '') {
+        return $message;
+    }
+    if ($result !== '') {
+        return $result;
+    }
+    return '寄信 API 回應格式不明';
+}
+
 /** 經 webmail API 寄信並寫入 maillog（.env MAIL_API_URL） */
 function SendMail($SendName, $SendMail, $FromName, $FromMail, $Subject, $MailBody){
     $ip        = UserIP();
     $base_url  = $_ENV['MAIL_API_URL'] ?? 'http://webmail.tsg.com.tw/mail.php';
     $Mail_List = explode(';', (string)$SendMail);
     $lastResp  = null;
+    $attempted = 0;
+    $succeeded = 0;
 
     foreach ($Mail_List as $to_mail) {
         $to_mail = trim($to_mail);
         if (!CheckMail($to_mail)) continue;
 
+        $attempted++;
         $data = [
             'Domain'   => $SERVER_NAME  ?? '',
             'WebUrl'   => ($SERVER_NAME  ?? '').($REQUEST_URI_PATH ?? ''),
@@ -914,16 +1005,36 @@ function SendMail($SendName, $SendMail, $FromName, $FromMail, $Subject, $MailBod
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_HEADER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+        mail_api_apply_curl_ssl_options($curl);
         $response = curl_exec($curl);
+        $curlErr = ($response === false) ? (string)curl_error($curl) : '';
         $header_size = curl_getinfo($curl, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $header_size);
+        $body = is_string($response) ? substr($response, $header_size) : '';
         curl_close($curl);
 
-        $parts = explode('|', (string)$body);
-        $resp  = json_decode($parts[0] ?? '{}');
-        $Message = $resp->Message ?? '';
-        $Result  = $resp->Result  ?? '';
-        $lastResp = $resp;
+        if ($response === false) {
+            $resp = (object)['Result' => 'FAIL', 'Message' => 'MAIL API 連線失敗：' . $curlErr];
+            $Message = (string)$resp->Message;
+            $Result  = (string)$resp->Result;
+            $lastResp = $resp;
+        } else {
+            $parts = explode('|', (string)$body);
+            $resp  = json_decode($parts[0] ?? '{}');
+            if (!is_object($resp)) {
+                $resp = (object)[
+                    'Result'  => 'FAIL',
+                    'Message' => 'MAIL API 回應非 JSON：' . mb_substr(trim((string)$body), 0, 200),
+                ];
+            }
+            $Message = (string)($resp->Message ?? '');
+            $Result  = (string)($resp->Result ?? '');
+            $lastResp = $resp;
+        }
+
+        if (sendmail_response_is_success($resp)) {
+            $succeeded++;
+        }
 
         // 寫入發送信件 log（不記密碼/Token 等敏感資訊）
         $data_array = [
@@ -951,6 +1062,16 @@ function SendMail($SendName, $SendMail, $FromName, $FromMail, $Subject, $MailBod
             }
             $pdo->close();
         }
+    }
+
+    if ($attempted === 0) {
+        return (object)['Result' => 'FAIL', 'Message' => '無有效收件信箱'];
+    }
+    if ($succeeded === 0 && is_object($lastResp)) {
+        return $lastResp;
+    }
+    if ($succeeded > 0 && is_object($lastResp) && !sendmail_response_is_success($lastResp)) {
+        return (object)['Result' => 'OK', 'Message' => '部分收件者寄送成功'];
     }
     return $lastResp;
 }
