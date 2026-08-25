@@ -3,7 +3,8 @@
 > 本文件協助第一次接觸 brick6 的 PHP 開發人員，快速理解前後端架構、日常維運，以及如何進行局部功能修改（後台欄位增減、複製模組、前台調整）。
 >
 > **第一週實戰練習**（Day 6 / Day 7 可執行 patch）另見：`docs/ONBOARDING-WEEK1.md`  
-> **後台 TOTP 雙因素驗證移植**（migration + 逐檔 patch）另見：`docs/manage-mfa-setup.md`
+> **後台 TOTP 雙因素驗證移植**（migration + 逐檔 patch）另見：`docs/manage-mfa-setup.md`  
+> **前台 JSON-LD 結構化資料**另見：`docs/frontend-json-ld.md`
 
 ---
 
@@ -241,7 +242,7 @@ ALTER TABLE news ADD COLUMN SubTitle VARCHAR(255) DEFAULT '' AFTER Title;
 
 ```
 _inc.php
-├── _in_code_head.php       ← SEO
+├── _in_code_head.php       ← SEO／OG／JSON-LD
 ├── _in_javascript.php      ← CSS/JS
 ├── _header.php
 ├── _banner.php             ← Banner + 麵包屑
@@ -289,6 +290,7 @@ frontend_module_set_config(array_merge(
 | `frontend_fetch_msg_contents()` | CKEditor 內文 |
 | `frontend_detail_href()` | 內頁友好 URL |
 | `e()` / `e_attr()` | XSS 安全輸出 |
+| `json_ld_script_tag()` / `frontend_*_ldjson()` | JSON-LD（詳見 `docs/frontend-json-ld.md`） |
 
 ---
 
