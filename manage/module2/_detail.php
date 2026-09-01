@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
 $langCount = !empty($array_lang) && is_array($array_lang) ? count($array_lang) : 0;
-$layerNames = $layerNames ?? [];
 $langStrName = $langStrName ?? [];
 $SeoTitle = $SeoTitle ?? [];
 $Description = $Description ?? [];
@@ -11,6 +10,7 @@ $Keywords = $Keywords ?? [];
 $Question = $Question ?? [];
 $Answer = $Answer ?? [];
 $isShow = $isShow ?? [];
+$qaSlotMax = function_exists('module_qa_slot_max') ? module_qa_slot_max() : 10;
 
 if (!isset($layout_page_title) || $layout_page_title === '') {
     $layout_page_title = '單元設定';
@@ -27,149 +27,7 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
   'use strict';
 
   const toInt = (v) => Number.parseInt(String(v || '').trim(), 10) || 0;
-  let latestReqId = 0;
   let submitLock = false;
-
-  const panelIds = ['program', 'layer'];
-
-  function hidePanels(ids) {
-    panelIds.forEach((id) => {
-      const show = ids.indexOf(id) >= 0;
-      document.querySelectorAll('[data-module-panel="' + id + '"]').forEach((el) => {
-        el.classList.toggle('is-hidden', !show);
-      });
-    });
-  }
-
-  function rebuildLayerOptions(maxLayer, keepValue) {
-    const sel = document.getElementById('intLayer');
-    if (!sel) return;
-    const oldLayerEl = document.getElementById('oldLayer');
-    const cur = keepValue !== undefined
-      ? String(keepValue)
-      : (sel.value || (oldLayerEl ? oldLayerEl.value : ''));
-    sel.innerHTML = '<option value="">請選擇</option>';
-    for (let i = 2; i <= maxLayer; i++) {
-      const opt = document.createElement('option');
-      opt.value = String(i);
-      opt.textContent = String(i);
-      sel.appendChild(opt);
-    }
-    if (cur && toInt(cur) >= 2 && toInt(cur) <= maxLayer) {
-      sel.value = cur;
-    }
-  }
-
-  function showModule(num) {
-    hidePanels([]);
-    if (Number(num) === 1) {
-      const useEl = document.querySelector('input[name="intUse"]:checked');
-      const maxL = useEl ? toInt(useEl.getAttribute('data-max-layer')) : 0;
-      showUse(useEl ? useEl.value : '', maxL);
-    }
-  }
-
-  function showUse(num, maxLayer) {
-    const chk = document.getElementById('chkUse');
-    if (chk) chk.value = num || '';
-    const panels = ['program'];
-    if (Number(maxLayer) > 0) {
-      panels.push('layer');
-      rebuildLayerOptions(maxLayer);
-      showLayer();
-    } else {
-      const sel = document.getElementById('intLayer');
-      if (sel) {
-        sel.innerHTML = '<option value="">請選擇</option>';
-        sel.value = '';
-      }
-      applySublistHtml('<ul class="moduleLayerList__items"></ul>');
-    }
-    hidePanels(panels);
-  }
-
-  function debounce(fn, wait) {
-    let t = 0;
-    return function () {
-      clearTimeout(t);
-      const ctx = this;
-      const args = arguments;
-      t = setTimeout(() => fn.apply(ctx, args), wait);
-    };
-  }
-
-  function resolveLayerSourcePKey() {
-    const modulePk = toInt(document.getElementById('Module_PKey')?.value);
-    if (modulePk > 0) {
-      return modulePk;
-    }
-    const pkey = toInt(document.getElementById('PKey')?.value);
-    if (pkey > 0) {
-      return pkey;
-    }
-    return toInt(document.getElementById('Copy_PKey')?.value);
-  }
-
-  function applySublistHtml(html) {
-    const box = document.getElementById('subList');
-    if (!box) return;
-    box.innerHTML = html;
-    const first = document.querySelector('#subList input[id^="subName"]');
-    if (first && typeof first.focus === 'function') {
-      first.focus();
-    }
-  }
-
-  const doShowLayer = debounce(function () {
-    const layer = document.getElementById('intLayer')?.value || '';
-    const box = document.getElementById('subList');
-    if (!layer || toInt(layer) <= 1) {
-      if (box) {
-        box.innerHTML = '<ul class="moduleLayerList__items"></ul>';
-      }
-      return;
-    }
-
-    const pkey = resolveLayerSourcePKey();
-    const reqId = ++latestReqId;
-    const token = document.querySelector('input[name="csrf_token"]')?.value || '';
-    const body = new URLSearchParams({
-      PKey: String(Math.max(0, pkey)),
-      Layer: layer,
-      csrf_token: token
-    });
-
-    fetch('_sublist.php', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      body: body.toString(),
-      credentials: 'same-origin'
-    })
-      .then(function (res) {
-        if (!res.ok) {
-          throw new Error('HTTP ' + res.status);
-        }
-        return res.text();
-      })
-      .then(function (html) {
-        if (reqId !== latestReqId) return;
-        applySublistHtml(html);
-      })
-      .catch(function (err) {
-        console.error('載入階層子單元失敗:', err);
-      });
-  }, 120);
-
-  function showLayer() {
-    doShowLayer();
-  }
-
-  window.showModule = showModule;
-  window.showUse = showUse;
-  window.showLayer = showLayer;
 
   window.login = function (theForm) {
     if (submitLock) return;
@@ -191,47 +49,21 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
     }
 
     const masterNameEl = document.getElementById('strName');
-    if (masterNameEl && (masterNameEl.value || '').trim() === '') {
-      errors.push('單元名稱為空白');
-      fields.push('strName');
-    }
-
     const totalLang = toInt(document.getElementById('Total_lang')?.value) || 0;
     let hasUnitName = !!(masterNameEl && (masterNameEl.value || '').trim());
     for (let li = 1; li <= totalLang; li++) {
       const el = document.getElementById('strName' + li);
-      if (!el) continue;
-      if ((el.value || '').trim() !== '') {
+      if (el && (el.value || '').trim() !== '') {
         hasUnitName = true;
       }
+    }
+    if (masterNameEl && totalLang <= 0 && !hasUnitName) {
+      errors.push('單元名稱為空白');
+      fields.push('strName');
     }
     if (totalLang > 0 && !hasUnitName) {
       errors.push('單元名稱為空白（請至少填寫一個語系）');
       fields.push('strName1');
-    }
-
-    if (document.getElementById('intPage2')?.checked) {
-      const link = (document.getElementById('PageLink')?.value || '').trim();
-      const ok = /^([a-zA-Z0-9_\-/.]+|\w+\.(html?|php))$/.test(link);
-      if (!link || !ok) {
-        errors.push('前台連結網址格式不正確');
-        fields.push('PageLink');
-      }
-    }
-
-    const typeVal = document.querySelector('input[name="intType"]:checked')?.value;
-    if (typeVal === '1' && !document.querySelector('input[name="intUse"]:checked')) {
-      errors.push('功能模組未選擇');
-      fields.push('intUse1');
-    }
-
-    const layer = toInt(document.getElementById('intLayer')?.value);
-    for (let i = 1; i <= layer; i++) {
-      const el = document.getElementById('subName' + i);
-      if (el && (el.value || '').trim() === '') {
-        errors.push('子單元名稱' + i + '為空白');
-        fields.push('subName' + i);
-      }
     }
 
     if (errors.length) {
@@ -242,43 +74,6 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
     }
     return window.manageFormValidationOk(theForm || document.getElementById('form1'));
   };
-
-  document.addEventListener('DOMContentLoaded', function () {
-    if (window.jQuery && $.fn && typeof $.fn.maxlength === 'function' && document.getElementById('Interview')) {
-      $('#Interview').maxlength({ maxCharacters: 400, slider: true });
-    }
-
-    const intType = toInt(<?php echo (int)$intType; ?>);
-    showModule(intType);
-
-    document.addEventListener('change', function (ev) {
-      if (ev.target && ev.target.id === 'intLayer') {
-        const layer = toInt(ev.target.value);
-        if (layer <= 1) {
-          applySublistHtml('<ul class="moduleLayerList__items"></ul>');
-          return;
-        }
-        showLayer();
-      }
-    });
-
-    document.querySelectorAll('input[name="intType"]').forEach((radio) => {
-      radio.addEventListener('change', function () {
-        showModule(toInt(this.value));
-      });
-    });
-
-    document.querySelectorAll('input[name="intUse"]').forEach((radio) => {
-      radio.addEventListener('change', function () {
-        showUse(this.value, toInt(this.getAttribute('data-max-layer')));
-      });
-    });
-
-    const layerSelect = document.getElementById('intLayer');
-    if (toInt(layerSelect?.value) > 1) {
-      showLayer();
-    }
-  });
 })();
 <?php echo script_close(); ?>
 </head>
@@ -391,7 +186,7 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                         <input name="Module_PKey" type="hidden" id="Module_PKey" value="<?php echo (int)($Module_PKey ?? $Update_PKey ?? 0); ?>">
                         <input type="hidden" id="Copy_PKey" name="Copy_PKey" value="<?php echo (int)($copySourcePKey ?? 0); ?>">
                         <input name="PKey" type="hidden" id="PKey" value="<?php echo (int)($Update_PKey ?? $Module_PKey ?? 0); ?>">
-                        <input type="hidden" name="intColum" id="intColum" value="<?php echo (int)($isColum ?? 0); ?>">
+                        <input type="hidden" name="intType" id="intType" value="2">
                         <input type="hidden" name="csrf_token" value="<?php echo e((string)($csrf_token ?? '')); ?>">
                         <?php if ($langCount > 0) {
                             echo hiddenNumeric('Total_lang', $langCount) . PHP_EOL;
@@ -406,10 +201,10 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                             <i class="bi bi-info-circle notes__icon"></i> 系統備註
                         </div>
                         <ul class="notes__list">
+                            <li>本頁僅為既有美工頁單元補上 SEO/GEO（TDK）與 FAQ，不必選擇功能模組。</li>
                             <li>單元下架後，網站前台不顯示。</li>
-                            <li>「功能頁面」須選擇功能模組；階層名稱依所選模組最高階層顯示（欄位名稱 subName）。</li>
                             <li>語系分頁的單元名稱、SEO/GEO 與 FAQ 分別寫入 module_lang、module_qa。</li>
-                            <li>SEO/GEO 標題、內文、關鍵字供前台 meta 使用；FAQ 每語系最多 5 組問答。</li>
+                            <li>SEO/GEO 標題、內文、關鍵字供前台 meta 使用；FAQ 每語系最多 <?php echo (int)$qaSlotMax; ?> 組問答。</li>
                         </ul>
                     </section>
                     <div class="notes__spacer"></div>

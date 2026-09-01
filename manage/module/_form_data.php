@@ -243,7 +243,7 @@ if (!function_exists('module_qa_slot_max')) {
     /** 美工頁每語系 FAQ 組數 */
     function module_qa_slot_max(): int
     {
-        return 5;
+        return 10;
     }
 }
 
@@ -461,9 +461,28 @@ if (!function_exists('module_addin_list_redirect_url')) {
     }
 }
 
+if (!function_exists('module_addin_is_tdk_only')) {
+    /** 美工頁（module2）僅補 TDK／FAQ，不檢查功能模組 */
+    function module_addin_is_tdk_only(array $opts = []): bool
+    {
+        if (!empty($opts['tdk_only'])) {
+            return true;
+        }
+        $cfgType = (int)($opts['int_type'] ?? 0);
+        if ($cfgType === 2) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('module_addin_validate')) {
-    /** @return string 錯誤訊息（空字串表示通過） */
-    function module_addin_validate(array $filter): string {
+    /**
+     * @param array<string,mixed> $opts tdk_only=true 時略過功能模組／階層／前台網址
+     * @return string 錯誤訊息（空字串表示通過）
+     */
+    function module_addin_validate(array $filter, array $opts = []): string {
         $msg = '';
 
         if (module_resolve_master_strname($filter) === '') {
@@ -473,6 +492,10 @@ if (!function_exists('module_addin_validate')) {
         $sort = $filter['Sort'] ?? '';
         if ($sort === '' || !ctype_digit((string)$sort)) {
             $msg .= "【單元順序】空白或非數字格式\n";
+        }
+
+        if (module_addin_is_tdk_only($opts)) {
+            return $msg;
         }
 
         $intType = is_numeric($filter['intType'] ?? null) ? (int)$filter['intType'] : 1;
@@ -487,7 +510,6 @@ if (!function_exists('module_addin_validate')) {
         }
 
         $intLayer = is_numeric($filter['intLayer'] ?? null) ? (int)$filter['intLayer'] : 0;
-        $intUse   = is_numeric($filter['intUse'] ?? null) ? (int)$filter['intUse'] : 0;
         $maxLayer = (int)(crud_load_program_meta($intUse)['MaxLayer'] ?? 0);
         if ($maxLayer <= 0 || $intLayer <= 1) {
             return $msg;
@@ -531,9 +553,25 @@ if (!function_exists('module_class_fetch_options')) {
 }
 
 if (!function_exists('module_addin_build_master_data')) {
-    /** @return array<string,mixed> */
-    function module_addin_build_master_data(array $filter): array {
+    /**
+     * @param array<string,mixed> $opts tdk_only=true 時只更新名稱／順序／上下架／intType，保留既有功能模組
+     * @return array<string,mixed>
+     */
+    function module_addin_build_master_data(array $filter, array $opts = []): array {
         $strName = mb_substr(module_resolve_master_strname($filter), 0, 50, 'UTF-8');
+        if (module_addin_is_tdk_only($opts)) {
+            $intType = (int)($opts['int_type'] ?? $filter['intType'] ?? 2);
+
+            return [
+                'Sort'    => SqlFilter($filter['Sort'] ?? 0, 'int'),
+                'strName' => SqlFilter($strName, 'tab'),
+                'Upload'  => SqlFilter((($filter['Upload'] ?? 'Yes') === 'No') ? 'No' : 'Yes', 'tab'),
+                'intType' => SqlFilter($intType > 0 ? $intType : 2, 'int'),
+                'dtUDate' => date('Y-m-d H:i:s'),
+                'UserID'  => SqlFilter($GLOBALS['Login_ID'] ?? '', 'tab'),
+            ];
+        }
+
         $layerCtx = module_addin_normalize_layers($filter);
         $intUse   = $layerCtx['intUse'];
         $intLayer = $layerCtx['intLayer'];

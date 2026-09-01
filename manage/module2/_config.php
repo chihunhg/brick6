@@ -19,6 +19,7 @@ return [
     'has_sort'           => true,
     'list_show_add'      => false,
     'list_int_type'      => 2,
+    'tdk_only'           => true,
     'img_slot_max'       => 0,
     'img_file_from'      => 1,
     'forder_prefix'      => 'module_',

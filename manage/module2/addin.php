@@ -38,41 +38,39 @@ if ($listUrl === 'list.php' || str_ends_with($listUrl, '/list.php')) {
     $listUrl = 'list.php';
 }
 
-$layerCtx = module_addin_normalize_layers($filter_array);
+$tdkOpts = [
+    'tdk_only' => true,
+    'int_type' => $listIntType,
+];
+$filter_array['intType'] = (string)$listIntType;
 
-$MSG = module_addin_validate($filter_array);
+$MSG = module_addin_validate($filter_array, $tdkOpts);
 if ($MSG !== '') {
     crud_form_error_redirect($MSG, $returnUrl);
 }
 
-if ($formPKey > 0) {
-    $exists = crud_fetch_one(
-        'SELECT PKey, intType FROM ' . $table_name . ' WHERE PKey = :pk LIMIT 1',
-        ['pk' => $formPKey]
-    );
-    if ($exists === null) {
-        crud_form_error_redirect('查無要修改資料', $returnUrl);
-    }
-    if ((int)($exists['intType'] ?? 0) !== $listIntType) {
-        crud_form_error_redirect('此單元非美工頁面類型', $returnUrl);
-    }
+if ($formPKey <= 0) {
+    crud_form_error_redirect('參數錯誤：PKey 無效', $listUrl);
 }
 
-$filter_array['intType'] = (string)$listIntType;
-$data_array = module_addin_build_master_data($filter_array);
-$data_array['intType'] = SqlFilter($listIntType, 'int');
+$exists = crud_fetch_one(
+    'SELECT PKey, intType FROM ' . $table_name . ' WHERE PKey = :pk LIMIT 1',
+    ['pk' => $formPKey]
+);
+if ($exists === null) {
+    crud_form_error_redirect('查無要修改資料', $returnUrl);
+}
+if ((int)($exists['intType'] ?? 0) !== $listIntType) {
+    crud_form_error_redirect('此單元非美工頁面類型', $returnUrl);
+}
 
-$intLayer = $layerCtx['intLayer'];
-$oldLayer = $layerCtx['oldLayer'];
-$intUse   = $layerCtx['intUse'];
-$strLink  = $layerCtx['strLink'];
+$data_array = module_addin_build_master_data($filter_array, $tdkOpts);
+$data_array['intType'] = SqlFilter($listIntType, 'int');
 
 try {
     $upsert     = crud_upsert_master($table_name, $formPKey, $data_array, 'PKey', 'dtDate');
     $modulePKey = $upsert['pkey'];
     $show       = $upsert['action'];
-
-    crud_sync_module_d_layers($modulePKey, $intLayer, $oldLayer, $intUse, $strLink, $filter_array);
 
     if ($table_lang !== '') {
         crud_save_module_lang_slots($table_lang, $modulePKey, $filter_array);
