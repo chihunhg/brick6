@@ -88,45 +88,47 @@ if(! $rs->eof){
 switch($Web_Secure){
 	case 1://免費專業方案
 		$log_day = 10;//Log 記錄保留天數
-		$Password_Match = 2;//密碼複雜度符合數目
-		$Password_Default = false;//預設密碼變更
-		$Password_Repeat = false;//密碼變更不可重複
-		$Password_change = false;//密碼強迫變更
-		$Password_day = 180;//密碼強迫變更天數
-		$Acount_Lock = false;//帳戶鎖定機制
-		$default_pw = 'brick4080';//預設密碼
+		$PW_Match = 2;//密碼複雜度符合數目
+		$PW_Default = false;//預設密碼變更
+		$PW_Repeat = false;//密碼變更不可重複
+		$PW_Change = false;//密碼強迫變更
+		$PW_Day = 180;//密碼強迫變更天數
+		$Account_Lock = false;//帳戶鎖定機制
 		break;
 	case 2://付費高階方案
 		$log_day = 30;//Log 記錄保留天數
-		$Password_Match = 3;//密碼複雜度符合數目
-		$Password_Default = true;//預設密碼變更
-		$Password_Repeat = false;//密碼變更不可重複
-		$Password_change = false;//密碼強迫變更
-		$Password_day = 180;//密碼強迫變更天數
-		$Acount_Lock = true;//帳戶鎖定機制
-		$default_pw = 'Brick4080';//預設密碼
+		$PW_Match = 3;//密碼複雜度符合數目
+		$PW_Default = true;//預設密碼變更
+		$PW_Repeat = false;//密碼變更不可重複
+		$PW_Change = false;//密碼強迫變更
+		$PW_Day = 180;//密碼強迫變更天數
+		$Account_Lock = true;//帳戶鎖定機制
 		break;
 	case 3://公家普級方案
 		$log_day = 90;//Log 記錄保留天數
-		$Password_Match = 4;//密碼複雜度符合數目
-		$Password_Default = true;//預設密碼變更
-		$Password_Repeat = true;//密碼變更不可重複
-		$Password_change = true;//密碼強迫變更
-		$Password_day = 180;//密碼強迫變更天數
-		$Acount_Lock = true;//帳戶鎖定機制
-		$default_pw = 'Aa@4080';//預設密碼
+		$PW_Match = 4;//密碼複雜度符合數目
+		$PW_Default = true;//預設密碼變更
+		$PW_Repeat = true;//密碼變更不可重複
+		$PW_Change = true;//密碼強迫變更
+		$PW_Day = 180;//密碼強迫變更天數
+		$Account_Lock = true;//帳戶鎖定機制
 		break;
 	default:
 		$log_day = 30;//Log 記錄保留天數
-		$Password_Match = 3;//密碼複雜度符合數目
-		$Password_Default = true;//預設密碼變更
-		$Password_Repeat = false;//密碼變更不可重複
-		$Password_change = false;//密碼強迫變更
-		$Password_day = 180;//密碼強迫變更天數
-		$Acount_Lock = true;//帳戶鎖定機制
-		$default_pw = 'Brick4080';//預設密碼
+		$PW_Match = 3;//密碼複雜度符合數目
+		$PW_Default = true;//預設密碼變更
+		$PW_Repeat = false;//密碼變更不可重複
+		$PW_Change = false;//密碼強迫變更
+		$PW_Day = 180;//密碼強迫變更天數
+		$Account_Lock = true;//帳戶鎖定機制
 		break;
 }
+$GLOBALS['PW_Match'] = (int)$PW_Match;
+$GLOBALS['PW_Default'] = (bool)$PW_Default;
+$GLOBALS['PW_Repeat'] = (bool)$PW_Repeat;
+$GLOBALS['PW_Change'] = (bool)$PW_Change;
+$GLOBALS['PW_Day'] = (int)$PW_Day;
+$GLOBALS['Account_Lock'] = (bool)$Account_Lock;
 $sql_d = 'delete from managelog Where datediff(\''.date('Y-m-d').'\', dtDate) > '.$log_day;
 execute_sql($sql_d);
 

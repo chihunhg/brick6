@@ -6,6 +6,7 @@ if (strtolower($filter_array['Action']) == 'logout'){
 	exit;
 }
 
+// 若無 Admin，依 .env ADMIN_INITIAL_PASSWORD 建立（未設定則略過）
 manage_bootstrap_admin_account();
 
 If ($_SESSION['Manage'] == 'Yes' && strlen($_SESSION["Login_ID"]) > 0){
