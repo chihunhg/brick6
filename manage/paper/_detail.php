@@ -151,101 +151,342 @@ function fieldCheck0(theForm) {
                             </div>
                         </div>
 
+                        <!-- ==================== 第一組：基本設定 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx" data-a11y="true">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-1"
+                                    id="accordion-header-1">基本設定</h4>
+                                <div class="accordionBx__panel"
+                                id="accordion-panel-1"
+                                role="region"
+                                aria-labelledby="accordion-header-1"
+                                aria-hidden="true">
+
+                                    <div class="inner">
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel" for="Sort">
+                                            顯示語系 <span class="inputLabel__required">*</span>
+                                            </label>
+                                            <div class="col--10 inputGroup row">
+                                                <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
+                                                    data-manage-action="class1-lang-select" data-lang-mode="all">
+                                                <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
+                                                    data-manage-action="class1-lang-select" data-lang-mode="none">
+                                                <?php for($i=1;$i<=count($array_lang);$i++){?>
+                                                    <label for="Show<?php echo $i?>">
+                                                        <input name="Show<?php echo $i?>" type="checkbox" id="Show<?php echo $i?>" value="Y"<?php if (class1_lang_is_show_on($isShow[$i] ?? '')) { echo ' checked'; } ?>
+                                                        data-manage-action="class1-lang-toggle" data-lang-index="<?php echo $i?>" />
+                                                    <?php echo $array_lang[$i]?>
+                                                    </label>
+                                                <?php } ?>
+                                                <span id="Lang_txt" class="red"></span>
+                                            </div>
+                                        </div>
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel" for="Sort">
+                                                順序 <span class="inputLabel__required">*</span>
+                                            </label>
+                                            <div class="col--10 inputGroup">
+                                                <input name="Sort" id="Sort" type="number" inputmode="numeric"
+                                                    min="0" step="1" class="formInput editView__sortInput"
+                                                    value="<?php echo $Sort; ?>" maxlength="4" autocomplete="off">
+                                                <span id="Sort_txt" class="input__errorTxt"></span>
+                                            </div>
+                                        </div>
+                                        <?php manage_render_strdate_field($strDate ?? ''); ?>
+                                        <?php if ($Layer > 1): ?>
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel" for="Class1"><?php echo $Class_Name[1]?>名稱 <span class="inputLabel__required">*</span></label>
+                                            <div class="col--10">
+                                                <select name="Class1" id="Class1" class="formSelect">
+                                                    <option value="">請選擇</option>
+                                                    <?php
+                                                    $sql = 'Select PKey, strName From dbclass1 Where Module_PKey= :Module_PKey Order By Sort';
+                                                    $rs1 = new recordset($sql, ['Module_PKey' => (int)$Module_PKey]);
+                                                    while(! $rs1->eof){
+                                                    ?>
+                                                    <option value="<?php echo $rs1->field('PKey')?>" <?php if(strval($Class1)==strval($rs1->field('PKey'))) {echo "selected=\"selected\"";}?>><?php echo $rs1->field('strName')?></option>
+                                                    <?php
+                                                    $rs1->movenext();
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <?php endif;?>
+                                        <?php if ($Layer > 2): ?>
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel" for="Upload"><?php echo $Class_Name[2]?>名稱</label>
+                                            <div class="col--10">
+                                                <select name="Class2" id="Class2" class="formSelect">
+                                                    <option value="">請選擇</option>
+                                                    <?php
+                                                    $class2Opts = function_exists('crud_fetch_class_options')
+                                                        ? crud_fetch_class_options(2, (int)$Module_PKey, (int)$Class1)
+                                                        : [];
+                                                    foreach ($class2Opts as $opt) {
+                                                        $optId = (int)($opt['PKey'] ?? 0);
+                                                        $optName = (string)($opt['strName'] ?? '');
+                                                    ?>
+                                                    <option value="<?php echo $optId; ?>"<?php if ((string)$Class2 === (string)$optId) { echo ' selected="selected"'; } ?>><?php echo e($optName); ?></option>
+                                                    <?php } ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if ($Layer > 3): ?>
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel" for="Upload"><?php echo $Class_Name[3]?>名稱</label>
+                                            <div class="col--10">
+                                                <select name="Class3" id="Class3" class="formSelect">
+                                                    <option value="">請選擇</option>
+                                                    <?php
+                                                    $sql = 'Select PKey, strName From dbclass3 Where Class2_PKey= :Class2_PKey Order By Sort';
+                                                    $rs1 = new recordset($sql, ['Class2_PKey' => (int)$Class2]);
+                                                    while(! $rs1->eof){
+                                                    ?>
+                                                    <option value="<?php echo $rs1->field('PKey')?>" <?php if(strval($Class3)==strval($rs1->field('PKey'))) {echo "selected=\"selected\"";}?>><?php echo $rs1->field('strName')?></option>
+                                                    <?php
+                                                    $rs1->movenext();
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <?php endif;?>
+                                        <?php require_once '../_tag_relation_block.php'; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- ==================== 第二組：文章內容 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                        role="button"
+                                        aria-expanded="false"
+                                        aria-controls="accordion-panel-2"
+                                        id="accordion-header-2">文章內容</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-2"
+                                    role="region"
+                                    aria-labelledby="accordion-header-2"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <article class="editView__tabs tabsGp">
+                                            <ul class="tabsGp__tabs">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <li id="group2_tabNav_<?php echo $i; ?>"
+                                                    class="tabsGp__link --color<?php echo $i; ?>"
+                                                    data-tab-target="group2_tabCon_<?php echo $i; ?>">
+                                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
+                                                </li>
+                                                <?php } ?>
+                                            </ul>
+                                            <div class="tabsGp__body">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                    
+                                                <div id="group2_tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
+                                                    <!-- 標題 -->
+                                                    <div class="formGrid">
+                                                        <label class="col--2 inputLabel editView__formLabel" for="strName<?php echo $i; ?>">
+                                                            標題 <span class="inputLabel__required">*</span>
+                                                        </label>
+                                                        <div class="col--10">
+                                                            <input name="strName<?php echo $i; ?>" type="text"
+                                                                id="strName<?php echo $i; ?>" class="formInput"
+                                                                value="<?php echo e((string)($strName[$i] ?? '')); ?>">
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- 內容 1~6 -->
+                                                    <?php for($n = 1; $n <= 6; $n++) { ?>
+                                                    <div class="formGrid">
+                                                        <label class="col--2 inputLabel editView__formLabel">內容<?php echo $n; ?>
+                                                        </label>
+                                                        <div class="col--10">
+                                                            <?php
+                                                            $editorAiFieldId = 'Contents' . $n . '_' . $i;
+                                                            require dirname(__DIR__) . '/_detail_ckeditor_ai_button.php';
+                                                            ?>
+                                                            <textarea name="Contents<?php echo $n.'_'.$i; ?>" id="Contents<?php echo $n.'_'.$i; ?>"
+                                                                class="ckeditor formInput"><?php echo e_editor_html((string)($Contents[$n][$i] ?? '')); ?></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <?php } ?>
+                                                </div>
+                                                <?php } ?>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- ==================== 第三組：圖片設定 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-3"
+                                    id="accordion-header-3">圖片設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-3"
+                                    role="region"
+                                    aria-labelledby="accordion-header-3"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <?php if ($showListField) { ?>
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel">列表圖</label>
+                                            <?php $n=1; ?>
+                                            <div class="col--10 inputGroup">
+                                                <?php
+                                                $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
+                                                manage_render_upload_image_slot($n, $isAdd, $photoPath, (int)($PhotoS[$n] ?? 0));
+                                                ?>
+                                                <div class="notes">
+                                                    <ul class="notes__list">
+                                                        <li>圖片：寬750px，高不限。</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php } ?>
+                                        <?php for ($n = 2; $n <= $managePhotoContentSlotEnd; $n++) { ?>
+                                        <div class="formGrid --picSetting">
+                                            <label class="col--2 inputLabel editView__formLabel">內容<?php echo $n-1?></label>
+                                            <div class="col--10 inputGroup">
+                                                <div class="flex flex--itCenter gap--3">
+                                                    <span class="inputLabel">呈現方式：</span>
+                                                    <?php manage_render_content_layout_select($n); ?>
+                                                </div>
+                                                <?php
+                                                $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
+                                                manage_render_upload_image_slot(
+                                                    $n,
+                                                    $isAdd,
+                                                    $photoPath,
+                                                    (int)($PhotoS[$n] ?? 0),
+                                                    'img',
+                                                    2000,
+                                                    '圖片上傳(' . ($n - 1) . ')',
+                                                    false
+                                                );
+                                                ?>
+                                            </div>
+                                        </div>
+                                        <?php } ?>
+                                        <?php require dirname(__DIR__) . '/_detail_file_slots_section.php'; ?>
+                                        <div class="notes">
+                                            <ul class="notes__list">
+                                                <li>上圖下文：寬1140px，高不限。</li>
+                                                <li>左圖右文：寬760px，高不限。</li>
+                                                <li>右圖左文：寬760px，高不限。</li>
+                                                <li>下圖上文：寬1140px，高不限。</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        
+                        <!-- ==================== 第四組：影音連結 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-4"
+                                    id="accordion-header-4">影音連結</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-4"
+                                    role="region"
+                                    aria-labelledby="accordion-header-4"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <div class="formGrid">
+                                            <label class="col--2 inputLabel editView__formLabel" for="Movielink<?php echo $i; ?>">
+                                                影音連結
+                                            </label>
+                                            <div class="col--10">
+                                                <span>https://www.youtube.com/watch?v=</span>
+                                                <input type="text" name="Movielink<?php echo $i; ?>"
+                                                    id="Movielink<?php echo $i; ?>" class="formInput w--auto"
+                                                    value="<?php echo e((string)($Movielink[$i] ?? '')); ?>">
+                                                <p> (影音連結例：https://www.youtube.com/watch?v=<span class="red">QEWV6fiYaDU</span>) </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>  
+                        </article>
+
+
+                        <!-- ==================== 第五組： SEO 設定 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-5"
+                                    id="accordion-header-5">SEO 設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-5"
+                                    role="region"
+                                    aria-labelledby="accordion-header-5"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <article class="editView__tabs tabsGp">
+                                            <ul class="tabsGp__tabs">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <li id="group1_tabNav_<?php echo $i; ?>"
+                                                    class="tabsGp__link --color<?php echo $i; ?>"
+                                                    data-tab-target="group1_tabCon_<?php echo $i; ?>">
+                                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
+                                                </li>
+                                                <?php } ?>
+                                            </ul>
+                                            <div class="tabsGp__body">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <div id="group1_tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
+
+                                                    <!-- SEO 設定 -->
+                                                    <?php require dirname(__DIR__) . '/_detail_lang_seo_fields.php'; ?>
+
+                                                    <!-- 簡述 -->
+                                                    <?php if ($showInterviewField) { ?>
+                                                    <div class="formGrid">
+                                                        <label class="col--2 inputLabel editView__formLabel" for="Interview<?php echo $i; ?>">簡述</label>
+                                                        <div class="col--10">
+                                                            <textarea name="Interview<?php echo $i; ?>" id="Interview<?php echo $i; ?>"
+                                                                class="formInput" style="height:100px"><?php echo e((string)($Interview[$i] ?? '')); ?></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <?php } ?>
+
+                                                    <!-- 核心摘要 -->
+                                                    <?php require dirname(__DIR__) . '/_detail_lang_summary_field.php'; ?>
+
+                                                </div>
+                                                <?php } ?>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- ==================== 上下架顯示 ==================== -->
                         <article class="editView__body">
                             <div class="editView__section">
-                                <h4 class="editView__sectionTitle">基本設定</h4>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Sort">
-                                    顯示語系 <span class="inputLabel__required">*</span>
-                                    </label>
-                                    <div class="col--10 inputGroup row">
-                                        <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
-                                            data-manage-action="class1-lang-select" data-lang-mode="all">
-                                        <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
-                                            data-manage-action="class1-lang-select" data-lang-mode="none">
-                                        <?php for($i=1;$i<=count($array_lang);$i++){?>
-                                            <label for="Show<?php echo $i?>">
-                                                <input name="Show<?php echo $i?>" type="checkbox" id="Show<?php echo $i?>" value="Y"<?php if (class1_lang_is_show_on($isShow[$i] ?? '')) { echo ' checked'; } ?>
-                                                data-manage-action="class1-lang-toggle" data-lang-index="<?php echo $i?>" />
-                                            <?php echo $array_lang[$i]?>
-                                            </label>
-                                        <?php } ?>
-                                        <span id="Lang_txt" class="red"></span>
-                                    </div>
-                                </div>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Sort">
-                                        順序 <span class="inputLabel__required">*</span>
-                                    </label>
-                                    <div class="col--10 inputGroup">
-                                        <input name="Sort" id="Sort" type="number" inputmode="numeric"
-                                            min="0" step="1" class="formInput editView__sortInput"
-                                            value="<?php echo $Sort; ?>" maxlength="4" autocomplete="off">
-                                        <span id="Sort_txt" class="input__errorTxt"></span>
-                                    </div>
-                                </div>
-                                <?php manage_render_strdate_field($strDate ?? ''); ?>
-                                <?php if ($Layer > 1): ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Class1"><?php echo $Class_Name[1]?>名稱 <span class="inputLabel__required">*</span></label>
-                                    <div class="col--10">
-                                        <select name="Class1" id="Class1" class="formSelect">
-                                            <option value="">請選擇</option>
-                                            <?php
-                                            $sql = 'Select PKey, strName From dbclass1 Where Module_PKey= :Module_PKey Order By Sort';
-                                            $rs1 = new recordset($sql, ['Module_PKey' => (int)$Module_PKey]);
-                                            while(! $rs1->eof){
-                                            ?>
-                                            <option value="<?php echo $rs1->field('PKey')?>" <?php if(strval($Class1)==strval($rs1->field('PKey'))) {echo "selected=\"selected\"";}?>><?php echo $rs1->field('strName')?></option>
-                                            <?php
-                                            $rs1->movenext();
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                                <?php endif;?>
-                                <?php if ($Layer > 2): ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Upload"><?php echo $Class_Name[2]?>名稱</label>
-                                    <div class="col--10">
-                                        <select name="Class2" id="Class2" class="formSelect">
-                                            <option value="">請選擇</option>
-                                            <?php
-                                            $class2Opts = function_exists('crud_fetch_class_options')
-                                                ? crud_fetch_class_options(2, (int)$Module_PKey, (int)$Class1)
-                                                : [];
-                                            foreach ($class2Opts as $opt) {
-                                                $optId = (int)($opt['PKey'] ?? 0);
-                                                $optName = (string)($opt['strName'] ?? '');
-                                            ?>
-                                            <option value="<?php echo $optId; ?>"<?php if ((string)$Class2 === (string)$optId) { echo ' selected="selected"'; } ?>><?php echo e($optName); ?></option>
-                                            <?php } ?>
-                                        </select>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                                <?php if ($Layer > 3): ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Upload"><?php echo $Class_Name[3]?>名稱</label>
-                                    <div class="col--10">
-                                        <select name="Class3" id="Class3" class="formSelect">
-                                            <option value="">請選擇</option>
-                                            <?php
-                                            $sql = 'Select PKey, strName From dbclass3 Where Class2_PKey= :Class2_PKey Order By Sort';
-                                            $rs1 = new recordset($sql, ['Class2_PKey' => (int)$Class2]);
-                                            while(! $rs1->eof){
-                                            ?>
-                                            <option value="<?php echo $rs1->field('PKey')?>" <?php if(strval($Class3)==strval($rs1->field('PKey'))) {echo "selected=\"selected\"";}?>><?php echo $rs1->field('strName')?></option>
-                                            <?php
-                                            $rs1->movenext();
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                                <?php endif;?>
-                                <?php require_once '../_tag_relation_block.php'; ?>
+                                <h4 class="editView__sectionTitle">上下架顯示</h4>
                                 <?php if ($showHomeField) { ?>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel" for="Home">首頁呈現</label>
@@ -276,168 +517,9 @@ function fieldCheck0(theForm) {
                             </div>
                         </article>
 
-                        <article class="editView__body">
-                            <div class="editView__section">
-                                <h4 class="editView__sectionTitle">內容區塊</h4>
-                                <?php if ($showListField) { ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel">列表圖</label>
-                                    <?php $n=1; ?>
-                                    <div class="col--10 inputGroup">
-                                        <div class="uploadBox w--auto">
-                                            <p class="inputLabel">圖片上傳</p>
-                                            <?php
-                                            $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
-                                            ?>
-                                            <div class="uploadBox__picBx">
-                                                <img id="preview<?php echo $n; ?>" alt=""
-                                                    style="max-width:150px;max-height:150px;"
-                                                    <?php if ($photoPath !== '') { ?>
-                                                    src="../../Upload/<?php echo e($photoPath); ?>?<?php echo time(); ?>"
-                                                    <?php } ?>>
-                                                <div id="size<?php echo $n; ?>"></div>
-                                                <span id="Photo<?php echo $n; ?>_txt" class="red"></span>
-                                                <?php if (manage_photo_slot_show_delete($isAdd, $photoPath)) {
-                                                    manage_render_photo_delete_button($n);
-                                                } ?>
-                                            </div>
-                                            <div class="uploadBox__fileBx">
-                                                <label for="Photo<?php echo $n?>">
-                                                    選擇檔案
-                                                    <input name="Photo<?php echo $n?>" type="file" accept="image/jpeg,image/gif,image/png"
-                                                        id="Photo<?php echo $n?>" size="30"
-                                                        data-check-file="Photo<?php echo $n?>,2000,img">
-                                                    <input name="intType<?php echo $n?>" type="hidden" id="intType<?php echo $n?>" value="1">
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="notes">
-                                            <ul class="notes__list">
-                                                <li>圖片：寬750px，高不限。</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php } ?>
-                                <?php for ($n = 2; $n <= $managePhotoContentSlotEnd; $n++) { ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel">內容<?php echo $n-1?></label>
-                                    <div class="col--10 inputGroup">
-                                        <div class="flex flex--itCenter gap--3">
-                                            <span class="inputLabel">呈現方式：</span>
-                                            <?php manage_render_content_layout_select($n); ?>
-                                        </div>
-                                        <div class="uploadBox w--auto">
-                                            <p class="inputLabel">圖片上傳(<?php echo $n-1?>)</p>
-                                            <?php
-                                            $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
-                                            ?>
-                                            <div class="uploadBox__picBx">
-                                                <img id="preview<?php echo $n; ?>" alt=""
-                                                    style="max-width:150px;max-height:150px;"
-                                                    <?php if ($photoPath !== '') { ?>
-                                                    src="../../Upload/<?php echo e($photoPath); ?>?<?php echo time(); ?>"
-                                                    <?php } ?>>
-                                                <div id="size<?php echo $n; ?>"></div>
-                                                <span id="Photo<?php echo $n; ?>_txt" class="red"></span>
-                                                <?php if (manage_photo_slot_show_delete($isAdd, $photoPath)) {
-                                                    manage_render_photo_delete_button($n);
-                                                } ?>
-                                            </div>
-                                            <div class="uploadBox__fileBx">
-                                                <label for="Photo<?php echo $n?>">
-                                                    選擇檔案
-                                                    <input name="Photo<?php echo $n?>" type="file" accept="image/jpeg,image/gif,image/png"
-                                                        id="Photo<?php echo $n?>" size="30"
-                                                        data-check-file="Photo<?php echo $n?>,2000,img">
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php } ?>
-                                <?php require dirname(__DIR__) . '/_detail_file_slots_section.php'; ?>
-                                <div class="notes">
-                                    <ul class="notes__list">
-                                        <li>上圖下文：寬1140px，高不限。</li>
-                                        <li>左圖右文：寬760px，高不限。</li>
-                                        <li>右圖左文：寬760px，高不限。</li>
-                                        <li>下圖上文：寬1140px，高不限。</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </article>
-
-                        <article class="editView__tabs tabsGp">
-                            <ul class="tabsGp__tabs">
-                                <?php 
-                                for ($i = 1; $i <= count($array_lang); $i++) {
-                                ?>
-                                <li id="tabNav_<?php echo $i; ?>"
-                                    class="tabsGp__link --color<?php echo $i; ?>"
-                                    data-tab-target="tabCon_<?php echo $i; ?>">
-                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
-                                </li>
-                                <?php } ?>
-                            </ul>
-                            <div class="tabsGp__body">
-                                <?php 
-                                for ($i = 1; $i <= count($array_lang); $i++) {
-                                ?>
-                                <div id="tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="strName<?php echo $i; ?>">
-                                            標題 <span class="inputLabel__required">*</span>
-                                        </label>
-                                        <div class="col--10">
-                                            <input name="strName<?php echo $i; ?>" type="text"
-                                                id="strName<?php echo $i; ?>" class="formInput"
-                                                value="<?php echo e((string)($strName[$i] ?? '')); ?>">
-                                        </div>
-                                    </div>
-                                    <?php require dirname(__DIR__) . '/_detail_lang_seo_fields.php'; ?>
-                                    <?php if ($showInterviewField) { ?>
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="Interview<?php echo $i?>">簡述</label>
-                                        <div class="col--10">
-                                            <textarea name="Interview<?php echo $i?>" id="Interview<?php echo $i?>"
-                                                class="formInput" style="height:100px"><?php echo e((string)($Interview[$i] ?? '')); ?></textarea>
-                                        </div>
-                                    </div>
-                                    <?php } ?>
-                                    <?php require dirname(__DIR__) . '/_detail_lang_summary_field.php'; ?>
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="Movielink<?php echo $i?>">
-                                            影音連結
-                                        </label>
-                                        <div class="col--10">
-                                            <span>https://www.youtube.com/watch?v=</span>
-                                            <input type="text" name="Movielink<?php echo $i?>"
-                                                id="Movielink<?php echo $i?>" class="formInput w--auto"
-                                                value="<?php echo e((string)($Movielink[$i] ?? '')); ?>">
-                                                <p> (影音連結例：https://www.youtube.com/watch?v=<span class="red">QEWV6fiYaDU</span>) </p>
-                                        </div>
-                                    </div>
-                                    <?php for($n=1;$n<=6;$n++){ ?>
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel">內容<?php echo $n?></label>
-                                        <div class="col--10">
-                                            <?php
-                                            $editorAiFieldId = 'Contents' . $n . '_' . $i;
-                                            require dirname(__DIR__) . '/_detail_ckeditor_ai_button.php';
-                                            ?>
-                                            <textarea name="Contents<?php echo $n.'_'.$i?>" id="Contents<?php echo $n.'_'.$i?>"
-                                                class="ckeditor formInput"><?php echo e_editor_html((string)($Contents[$n][$i] ?? '')); ?></textarea>
-                                        </div>
-                                    </div>
-                                    <?php } ?>
-                                </div>
-                                <?php } ?>
-                            </div>
-                        </article>
-
                         <?php require_once '../_submit.php'; ?>
                         </form>
+
                     </section>
 
                     <section class="notes notes--lg">
@@ -464,5 +546,60 @@ $(function() {
 	<?php manage_echo_strdate_picker_init('strDate', $strDate ?? ''); ?>
 });
 <?php echo script_close(); ?>
+
+<!-- ==================== 頁籤切換邏輯 JS ==================== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 尋找頁面中所有的頁籤組 (.tabsGp)
+        const tabGroups = document.querySelectorAll('.tabsGp');
+
+        tabGroups.forEach(function (group) {
+            const navItems = group.querySelectorAll('.tabsGp__link');
+            const contents = group.querySelectorAll('.tabContent');
+
+            // 初始化：預設顯示第一組頁籤，隱藏其餘頁籤內容
+            navItems.forEach(function (nav, index) {
+                const targetId = nav.getAttribute('data-tab-target');
+                const targetContent = group.querySelector('#' + targetId);
+
+                if (index === 0) {
+                    nav.classList.add('is-active', 'active', 'on'); // 兼容常見 class 名稱
+                    if (targetContent) {
+                        targetContent.style.display = 'block';
+                        targetContent.classList.add('is-active', 'active', 'on');
+                    }
+                } else {
+                    nav.classList.remove('is-active', 'active', 'on');
+                    if (targetContent) {
+                        targetContent.style.display = 'none';
+                        targetContent.classList.remove('is-active', 'active', 'on');
+                    }
+                }
+
+                // 綁定點擊切換事件
+                nav.addEventListener('click', function () {
+                    // 1. 清除該組內所有頁籤樣式與隱藏內容
+                    navItems.forEach(function (item) {
+                        item.classList.remove('is-active', 'active', 'on');
+                    });
+                    contents.forEach(function (content) {
+                        content.style.display = 'none';
+                        content.classList.remove('is-active', 'active', 'on');
+                    });
+
+                    // 2. 啟動當前點擊的頁籤與對應內容
+                    this.classList.add('is-active', 'active', 'on');
+                    const activeTargetId = this.getAttribute('data-tab-target');
+                    const activeContent = group.querySelector('#' + activeTargetId);
+                    
+                    if (activeContent) {
+                        activeContent.style.display = 'block';
+                        activeContent.classList.add('is-active', 'active', 'on');
+                    }
+                });
+            });
+        });
+    });
+</script>
 </body>
 </html>

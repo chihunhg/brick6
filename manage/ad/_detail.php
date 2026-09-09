@@ -293,30 +293,9 @@ $(function () {
                                         <?php } ?>
                                     </label>
                                     <div class="col--10 inputGroup">
-                                        <div class="uploadBox w--auto">
-                                            <p class="inputLabel">圖片上傳</p>
-                                            <div class="uploadBox__picBx">
-                                                <img id="preview<?php echo $n; ?>" alt=""
-                                                    style="max-width:150px;max-height:150px;"
-                                                    <?php if ($photoPath !== '') { ?>
-                                                    src="../../Upload/<?php echo e($photoPath); ?>?<?php echo time(); ?>"
-                                                    <?php } ?>>
-                                                <div id="size<?php echo $n; ?>"></div>
-                                                <span id="Photo<?php echo $n; ?>_txt" class="input__errorTxt"></span>
-                                                <?php if ($photoPath !== '') { ?>
-                                                <?php manage_render_photo_delete_button($n); ?>
-                                                <?php } ?>
-                                            </div>
-                                            <div class="uploadBox__fileBx">
-                                                <label for="Photo<?php echo $n; ?>">
-                                                    選擇檔案
-                                                    <input name="Photo<?php echo $n; ?>" type="file" accept="image/jpeg,image/gif,image/png"
-                                                        id="Photo<?php echo $n; ?>" size="30"
-                                                        data-check-file="Photo<?php echo $n; ?>,6000,img">
-                                                    <input name="intType<?php echo $n; ?>" type="hidden" id="intType<?php echo $n; ?>" value="1">
-                                                </label>
-                                            </div>
-                                        </div>
+                                        <?php
+                                        manage_render_upload_image_slot($n, $isAdd, $photoPath, 0, 'img', 6000);
+                                        ?>
                                         <div class="notes">
                                             <ul class="notes__list">
                                                 <?php foreach ($slotInfo['hints'] as $hint) { ?>

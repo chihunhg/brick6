@@ -2662,20 +2662,27 @@ if (!function_exists('manage_render_upload_file_prefile')) {
 }
 
 if (!function_exists('manage_render_upload_image_slot')) {
-    /** 圖片欄位（Sort 對應 Photo{n}） */
+    /**
+     * 圖片欄位（Sort 對應 Photo{n}）
+     * 結構：標籤 | 150px 預覽框 | 刪除圖片 | 選擇檔案
+     */
     function manage_render_upload_image_slot(
         int $slot,
         bool $isAdd,
         string $photoPath,
         int $photoRowPkey = 0,
         string $checkType = 'img',
-        int $maxKb = 2000
+        int $maxKb = 2000,
+        string $label = '圖片上傳',
+        bool $emitIntTypeHidden = true
     ): void {
         $slot = max(1, $slot);
         $photoPath = trim($photoPath);
         ?>
         <div class="uploadBox w--auto">
-            <p class="inputLabel">圖片上傳</p>
+            <?php if ($label !== '') { ?>
+            <p class="inputLabel"><?php echo e($label); ?></p>
+            <?php } ?>
             <div class="uploadBox__picBx">
                 <img id="preview<?php echo $slot; ?>" alt=""
                     style="max-width:150px;max-height:150px;<?php echo $photoPath === '' ? 'display:none;' : ''; ?>"
@@ -2683,10 +2690,10 @@ if (!function_exists('manage_render_upload_image_slot')) {
                     src="../../Upload/<?php echo e($photoPath); ?>?<?php echo time(); ?>"
                     <?php } ?>>
                 <div id="size<?php echo $slot; ?>"></div>
-                <?php if (manage_photo_slot_show_delete($isAdd, $photoPath)) {
-                    manage_render_photo_delete_button($slot);
-                } ?>
             </div>
+            <?php if (manage_photo_slot_show_delete($isAdd, $photoPath)) {
+                manage_render_photo_delete_button($slot);
+            } ?>
             <div class="uploadBox__fileBx">
                 <label for="Photo<?php echo $slot; ?>">
                     選擇檔案
@@ -2694,9 +2701,12 @@ if (!function_exists('manage_render_upload_image_slot')) {
                         accept="image/jpeg,image/gif,image/png,image/webp"
                         id="Photo<?php echo $slot; ?>" size="30"
                         data-check-file="Photo<?php echo $slot; ?>,<?php echo (int)$maxKb; ?>,<?php echo e($checkType); ?>">
+                    <?php if ($emitIntTypeHidden) { ?>
                     <input name="intType<?php echo $slot; ?>" type="hidden" id="intType<?php echo $slot; ?>" value="1">
+                    <?php } ?>
                 </label>
             </div>
+            <span id="Photo<?php echo $slot; ?>_txt" class="input__errorTxt"></span>
         </div>
         <?php
     }
@@ -2733,12 +2743,12 @@ if (!function_exists('manage_render_upload_document_slot')) {
                 <?php manage_render_upload_file_prefile($slot, '', ''); ?>
                 <?php } ?>
                 <div id="size<?php echo $slot; ?>"></div>
-                <?php
-                if (manage_photo_slot_show_delete($isAdd, $filePath)) {
-                    manage_render_photo_delete_button($slot);
-                }
-                ?>
             </div>
+            <?php
+            if (manage_photo_slot_show_delete($isAdd, $filePath)) {
+                manage_render_photo_delete_button($slot);
+            }
+            ?>
             <div class="uploadBox__fileBx">
                 <label for="Photo<?php echo $slot; ?>">
                     選擇檔案

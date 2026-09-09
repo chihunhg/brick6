@@ -231,33 +231,10 @@ function fieldCheck0(theForm) {
                                     <label class="col--2 inputLabel editView__formLabel">列表圖</label>
                                     <?php $n=1; ?>
                                     <div class="col--10 inputGroup">
-                                        <div class="uploadBox w--auto">
-                                            <p class="inputLabel">圖片上傳</p>
-                                            <?php
-                                            $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
-                                            ?>
-                                            <div class="uploadBox__picBx">
-                                                <img id="preview<?php echo $n; ?>" alt=""
-                                                    style="max-width:150px;max-height:150px;"
-                                                    <?php if ($photoPath !== '') { ?>
-                                                    src="../../Upload/<?php echo e($photoPath); ?>?<?php echo time(); ?>"
-                                                    <?php } ?>>
-                                                <div id="size<?php echo $n; ?>"></div>
-                                                <span id="Photo<?php echo $n; ?>_txt" class="red"></span>
-                                                <?php if (manage_photo_slot_show_delete($isAdd, $photoPath)) {
-                                                    manage_render_photo_delete_button($n);
-                                                } ?>
-                                            </div>
-                                            <div class="uploadBox__fileBx">
-                                                <label for="Photo<?php echo $n?>">
-                                                    選擇檔案
-                                                    <input name="Photo<?php echo $n?>" type="file" accept="image/jpeg,image/gif,image/png"
-                                                        id="Photo<?php echo $n?>" size="30"
-                                                        data-check-file="Photo<?php echo $n?>,2000,img">
-                                                    <input name="intType<?php echo $n?>" type="hidden" id="intType<?php echo $n?>" value="1">
-                                                </label>
-                                            </div>
-                                        </div>
+                                        <?php
+                                        $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
+                                        manage_render_upload_image_slot($n, $isAdd, $photoPath, (int)($PhotoS[$n] ?? 0));
+                                        ?>
                                         <div class="notes">
                                             <ul class="notes__list">
                                                 <li>圖片：寬750px，高不限。</li>

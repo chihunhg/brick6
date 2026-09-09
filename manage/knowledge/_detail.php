@@ -197,7 +197,7 @@ $(function () {
                       </div>
 
                       <div class="uploadBox w--auto">
-                        <div class="uploadBox__picBx">
+                        <div class="uploadBox__picBx uploadBox__picBx--file">
                           <?php if (!empty($Photo[1])) { ?>
                           <?php
                             switch ($extLower) {
@@ -231,13 +231,15 @@ $(function () {
                                 break;
                             }
                           ?>
-                          <a href="#" id="delete1" class="uploadBox__delBtn">刪除檔案</a>
                           <?php } else { ?>
                           <span id="prefile1"></span>
                           <img id="preview1" style="max-width:150px; max-height:150px;" alt="">
                           <div id="size1"></div>
                           <?php } ?>
                         </div>
+                        <?php if (!empty($Photo[1])) { ?>
+                        <a href="#" id="delete1" class="uploadBox__delBtn">刪除檔案</a>
+                        <?php } ?>
 
                         <div class="uploadBox__fileBx">
                           <label for="Photo1">
