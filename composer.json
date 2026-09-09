@@ -4,8 +4,7 @@
     "require": {
         "php": ">=8.0",
         "google-gemini-php/client": "^2.7",
-        "guzzlehttp/guzzle": "^7.13",
-        "phpoffice/phpspreadsheet": "^1.29"
+        "guzzlehttp/guzzle": "^7.13"
     },
     "config": {
         "sort-packages": true

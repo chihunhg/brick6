@@ -132,7 +132,7 @@ $layout_container_class = 'container';
 
                                                 <input type="file" name="Photo1" id="Photo1"
 
-                                                    accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                                                    accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
 
                                                     class="formInput">
 
@@ -258,7 +258,7 @@ $layout_container_class = 'container';
 
                         <ul class="notes__list">
 
-                            <li>Excel 第一欄為會員 E-mail，第一列為標題列（從第二列開始讀取）。</li>
+                            <li>Excel 第一欄為會員 E-mail，第一列為標題列（從第二列開始讀取）。請使用 .xlsx 檔。</li>
 
                             <li>手動匯入多筆帳號請以分號（;）分隔。</li>
 

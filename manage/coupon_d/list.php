@@ -310,7 +310,7 @@ $showListUpload = false;
 
                             <li>已折抵訂單的明細不可刪除（勾選欄位已停用）。</li>
 
-                            <li>匯入 Excel 第一欄請填寫會員 E-mail；手動匯入可用分號分隔多筆帳號。</li>
+                            <li>匯入 Excel（.xlsx）第一欄請填寫會員 E-mail；手動匯入可用分號分隔多筆帳號。</li>
 
                         </ul>
 

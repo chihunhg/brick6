@@ -32,6 +32,7 @@ if (empty($manage_binary_export)) {
 
 //後台模組使用
 require_once dirname(dirname(__FILE__)).'/include/common.php';//引入文件
+require_once dirname(dirname(__FILE__)).'/include/xlsx.php';//Excel 匯出／匯入（不依賴 PhpSpreadsheet）
 
 // *** Include the class 載入縮圖元件
 require_once dirname(dirname(__FILE__)).'/include/image.php';

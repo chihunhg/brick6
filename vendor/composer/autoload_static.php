@@ -10,30 +10,19 @@ class ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
-        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         'e4c9b2466af4057cc73ca0bb2fbccd8a' => __DIR__ . '/..' . '/google-gemini-php/client/src/Gemini.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
     );
 
     public static $prefixLengthsPsr4 = array (
-        'Z' => 
-        array (
-            'ZipStream\\' => 10,
-        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
         ),
         'P' => 
         array (
-            'Psr\\SimpleCache\\' => 16,
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
-            'PhpOffice\\PhpSpreadsheet\\' => 25,
-        ),
-        'M' => 
-        array (
-            'Matrix\\' => 7,
         ),
         'H' => 
         array (
@@ -46,25 +35,12 @@ class ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4
             'GuzzleHttp\\' => 11,
             'Gemini\\' => 7,
         ),
-        'C' => 
-        array (
-            'Composer\\Pcre\\' => 14,
-            'Complex\\' => 8,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'ZipStream\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
-        ),
         'Symfony\\Polyfill\\Php80\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
-        ),
-        'Psr\\SimpleCache\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/psr/simple-cache/src',
         ),
         'Psr\\Http\\Message\\' => 
         array (
@@ -74,14 +50,6 @@ class ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4
         'Psr\\Http\\Client\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-client/src',
-        ),
-        'PhpOffice\\PhpSpreadsheet\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
-        ),
-        'Matrix\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
         ),
         'Http\\Discovery\\' => 
         array (
@@ -103,24 +71,6 @@ class ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4
         array (
             0 => __DIR__ . '/..' . '/google-gemini-php/client/src',
         ),
-        'Composer\\Pcre\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/pcre/src',
-        ),
-        'Complex\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
-        ),
-    );
-
-    public static $prefixesPsr0 = array (
-        'H' => 
-        array (
-            'HTMLPurifier' => 
-            array (
-                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
-            ),
-        ),
     );
 
     public static $classMap = array (
@@ -137,7 +87,6 @@ class ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4::$prefixesPsr0;
             $loader->classMap = ComposerStaticInitd8a28a98690661b70354c06fca3a9fc4::$classMap;
 
         }, null, ClassLoader::class);
