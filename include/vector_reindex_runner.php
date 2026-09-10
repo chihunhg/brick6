@@ -115,7 +115,7 @@ if (!function_exists('vector_reindex_one')) {
     /**
      * 補建單筆：upsert、delete（無內容）或 dry-run 預覽
      *
-     * @return array{status: string, message: string} status 為 upsert|delete|skip|error
+     * @return array{status: string, message: string, abort?: bool} status 為 upsert|delete|skip|error
      */
     function vector_reindex_one(VectorSearchService $service, string $type, int $pkey, bool $dryRun = false): array
     {
@@ -133,7 +133,7 @@ if (!function_exists('vector_reindex_one')) {
 
                 return ['status' => 'delete', 'message' => 'removed from index'];
             } catch (Throwable $e) {
-                return ['status' => 'error', 'message' => $e->getMessage()];
+                return ['status' => 'error', 'message' => $e->getMessage(), 'abort' => false];
             }
         }
 
@@ -148,7 +148,15 @@ if (!function_exists('vector_reindex_one')) {
 
             return ['status' => 'upsert', 'message' => 'ok'];
         } catch (Throwable $e) {
-            return ['status' => 'error', 'message' => $e->getMessage()];
+            $message = $e->getMessage();
+            $abort = function_exists('vector_embedding_is_fatal_error')
+                && vector_embedding_is_fatal_error($e);
+
+            return [
+                'status'  => 'error',
+                'message' => $message,
+                'abort'   => $abort,
+            ];
         }
     }
 }
@@ -237,6 +245,11 @@ if (!function_exists('vector_reindex_execute')) {
 
                 if ($status === 'error') {
                     $lines[] = sprintf('  [ERROR] %s#%d — %s', $type, $pkey, (string)($result['message'] ?? ''));
+                    if (!empty($result['abort'])) {
+                        $lines[] = '  [ABORT] Embedding 帳單或金鑰錯誤，已停止後續補建（避免重複打 API）。'
+                            . '請至 https://ai.studio/projects 儲值或檢查 GEMINI_API_KEY 後再跑排程。';
+                        break 2;
+                    }
                 }
 
                 if ($sleepMs > 0 && !$dryRun) {

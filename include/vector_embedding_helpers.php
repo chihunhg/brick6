@@ -196,6 +196,49 @@ if (!function_exists('vector_embedding_l2_normalize')) {
     }
 }
 
+if (!function_exists('vector_embedding_is_fatal_error')) {
+    /**
+     * 是否為不應重試的 Embedding 錯誤（額度用盡、金鑰無效等）
+     *
+     * 用於批次補建：遇到帳單／金鑰問題時立刻中止，避免連打 API。
+     */
+    function vector_embedding_is_fatal_error(Throwable|string $error): bool
+    {
+        $parts = [];
+        if (is_string($error)) {
+            $parts[] = $error;
+        } else {
+            $current = $error;
+            while ($current instanceof Throwable) {
+                $parts[] = $current->getMessage();
+                $current = $current->getPrevious();
+            }
+        }
+
+        $haystack = strtolower(implode("\n", $parts));
+        $needles = [
+            'prepayment credits are depleted',
+            'credits are depleted',
+            'billing#prepay',
+            'please go to ai studio',
+            'insufficient_quota',
+            'insufficient funds',
+            'api key not valid',
+            'api_key_invalid',
+            'invalid api key',
+            'api key expired',
+        ];
+
+        foreach ($needles as $needle) {
+            if (str_contains($haystack, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('vector_embedding_api_ready')) {
     /**
      * 目前 provider 的 API Key 是否已設定
