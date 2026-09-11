@@ -439,7 +439,7 @@ if (!function_exists('manage_semantic_expand_terms')) {
                 . "須包含：同義詞、簡稱、繁簡變體；若輸入為英文須含對應繁體中文（例：table→表格）；若輸入為中文可含常見英文（例：表格→table）；中文近義詞須互含（例：資料表→表格）。"
                 . "禁止輸出不同主題的上位分類詞（如搜尋「表格」或 table 不可輸出「編輯器」「管理」「editor」「admin」）。";
 
-            $response = $client->generativeModel(model: 'gemini-2.5-flash')
+            $response = $client->generativeModel(model: gemini_generative_model_id())
                 ->withGenerationConfig(new \Gemini\Data\GenerationConfig(
                     maxOutputTokens: 256,
                     temperature: 0.2,

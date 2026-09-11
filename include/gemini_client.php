@@ -81,6 +81,45 @@ if (!function_exists('gemini_create_client')) {
     }
 }
 
+if (!function_exists('gemini_generative_model_id')) {
+    /**
+     * 後台產生內容用的 Gemini 模型（新 AQ. 金鑰無法使用 gemini-2.5-flash）
+     *
+     * 環境變數 GEMINI_GENERATIVE_MODEL；未設時預設 gemini-3.6-flash
+     */
+    function gemini_generative_model_id(): string
+    {
+        if (function_exists('host_env_string')) {
+            $raw = trim(host_env_string('GEMINI_GENERATIVE_MODEL'));
+        } else {
+            $raw = trim((string)($_ENV['GEMINI_GENERATIVE_MODEL'] ?? getenv('GEMINI_GENERATIVE_MODEL') ?: ''));
+        }
+
+        return $raw !== '' ? $raw : 'gemini-3.6-flash';
+    }
+}
+
+if (!function_exists('gemini_json_thinking_config')) {
+    /**
+     * 結構化 JSON 產出時關閉／降到最低思考（2.5 用 thinkingBudget，3.x 用 thinkingLevel）
+     */
+    function gemini_json_thinking_config(): \Gemini\Data\ThinkingConfig
+    {
+        $model = gemini_generative_model_id();
+        if (str_starts_with($model, 'gemini-2.')) {
+            return new \Gemini\Data\ThinkingConfig(
+                includeThoughts: false,
+                thinkingBudget: 0,
+            );
+        }
+
+        return new \Gemini\Data\ThinkingConfig(
+            includeThoughts: false,
+            thinkingLevel: \Gemini\Enums\ThinkingLevel::MINIMAL,
+        );
+    }
+}
+
 if (!function_exists('gemini_api_error_message')) {
     /** 開發環境回傳較明確的 API 錯誤訊息 */
     function gemini_api_error_message(Throwable $e): string {

@@ -56,7 +56,6 @@ require_once dirname(__DIR__) . '/include/gemini_client.php';
 use Gemini\Data\Content;
 use Gemini\Data\GenerationConfig;
 use Gemini\Data\Schema;
-use Gemini\Data\ThinkingConfig;
 use Gemini\Enums\DataType;
 use Gemini\Enums\ResponseMimeType;
 
@@ -86,10 +85,7 @@ try {
     $generationConfig = new GenerationConfig(
         maxOutputTokens: 3584,
         responseMimeType: ResponseMimeType::APPLICATION_JSON,
-        thinkingConfig: new ThinkingConfig(
-            includeThoughts: false,
-            thinkingBudget: 0,
-        ),
+        thinkingConfig: gemini_json_thinking_config(),
         responseSchema: new Schema(
             type: DataType::OBJECT,
             properties: [
@@ -103,7 +99,7 @@ try {
     );
 
     $model = $client
-        ->generativeModel(model: 'gemini-2.5-flash')
+        ->generativeModel(model: gemini_generative_model_id())
         ->withSystemInstruction(Content::parse(
             gemini_sanitize_utf8_text(gemini_combined_system_instruction(
                 industry: $normalizedIndustry,
