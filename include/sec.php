@@ -386,6 +386,81 @@ if (!function_exists('clear_cookie')) {
     }
 }
 
+if (!function_exists('session_cookie_options')) {
+    /**
+     * 與目前 PHP session cookie 相同的 path／domain／secure／SameSite（供自訂 SessionID 使用）
+     *
+     * @return array{expires:int,path:string,domain:string,secure:bool,httponly:bool,samesite?:string}
+     */
+    function session_cookie_options(int $expires = 0): array
+    {
+        $p = session_get_cookie_params();
+        $opts = [
+            'expires' => $expires,
+            'path' => ($p['path'] ?? '') !== '' ? (string)$p['path'] : '/',
+            'domain' => (string)($p['domain'] ?? ''),
+            'secure' => !empty($p['secure']) || _is_https(),
+            'httponly' => array_key_exists('httponly', $p) ? (bool)$p['httponly'] : true,
+        ];
+        $sameSite = trim((string)($p['samesite'] ?? ''));
+        if ($sameSite !== '') {
+            $opts['samesite'] = $sameSite;
+        }
+
+        return $opts;
+    }
+}
+
+if (!function_exists('expire_named_cookie')) {
+    function expire_named_cookie(string $name): void
+    {
+        if ($name === '') {
+            return;
+        }
+        setcookie($name, '', session_cookie_options(time() - 42000));
+        unset($_COOKIE[$name]);
+    }
+}
+
+if (!function_exists('sync_app_session_id_cookie')) {
+    function sync_app_session_id_cookie(): void
+    {
+        $newId = session_id();
+        $GLOBALS['SessionID'] = $newId;
+        setcookie('SessionID', $newId, session_cookie_options());
+    }
+}
+
+if (!function_exists('regenerate_session_on_login')) {
+    /**
+     * 登入成功（權限提升）時輪換 Session ID，並同步舊版自訂 SessionID cookie。
+     */
+    function regenerate_session_on_login(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        $saved = $_SESSION;
+        $previousId = session_id();
+
+        expire_named_cookie('SessionID');
+        session_regenerate_id(true);
+
+        if (session_id() === '' || session_id() === $previousId) {
+            expire_named_cookie(session_name());
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION = [];
+                session_destroy();
+            }
+            session_start();
+        }
+
+        $_SESSION = $saved;
+        sync_app_session_id_cookie();
+    }
+}
+
 /* -------------------------------------------------------
  * CSRF
  * -----------------------------------------------------*/

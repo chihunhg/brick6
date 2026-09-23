@@ -16,6 +16,7 @@ $error   = 0;
 if ($action === 'logout') {
     // 寫入網站管理記錄
     manage_history(3, $Module_Name, '', $WorkFile, ($_SESSION['Login_ID'] ?? ''), '使用者登出');
+    expire_named_cookie('SessionID');
     session_destroy();
     $show = '你已執行登出動作';
     echo manage_inline_script(
