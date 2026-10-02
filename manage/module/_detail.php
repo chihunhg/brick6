@@ -2,12 +2,7 @@
 declare(strict_types=1);
 
 $isAdd = stripos((string)($WorkFile ?? ''), 'add') !== false;
-$langCount = !empty($array_lang) && is_array($array_lang) ? count($array_lang) : 0;
 $layerNames = $layerNames ?? [];
-$langStrName = $langStrName ?? [];
-$Description = $Description ?? [];
-$Keywords = $Keywords ?? [];
-$isShow = $isShow ?? [];
 
 if (!isset($layout_page_title) || $layout_page_title === '') {
     $layout_page_title = '單元設定';
@@ -187,24 +182,16 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
       fields.push('Sort');
     }
 
-    const masterNameEl = document.getElementById('strName');
-    if (masterNameEl && (masterNameEl.value || '').trim() === '') {
-      errors.push('單元名稱為空白');
-      fields.push('strName');
-    }
-
-    const totalLang = toInt(document.getElementById('Total_lang')?.value) || 0;
-    let hasUnitName = !!(masterNameEl && (masterNameEl.value || '').trim());
-    for (let li = 1; li <= totalLang; li++) {
-      const el = document.getElementById('strName' + li);
-      if (!el) continue;
-      if ((el.value || '').trim() !== '') {
-        hasUnitName = true;
-      }
-    }
-    if (totalLang > 0 && !hasUnitName) {
-      errors.push('單元名稱為空白（請至少填寫一個語系）');
-      fields.push('strName1');
+    const langNameInputs = Array.prototype.filter.call(
+      document.querySelectorAll('input[name^="strName"]'),
+      function (el) { return /^strName\d+$/.test(el.name); }
+    );
+    const hasLangName = langNameInputs.some(function (el) {
+      return (el.value || '').trim() !== '';
+    });
+    if (langNameInputs.length && !hasLangName) {
+      errors.push('請至少填寫一個語系的單元名稱');
+      fields.push(langNameInputs[0].id);
     }
 
     if (document.getElementById('intPage2')?.checked) {
@@ -317,18 +304,37 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                                         <span id="Sort_txt" class="input__errorTxt"></span>
                                     </div>
                                 </div>
-                                <?php if ($langCount <= 0) { ?>
+                                <?php
+                                $langLabels = is_array($array_lang ?? null) ? $array_lang : [];
+                                $langCount = count($langLabels);
+                                if ($langCount < 1) {
+                                    $langCount = 1;
+                                }
+                                $langNames = is_array($langStrName ?? null) ? $langStrName : [];
+                                ?>
                                 <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="strName">
+                                    <label class="col--2 inputLabel editView__formLabel" for="strName1">
                                         單元名稱 <span class="inputLabel__required">*</span>
                                     </label>
-                                    <div class="col--10 inputGroup">
-                                        <input name="strName" type="text" id="strName" class="formInput"
-                                            value="<?php echo e((string)($strName ?? '')); ?>" maxlength="20">
-                                        <span id="strName_txt" class="input__errorTxt"></span>
+                                    <div class="col--10">
+                                        <ul class="moduleLangList">
+                                            <?php for ($langIndex = 1; $langIndex <= $langCount; $langIndex++) {
+                                                $langLabel = (string)($langLabels[$langIndex] ?? ('語系' . $langIndex));
+                                                $langValue = (string)($langNames[$langIndex] ?? '');
+                                                ?>
+                                            <li class="moduleLangList__item">
+                                                <label class="moduleLangList__label" for="strName<?php echo $langIndex; ?>">
+                                                    <?php echo e($langLabel); ?>
+                                                </label>
+                                                <input name="strName<?php echo $langIndex; ?>" type="text"
+                                                    id="strName<?php echo $langIndex; ?>" class="formInput"
+                                                    value="<?php echo e($langValue); ?>" maxlength="50">
+                                                <span id="strName<?php echo $langIndex; ?>_txt" class="input__errorTxt"></span>
+                                            </li>
+                                            <?php } ?>
+                                        </ul>
                                     </div>
                                 </div>
-                                <?php } ?>
                                 <?php
                                 $moduleClassOptions = module_class_fetch_options();
                                 $selectedClass1PKey = (int)($Class1_PKey ?? 0);
@@ -519,46 +525,11 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                             </div>
                         </article>
 
-                        <?php if ($langCount > 0) { ?>
-                        <article class="editView__tabs tabsGp">
-                            <ul class="tabsGp__tabs">
-                                <?php for ($i = 1; $i <= $langCount; $i++) { ?>
-                                <li id="tabNav_<?php echo $i; ?>"
-                                    class="tabsGp__link --color<?php echo $i; ?>"
-                                    data-tab-target="tabCon_<?php echo $i; ?>">
-                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
-                                </li>
-                                <?php } ?>
-                            </ul>
-                            <div class="tabsGp__body">
-                                <?php for ($i = 1; $i <= $langCount; $i++) { ?>
-                                <div id="tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="strName<?php echo $i; ?>">
-                                            單元名稱<?php echo $i === 1 ? ' <span class="inputLabel__required">*</span>' : ''; ?>
-                                        </label>
-                                        <div class="col--10 inputGroup">
-                                            <input name="strName<?php echo $i; ?>" type="text" id="strName<?php echo $i; ?>"
-                                                class="formInput" maxlength="20"
-                                                value="<?php echo e((string)($langStrName[$i] ?? '')); ?>"
-                                                placeholder="<?php echo $i === 1 ? '列表顯示名稱，至少填寫一個語系' : ''; ?>">
-                                            <span id="strName<?php echo $i; ?>_txt" class="input__errorTxt"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php } ?>
-                            </div>
-                        </article>
-                        <?php } ?>
-
                         <input name="Module_PKey" type="hidden" id="Module_PKey" value="<?php echo (int)($Module_PKey ?? $Update_PKey ?? 0); ?>">
                         <input type="hidden" id="Copy_PKey" name="Copy_PKey" value="<?php echo (int)($copySourcePKey ?? 0); ?>">
                         <input name="PKey" type="hidden" id="PKey" value="<?php echo (int)($Update_PKey ?? $Module_PKey ?? 0); ?>">
                         <input type="hidden" name="intColum" id="intColum" value="<?php echo (int)($isColum ?? 0); ?>">
                         <input type="hidden" name="csrf_token" value="<?php echo e((string)($csrf_token ?? '')); ?>">
-                        <?php if ($langCount > 0) {
-                            echo hiddenNumeric('Total_lang', $langCount) . PHP_EOL;
-                        } ?>
 
                         <?php require_once '../_submit.php'; ?>
                         </form>
@@ -571,8 +542,8 @@ if (!isset($layout_page_title) || $layout_page_title === '') {
                         <ul class="notes__list">
                             <li>單元下架後，網站前台不顯示。</li>
                             <li>「功能頁面」須選擇功能模組；階層名稱依所選模組最高階層顯示（欄位名稱 subName）。</li>
-                            <li>語系分頁的單元名稱寫入 module_lang；列表主檔名稱取第一個有值的語系。</li>
-                            <li>儲存時會同步寫入 module_d（階層子表）與 module_lang（語系名稱）。</li>
+                            <li>單元名稱依語系分別填寫，各語系寫入 module_lang.strName；列表與選單使用第一個有填寫的語系名稱（module_p.strName）。</li>
+                            <li>儲存時會同步寫入 module_d（階層子表）與 module_lang。</li>
                         </ul>
                     </section>
                     <div class="notes__spacer"></div>

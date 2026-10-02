@@ -4599,7 +4599,8 @@ if (!function_exists('crud_save_lang_slots')) {
 
 if (!function_exists('crud_save_module_lang_slots')) {
     /**
-     * 儲存 module_lang（Description{n}、Keywords{n}、Show{n}）
+     * 儲存 module_lang（strName{n}、Description{n}、Keywords{n}、Show{n}）
+     * 更新時只寫入有送出的欄位，避免單元名稱存檔蓋掉 SEO。
      */
     function crud_save_module_lang_slots(
         string $tableLang,
@@ -4640,26 +4641,35 @@ if (!function_exists('crud_save_module_lang_slots')) {
                 continue;
             }
 
-            $row = [
-                'Module_PKey' => SqlFilter($modulePKey, 'int'),
-                'Sort'        => SqlFilter($n, 'int'),
-                'intLang'     => SqlFilter($n, 'int'),
-                'isShow'      => SqlFilter((string)($filter['Show' . $n] ?? ''), 'tab'),
-                'strName'     => SqlFilter((string)($filter[$nameKey] ?? ''), 'tab'),
-                'Description' => SqlFilter((string)($filter[$descKey] ?? ''), 'tab'),
-                'dtDate'      => date('Y-m-d H:i:s'),
-            ];
-            if ($hasTitle && crud_table_has_column($tableLang, 'Title')) {
-                $row['Title'] = SqlFilter((string)$filter[$titleKey], 'tab');
-            }
-            if (crud_table_has_column($tableLang, 'Keywords')) {
-                $row['Keywords'] = SqlFilter(crud_collect_lang_keywords_from_filter($filter, $n), 'tab');
-            }
-
             $existing = crud_fetch_one(
                 "SELECT PKey FROM {$tableLang} WHERE Module_PKey = :fk AND intLang = :lang",
                 ['fk' => $modulePKey, 'lang' => $n]
             );
+            $isInsert = $existing === null;
+            $row = [
+                'Module_PKey' => SqlFilter($modulePKey, 'int'),
+                'Sort'        => SqlFilter($n, 'int'),
+                'intLang'     => SqlFilter($n, 'int'),
+                'dtDate'      => date('Y-m-d H:i:s'),
+            ];
+            if ($hasShow || $isInsert) {
+                $row['isShow'] = SqlFilter((string)($filter['Show' . $n] ?? ''), 'tab');
+            }
+            if ($hasName || $isInsert) {
+                $nameVal = $hasName
+                    ? (string)($filter[$nameKey] ?? '')
+                    : (string)($filter['strName'] ?? '');
+                $row['strName'] = SqlFilter(mb_substr(trim($nameVal), 0, 50, 'UTF-8'), 'tab');
+            }
+            if ($hasDesc || $isInsert) {
+                $row['Description'] = SqlFilter((string)($filter[$descKey] ?? ''), 'tab');
+            }
+            if (($hasTitle || $isInsert) && crud_table_has_column($tableLang, 'Title')) {
+                $row['Title'] = SqlFilter((string)($filter[$titleKey] ?? ''), 'tab');
+            }
+            if (($hasKw || $isInsert) && crud_table_has_column($tableLang, 'Keywords')) {
+                $row['Keywords'] = SqlFilter(crud_collect_lang_keywords_from_filter($filter, $n), 'tab');
+            }
 
             $pdo = new dbPDO();
             if ($existing !== null) {

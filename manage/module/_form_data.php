@@ -40,6 +40,164 @@ if (!function_exists('module_detail_tables')) {
     }
 }
 
+if (!function_exists('module_primary_lang_text')) {
+    /**
+     * 單語系介面顯示用：優先語系 1，否則取第一個非空白 slot
+     *
+     * @param mixed $slots
+     */
+    function module_primary_lang_text($slots): string
+    {
+        if (!is_array($slots)) {
+            return trim((string)$slots);
+        }
+        $first = trim((string)($slots[1] ?? ''));
+        if ($first !== '') {
+            return $first;
+        }
+        foreach ($slots as $v) {
+            $v = trim((string)$v);
+            if ($v !== '') {
+                return $v;
+            }
+        }
+        return '';
+    }
+}
+
+if (!function_exists('module_flatten_single_lang_display')) {
+    /** 主檔名稱取第一個有值語系；SEO／FAQ 仍收成語系 1。單元名稱各語系 slot 保留。 */
+    function module_flatten_single_lang_display(): void
+    {
+        if (!isset($GLOBALS['module_form_vars']) || !is_array($GLOBALS['module_form_vars'])) {
+            return;
+        }
+        $v = &$GLOBALS['module_form_vars'];
+        $langCount = function_exists('manage_lang_count') ? manage_lang_count() : 6;
+
+        $name = module_primary_lang_text($v['langStrName'] ?? []);
+        if ($name === '') {
+            $name = trim((string)($v['strName'] ?? ''));
+        }
+        $v['strName'] = $name;
+        if (!isset($v['langStrName']) || !is_array($v['langStrName'])) {
+            $v['langStrName'] = [];
+        }
+
+        $v['SeoTitle'][1] = module_primary_lang_text($v['SeoTitle'] ?? []);
+        $v['Description'][1] = module_primary_lang_text($v['Description'] ?? []);
+
+        for ($k = 0; $k < 5; $k++) {
+            $slots = [];
+            for ($i = 1; $i <= $langCount; $i++) {
+                $slots[$i] = $v['Keywords'][$k][$i] ?? '';
+            }
+            $v['Keywords'][$k][1] = module_primary_lang_text($slots);
+        }
+
+        $slotMax = function_exists('module_qa_slot_max') ? module_qa_slot_max() : 10;
+        for ($q = 1; $q <= $slotMax; $q++) {
+            $qSlots = [];
+            $aSlots = [];
+            for ($i = 1; $i <= $langCount; $i++) {
+                $qSlots[$i] = $v['Question'][$q][$i] ?? '';
+                $aSlots[$i] = $v['Answer'][$q][$i] ?? '';
+            }
+            $v['Question'][$q][1] = module_primary_lang_text($qSlots);
+            $v['Answer'][$q][1] = module_primary_lang_text($aSlots);
+        }
+
+        module_detail_export_vars();
+    }
+}
+
+if (!function_exists('module_expand_single_lang_filter')) {
+    /**
+     * 單元名稱依 strName{n} 各語系保留；SEO／FAQ 仍由語系 1 展開到各 slot
+     *
+     * @param array<string, mixed> $filter
+     * @return array<string, mixed>
+     */
+    function module_expand_single_lang_filter(array $filter): array
+    {
+        $langCount = function_exists('manage_lang_count') ? manage_lang_count() : 6;
+
+        $hasPerLangName = false;
+        for ($i = 1; $i <= $langCount; $i++) {
+            if (array_key_exists('strName' . $i, $filter)) {
+                $hasPerLangName = true;
+                break;
+            }
+        }
+
+        if ($hasPerLangName) {
+            $primary = '';
+            for ($i = 1; $i <= $langCount; $i++) {
+                $langName = mb_substr(trim((string)($filter['strName' . $i] ?? '')), 0, 50, 'UTF-8');
+                $filter['strName' . $i] = $langName;
+                if ($primary === '' && $langName !== '') {
+                    $primary = $langName;
+                }
+            }
+            $filter['strName'] = $primary;
+        } else {
+            $name = trim((string)($filter['strName'] ?? ''));
+            if ($name === '') {
+                $name = trim((string)($filter['strName1'] ?? ''));
+            }
+            $filter['strName'] = mb_substr($name, 0, 50, 'UTF-8');
+        }
+
+        $hasSeo = isset($filter['Title1']) || isset($filter['Description1']) || isset($filter['Keyword1_1']);
+        $title = (string)($filter['Title1'] ?? $filter['Title'] ?? '');
+        $desc  = (string)($filter['Description1'] ?? $filter['Description'] ?? '');
+        $keywords = [];
+        for ($k = 1; $k <= 5; $k++) {
+            $keywords[$k] = (string)($filter['Keyword' . $k . '_1'] ?? '');
+        }
+
+        $hasQa = isset($filter['Question1_1']) || isset($filter['Answer1_1']);
+        $slotMax = function_exists('module_qa_slot_max') ? module_qa_slot_max() : 10;
+        $questions = [];
+        $answers = [];
+        for ($sort = 1; $sort <= $slotMax; $sort++) {
+            $qKey = function_exists('module_qa_field_question')
+                ? module_qa_field_question($sort, 1)
+                : ('Question' . $sort . '_1');
+            $aKey = function_exists('module_qa_field_answer')
+                ? module_qa_field_answer($sort, 1)
+                : ('Answer' . $sort . '_1');
+            $questions[$sort] = (string)($filter[$qKey] ?? '');
+            $answers[$sort] = (string)($filter[$aKey] ?? '');
+        }
+
+        for ($i = 1; $i <= $langCount; $i++) {
+            $filter['Show' . $i] = 'Y';
+            if ($hasSeo) {
+                $filter['Title' . $i] = $title;
+                $filter['Description' . $i] = $desc;
+                for ($k = 1; $k <= 5; $k++) {
+                    $filter['Keyword' . $k . '_' . $i] = $keywords[$k];
+                }
+            }
+            if ($hasQa) {
+                for ($sort = 1; $sort <= $slotMax; $sort++) {
+                    $qKey = function_exists('module_qa_field_question')
+                        ? module_qa_field_question($sort, $i)
+                        : ('Question' . $sort . '_' . $i);
+                    $aKey = function_exists('module_qa_field_answer')
+                        ? module_qa_field_answer($sort, $i)
+                        : ('Answer' . $sort . '_' . $i);
+                    $filter[$qKey] = $questions[$sort];
+                    $filter[$aKey] = $answers[$sort];
+                }
+            }
+        }
+
+        return $filter;
+    }
+}
+
 if (!function_exists('module_detail_init_defaults')) {
     /** 初始化單元表單預設變數 */
     function module_detail_init_defaults(): void {
@@ -308,6 +466,7 @@ if (!function_exists('module_detail_load')) {
         module_detail_apply_master($row);
         module_detail_load_children($pkey);
         module_detail_apply_lang_fallback();
+        module_flatten_single_lang_display();
         return true;
     }
 }
@@ -485,10 +644,6 @@ if (!function_exists('module_addin_validate')) {
     function module_addin_validate(array $filter, array $opts = []): string {
         $msg = '';
 
-        if (module_resolve_master_strname($filter) === '') {
-            $msg .= "【單元名稱】為空白（請至少填寫一個語系）\n";
-        }
-
         $sort = $filter['Sort'] ?? '';
         if ($sort === '' || !ctype_digit((string)$sort)) {
             $msg .= "【單元順序】空白或非數字格式\n";
@@ -496,6 +651,10 @@ if (!function_exists('module_addin_validate')) {
 
         if (module_addin_is_tdk_only($opts)) {
             return $msg;
+        }
+
+        if (module_resolve_master_strname($filter) === '') {
+            $msg .= "【單元名稱】請至少填寫一個語系\n";
         }
 
         $intType = is_numeric($filter['intType'] ?? null) ? (int)$filter['intType'] : 1;
@@ -554,7 +713,7 @@ if (!function_exists('module_class_fetch_options')) {
 
 if (!function_exists('module_addin_build_master_data')) {
     /**
-     * @param array<string,mixed> $opts tdk_only=true 時只更新名稱／順序／上下架／intType，保留既有功能模組
+     * @param array<string,mixed> $opts tdk_only=true 時只更新順序／上下架／intType，不改單元名稱
      * @return array<string,mixed>
      */
     function module_addin_build_master_data(array $filter, array $opts = []): array {
@@ -564,7 +723,6 @@ if (!function_exists('module_addin_build_master_data')) {
 
             return [
                 'Sort'    => SqlFilter($filter['Sort'] ?? 0, 'int'),
-                'strName' => SqlFilter($strName, 'tab'),
                 'Upload'  => SqlFilter((($filter['Upload'] ?? 'Yes') === 'No') ? 'No' : 'Yes', 'tab'),
                 'intType' => SqlFilter($intType > 0 ? $intType : 2, 'int'),
                 'dtUDate' => date('Y-m-d H:i:s'),

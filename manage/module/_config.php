@@ -6,7 +6,7 @@ declare(strict_types=1);
 return [
     'master'             => 'module_p',    // 主檔資料表
     'img'                => '',          // 圖片/檔案子表（無則留空）
-    'lang'               => 'module_lang', // 語系子表（無則留空）
+    'lang'               => 'module_lang', // 語系子表（單元名稱依 intLang 各寫一列 strName）
     'msg'                => '',          // 內文子表（CKEditor，無則留空）
     'link'               => '',          // 連結/關聯子表（無則留空）
     'fk'                 => 'Module_PKey', // 子表外鍵欄位（指向主檔 PKey）
