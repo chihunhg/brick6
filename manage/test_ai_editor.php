@@ -8,6 +8,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/_inc.php';
 require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
 
+if (!manage_ai_generate_enabled()) {
+    http_response_code(403);
+    echo 'AI 產生資料功能已關閉（MANAGE_AI_GENERATE=0）';
+    exit;
+}
+
 $pageTitle = 'AI 產文測試';
 $industryOptions = gemini_industry_options();
 $ckeJs = __DIR__ . '/ckeditor/ckeditor.js';

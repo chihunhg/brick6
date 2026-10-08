@@ -12,7 +12,10 @@ $SeoTitle = is_array($SeoTitle ?? null) ? $SeoTitle : [];
 $Description = is_array($Description ?? null) ? $Description : [];
 $Keywords = is_array($Keywords ?? null) ? $Keywords : [];
 $seoDescPlaceholder = (string)($seoDescPlaceholder ?? '請輸入160字元內的網站描述');
-$seoFieldsEnableAi = (bool)($seoFieldsEnableAi ?? true);
+if (!function_exists('manage_ai_generate_enabled')) {
+    require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+}
+$seoFieldsEnableAi = (bool)($seoFieldsEnableAi ?? true) && manage_ai_generate_enabled();
 
 static $manageSeoTdkAiAssetsLoaded = false;
 if ($seoFieldsEnableAi && !$manageSeoTdkAiAssetsLoaded) {

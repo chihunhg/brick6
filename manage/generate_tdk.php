@@ -13,6 +13,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+manage_ai_generate_assert_enabled();
 require_once dirname(__DIR__) . '/include/gemini_tdk_helpers.php';
 require_once dirname(__DIR__) . '/include/gemini_lang_helpers.php';
 require_once dirname(__DIR__) . '/include/gemini_stream_helpers.php';

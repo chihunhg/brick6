@@ -30,6 +30,18 @@ if ($editorAiFieldId === '' || !preg_match('/^[A-Za-z][A-Za-z0-9_\-]*$/', $edito
 
 }
 
+if (!function_exists('manage_ai_generate_enabled')) {
+
+    require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+
+}
+
+if (!manage_ai_generate_enabled()) {
+
+    return;
+
+}
+
 
 
 if (!function_exists('gemini_normalize_industry')) {

@@ -3,7 +3,40 @@ declare(strict_types=1);
 
 /**
  * Gemini 編輯器 HTML 產生：清理、驗證與產業規範
+ *
+ * MANAGE_AI_GENERATE=1 開啟後台 AI 產生資料（內文、TDK、搜尋核心摘要）；0 關閉。
  */
+
+if (!function_exists('manage_ai_generate_enabled')) {
+    /** 後台 AI 產生資料是否開啟（未設定時預設開啟） */
+    function manage_ai_generate_enabled(): bool
+    {
+        if (function_exists('host_env_bool')) {
+            return host_env_bool('MANAGE_AI_GENERATE', '1');
+        }
+
+        $raw = strtolower(trim((string)($_ENV['MANAGE_AI_GENERATE'] ?? getenv('MANAGE_AI_GENERATE') ?: '1')));
+
+        return in_array($raw, ['1', 'true', 'yes', 'on'], true);
+    }
+}
+
+if (!function_exists('manage_ai_generate_assert_enabled')) {
+    /** API 端點：功能關閉時回傳 JSON 並結束 */
+    function manage_ai_generate_assert_enabled(): void
+    {
+        if (manage_ai_generate_enabled()) {
+            return;
+        }
+
+        if (function_exists('json_out')) {
+            json_out(['success' => false, 'error' => 'AI 產生資料功能已關閉'], 403);
+        }
+
+        http_response_code(403);
+        exit;
+    }
+}
 
 if (!function_exists('gemini_sanitize_utf8_text')) {
     /**

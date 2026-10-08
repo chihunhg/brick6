@@ -9,9 +9,13 @@ if ($summaryLangSlot <= 0) {
     return;
 }
 $Summary = is_array($Summary ?? null) ? $Summary : [];
+if (!function_exists('manage_ai_generate_enabled')) {
+    require_once dirname(__DIR__) . '/include/gemini_editor_helpers.php';
+}
+$summaryAiEnabled = manage_ai_generate_enabled();
 
 static $manageSummaryAiAssetsLoaded = false;
-if (!$manageSummaryAiAssetsLoaded) {
+if ($summaryAiEnabled && !$manageSummaryAiAssetsLoaded) {
     $manageSummaryAiAssetsLoaded = true;
     $__geminiSseJs = __DIR__ . '/js/gemini-sse-client.js';
     $__geminiSseJsVer = is_file($__geminiSseJs) ? (string)filemtime($__geminiSseJs) : '1';
@@ -29,6 +33,7 @@ $summaryLangLabel = trim((string)($array_lang[$summaryLangSlot] ?? ''));
                                             AI搜尋核心摘要
                                         </label>
                                         <div class="col--10">
+                                            <?php if ($summaryAiEnabled) { ?>
                                             <div class="flex flex-wrap items-center gap--2 mb-2">
                                                 <button type="button"
                                                     class="btnStyle btnStyle--outline btnStyle--sm"
@@ -39,8 +44,9 @@ $summaryLangLabel = trim((string)($array_lang[$summaryLangSlot] ?? ''));
                                                 </button>
                                                 <span class="text-muted" style="font-size:13px;">依標題與內容自動產生，最多 400 字</span>
                                             </div>
+                                            <?php } ?>
                                             <textarea name="Summary<?php echo $summaryLangSlot; ?>" id="Summary<?php echo $summaryLangSlot; ?>"
                                                 class="formInput" style="height:100px" maxlength="400"
-                                                placeholder="請輸入或點選 AI 產生搜尋核心摘要"><?php echo e((string)($Summary[$summaryLangSlot] ?? '')); ?></textarea>
+                                                placeholder="<?php echo $summaryAiEnabled ? '請輸入或點選 AI 產生搜尋核心摘要' : '請輸入搜尋核心摘要'; ?>"><?php echo e((string)($Summary[$summaryLangSlot] ?? '')); ?></textarea>
                                         </div>
                                     </div>
