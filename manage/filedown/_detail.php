@@ -16,7 +16,7 @@ $Ext = is_array($Ext ?? null) ? $Ext : [];
 <?php echo script_open(); ?>
 $(function() {
     var filedownMaxKB = 6000; // knowledge/product 同樣採用：6000KB
-    var filedownAccept = '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar';
+    var filedownAccept = '.jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar';
 
     function formatFileSize(bytes) {
         if (!bytes && bytes !== 0) {

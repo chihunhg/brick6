@@ -88,8 +88,8 @@ if ($presentMode === 1) {
     $uploadResult = crud_upload_file_slots($file_array, $upload_foder, $indices, [
         'forder_prefix' => $ForderName,
         'size_bytes'    => $size_bytes,
-        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png'],
-        'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png'],
+        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'svg'],
+        'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/svg+xml'],
         'field_prefix'  => 'Photo',
         'resize_thumb'  => true,
     ]);

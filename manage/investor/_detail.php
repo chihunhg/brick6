@@ -40,7 +40,7 @@ $(function() {
     <?php } ?>
 
     var fileMaxKB = 20000;
-    var fileAccept = '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar';
+    var fileAccept = '.jpg,.jpeg,.png,.gif,.webp,.svg,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar';
     for (var t = 1; t <= Math.min(3, <?php echo (int)$langTotal; ?>); t++) {
         (function(i) {
             var slot = <?php echo json_encode([

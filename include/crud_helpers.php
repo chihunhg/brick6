@@ -2530,8 +2530,8 @@ if (!function_exists('crud_addin_process_img_file_uploads')) {
         $uploadImg = crud_upload_file_slots($file_array, $uploadFolder, $imageIndices, [
             'forder_prefix' => $forderName,
             'size_bytes'    => $sizeBytes,
-            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
-            'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg'],
+            'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
             'field_prefix'  => 'Photo',
             'resize_thumb'  => true,
         ]);
@@ -2541,7 +2541,7 @@ if (!function_exists('crud_addin_process_img_file_uploads')) {
             $uploadFile = crud_upload_file_slots($file_array, $uploadFolder, $fileIndices, [
                 'forder_prefix' => $forderName,
                 'size_bytes'    => $fileSize,
-                'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'],
+                'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'svg', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'],
                 'allowed_mimes' => [],
                 'field_prefix'  => 'Photo',
                 'resize_thumb'  => false,
@@ -2698,7 +2698,7 @@ if (!function_exists('manage_render_upload_image_slot')) {
                 <label for="Photo<?php echo $slot; ?>">
                     選擇檔案
                     <input name="Photo<?php echo $slot; ?>" type="file"
-                        accept="image/jpeg,image/gif,image/png,image/webp"
+                        accept="image/jpeg,image/gif,image/png,image/webp,image/svg+xml,.svg"
                         id="Photo<?php echo $slot; ?>" size="30"
                         data-check-file="Photo<?php echo $slot; ?>,<?php echo (int)$maxKb; ?>,<?php echo e($checkType); ?>">
                     <?php if ($emitIntTypeHidden) { ?>
@@ -2725,7 +2725,7 @@ if (!function_exists('manage_render_upload_document_slot')) {
         $slot = max(1, $slot);
         $filePath = trim($filePath);
         $ext = $ext !== '' ? strtolower($ext) : manage_file_ext_from_path($filePath);
-        $isImageExt = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+        $isImageExt = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true);
         ?>
         <div class="uploadBox w--auto">
             <p class="inputLabel">檔案上傳</p>
@@ -5425,6 +5425,7 @@ if (!function_exists('crud_upload_file_slots')) {
                 continue;
             }
 
+            $isSvg = ($ext === 'svg');
             $mime = '';
             if (function_exists('finfo_open')) {
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -5435,8 +5436,18 @@ if (!function_exists('crud_upload_file_slots')) {
             if ($mime === '') {
                 $mime = (string)($f['type'] ?? '');
             }
-            if ($allowedMimes !== [] && ($mime === '' || !in_array($mime, $allowedMimes, true))) {
-                $messages .= "檔案 {$i}: ({$origName}) 的檔案格式有誤\n";
+            if ($allowedMimes !== []) {
+                $mimeOk = ($mime !== '' && in_array($mime, $allowedMimes, true));
+                if (!$mimeOk && $isSvg && function_exists('svg_allowed_mimes') && in_array($mime, svg_allowed_mimes(), true)) {
+                    $mimeOk = true;
+                }
+                if (!$mimeOk) {
+                    $messages .= "檔案 {$i}: ({$origName}) 的檔案格式有誤\n";
+                    continue;
+                }
+            }
+            if ($isSvg && function_exists('is_likely_svg_file') && !is_likely_svg_file($tmpName)) {
+                $messages .= "檔案 {$i}: ({$origName}) 非有效 SVG 檔\n";
                 continue;
             }
 
@@ -5458,33 +5469,35 @@ if (!function_exists('crud_upload_file_slots')) {
 
             $photos[$i] = $newName;
 
-            $imgInfo = @getimagesize($destAbs);
-            if (is_array($imgInfo)) {
-                $photoW[$i] = (int)($imgInfo[0] ?? 0);
-                $photoH[$i] = (int)($imgInfo[1] ?? 0);
-            }
-
-            if (function_exists('convert_uploaded_to_webp')) {
-                $webpFull = convert_uploaded_to_webp($destAbs, dirname($destAbs) . DIRECTORY_SEPARATOR, 85);
-                if ($webpFull === false) {
-                    $messages .= "檔案 {$i}: ({$origName}) WebP 轉換失敗\n";
+            if (!$isSvg) {
+                $imgInfo = @getimagesize($destAbs);
+                if (is_array($imgInfo)) {
+                    $photoW[$i] = (int)($imgInfo[0] ?? 0);
+                    $photoH[$i] = (int)($imgInfo[1] ?? 0);
                 }
-            } elseif (function_exists('convert_webp')) {
-                convert_webp($destAbs);
-            } elseif (function_exists('covnert_webp')) {
-                covnert_webp($destAbs);
-            }
 
-            $webpAbs = $absDir . preg_replace('/\.[^.]+$/', '.webp', $newName);
-            if (is_file($webpAbs)) {
-                @chmod($webpAbs, 0666);
-            }
+                if (function_exists('convert_uploaded_to_webp')) {
+                    $webpFull = convert_uploaded_to_webp($destAbs, dirname($destAbs) . DIRECTORY_SEPARATOR, 85);
+                    if ($webpFull === false) {
+                        $messages .= "檔案 {$i}: ({$origName}) WebP 轉換失敗\n";
+                    }
+                } elseif (function_exists('convert_webp')) {
+                    convert_webp($destAbs);
+                } elseif (function_exists('covnert_webp')) {
+                    covnert_webp($destAbs);
+                }
 
-            if ($resizeThumb) {
-                if (function_exists('create_image_list_thumb')) {
-                    create_image_list_thumb($absDir, $newName, 150);
-                } elseif (function_exists('ReSizeImg')) {
-                    ReSizeImg($absDir, $newName, 150);
+                $webpAbs = $absDir . preg_replace('/\.[^.]+$/', '.webp', $newName);
+                if (is_file($webpAbs)) {
+                    @chmod($webpAbs, 0666);
+                }
+
+                if ($resizeThumb) {
+                    if (function_exists('create_image_list_thumb')) {
+                        create_image_list_thumb($absDir, $newName, 150);
+                    } elseif (function_exists('ReSizeImg')) {
+                        ReSizeImg($absDir, $newName, 150);
+                    }
                 }
             }
         }

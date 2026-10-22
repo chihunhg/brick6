@@ -133,8 +133,8 @@ $GLOBALS['Account_Lock'] = (bool)$Account_Lock;
 $sql_d = 'delete from managelog Where datediff(\''.date('Y-m-d').'\', dtDate) > '.$log_day;
 execute_sql($sql_d);
 
-$ImageTypeLimit='.GIF.JPG.PNG';
-$FileTypeLimit='.JPG.GIF.PNG.PDF.DOC.DOCX.PPT.XLS.XLSX.TXT.ZIP.RAR';
+$ImageTypeLimit='.GIF.JPG.JPEG.PNG.WEBP.SVG';
+$FileTypeLimit='.JPG.GIF.PNG.WEBP.SVG.PDF.DOC.DOCX.PPT.XLS.XLSX.TXT.ZIP.RAR';
 $ExcelLimit='.XLS.XLSX';
 $pageTitle1='TSG';
 $pageTitle2 = '後端管理系統';
@@ -224,10 +224,10 @@ $day = date('Y/m/d',mktime(0,0,0,$months+1,$days,$years));
 
 $Keywords = '';
 $Action = '';
-$remark_pic='<li>圖檔格式只接受JPG,GIF,PNG的檔案，檔案大小限2MB以內。</li>';
+$remark_pic='<li>圖檔格式只接受JPG,JPEG,GIF,PNG,WEBP,SVG的檔案，檔案大小限2MB以內。</li>';
 $remark_save='<li>檔案名稱請以英數字命名。</li>';
 $remark_save2='<li>上傳檔案請以英數字命名，檔案大小限6MB以內。</li>';
-$remark_file1='<li>檔案格式只接受JPG,GIF,PDF,DOC,DOCX,PPT,PPTX,XLS,XLSX,TXT,ZIP,RAR的檔案</li>';
+$remark_file1='<li>檔案格式只接受JPG,GIF,PNG,WEBP,SVG,PDF,DOC,DOCX,PPT,PPTX,XLS,XLSX,TXT,ZIP,RAR的檔案</li>';
 $remark_file2='<li>檔案格式只接受PDF。</li>';
 $remark_view = '<li>預覽功能說明：<br>
                 1. 後台已登入，不管該筆下架與否，皆可瀏覽。<br>

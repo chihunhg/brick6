@@ -206,9 +206,9 @@ if ($showListField && $table_img !== '') {
 
         'size_bytes'    => (int)($size_bytes ?? 2000 * 1024),
 
-        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
+        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg'],
 
-        'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+        'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
 
         'field_prefix'  => 'Photo',
 

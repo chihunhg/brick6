@@ -80,8 +80,8 @@ if ($showType === 2) {
     $imgResult = crud_upload_file_slots($file_array, $upload_foder, $imgIndices, [
         'forder_prefix' => $ForderName,
         'size_bytes'    => 2000 * 1024,
-        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
-        'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg'],
+        'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
         'field_prefix'  => 'Photo',
         'resize_thumb'  => true,
     ]);
@@ -115,7 +115,7 @@ if ($showType === 3) {
         $fileResult = crud_upload_file_slots($file_array, $upload_foder, $fileIndices, [
             'forder_prefix' => $ForderName,
             'size_bytes'    => 20000 * 1024,
-            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'zip', 'rar'],
+            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'zip', 'rar'],
             'allowed_mimes' => [],
             'field_prefix'  => 'Photo',
             'resize_thumb'  => false,

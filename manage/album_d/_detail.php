@@ -151,7 +151,7 @@ function fieldCheck0(theForm) {
                                                     <button type="button" class="btn btn-outline-secondary btn-sm" id="albumDChooseBtn">選擇多個檔案</button>
                                                 </p>
                                                 <input type="file" id="albumDFileInput" multiple
-                                                    accept="image/jpeg,image/gif,image/png,image/webp"
+                                                    accept="image/jpeg,image/gif,image/png,image/webp,image/svg+xml,.svg"
                                                     class="album-d-dropzone__input" tabindex="-1">
                                             </div>
                                             <div class="album-d-upload-actions">

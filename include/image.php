@@ -5,6 +5,33 @@
  */
 
 /**
+ * 粗驗 SVG：檔頭可見 &lt;svg，並拒絕明顯內嵌 script（後台上傳用）
+ */
+function is_likely_svg_file(string $path): bool
+{
+    if (!is_file($path) || !is_readable($path)) {
+        return false;
+    }
+    $head = @file_get_contents($path, false, null, 0, 8192);
+    if (!is_string($head) || $head === '') {
+        return false;
+    }
+    if (!preg_match('/<\s*svg[\s>\/]/i', $head)) {
+        return false;
+    }
+    if (preg_match('/<\s*script[\s>\/]/i', $head)) {
+        return false;
+    }
+    return true;
+}
+
+/** SVG 常見 MIME（finfo 在不同環境可能回傳 xml／plain） */
+function svg_allowed_mimes(): array
+{
+    return ['image/svg+xml', 'text/xml', 'application/xml', 'text/plain', 'application/octet-stream'];
+}
+
+/**
  * 穩健判斷指定檔案是否為 WebP：
  * 1) finfo MIME 檢查
  * 2) 檔頭 "RIFF....WEBP" 簽名
@@ -114,6 +141,11 @@ function convert_uploaded_to_webp($input, string $destDir, int $quality = 85): s
     $name = pathinfo($origName, PATHINFO_FILENAME);
     if ($name === '' || $ext === '') {
         error_log("convert_uploaded_to_webp: invalid original name/ext");
+        return false;
+    }
+
+    // SVG／向量圖不轉 WebP
+    if ($ext === 'svg' || $ext === 'svgz') {
         return false;
     }
 
@@ -468,6 +500,10 @@ if (!function_exists('create_image_list_thumb')) {
         if ($photo === '') {
             return false;
         }
+        $ext = strtolower(pathinfo($photo, PATHINFO_EXTENSION));
+        if ($ext === 'svg' || $ext === 'svgz') {
+            return false;
+        }
         $src = $folder . $photo;
         if (!is_file($src)) {
             return false;
@@ -501,10 +537,10 @@ function upload_images(array $file_array, string $upload_folder, array $options 
     $forder_prefix   = (string)($options['forder_prefix']   ?? 'dbad_');
     $total_uploads   = (int)   ($options['total_uploads']   ?? 10);
     $size_bytes      = (int)   ($options['size_bytes']      ?? 2000 * 1024);
-    $limitedext      =         ($options['limitedext']      ?? ['.gif','.jpg','.jpeg','.png']);
-    $allowed_exts    =         ($options['allowed_exts']    ?? ['gif','jpg','jpeg','png']);
-    $allowed_mimes   =         ($options['allowed_mimes']   ?? ['image/gif','image/jpeg','image/png']);
-    $allowed_types   =         ($options['allowed_types']   ?? [IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG]);
+    $limitedext      =         ($options['limitedext']      ?? ['.gif','.jpg','.jpeg','.png','.webp','.svg']);
+    $allowed_exts    =         ($options['allowed_exts']    ?? ['gif','jpg','jpeg','png','webp','svg']);
+    $allowed_mimes   =         ($options['allowed_mimes']   ?? ['image/gif','image/jpeg','image/png','image/webp','image/svg+xml']);
+    $allowed_types   =         ($options['allowed_types']   ?? [IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG, defined('IMAGETYPE_WEBP') ? IMAGETYPE_WEBP : 18]);
     $max_width       = (int)   ($options['max_width']       ?? 8000);
     $max_height      = (int)   ($options['max_height']      ?? 8000);
     $field_prefix    = (string)($options['field_prefix']    ?? 'Photo');
@@ -605,7 +641,12 @@ function upload_images(array $file_array, string $upload_folder, array $options 
 
         // 真實 MIME
         $mime = $finfo ? (finfo_file($finfo, $tmp) ?: '') : (mime_content_type($tmp) ?: '');
-        if (!in_array($mime, $allowed_mimes, true)) {
+        $isSvg = ($ext === 'svg');
+        $mimeOk = in_array($mime, $allowed_mimes, true);
+        if (!$mimeOk && $isSvg && function_exists('svg_allowed_mimes') && in_array($mime, svg_allowed_mimes(), true)) {
+            $mimeOk = true;
+        }
+        if (!$mimeOk) {
             $msgTxt = "內容類型不符（{$mime}）";
             $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
             $detail['error'] = $msgTxt;
@@ -613,39 +654,49 @@ function upload_images(array $file_array, string $upload_folder, array $options 
             continue;
         }
 
-        // 魔數驗證
-        $img_type = @exif_imagetype($tmp);
-        if ($img_type === false || !in_array($img_type, $allowed_types, true)) {
-            $msgTxt = "非有效圖片檔";
-            $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
-            $detail['error'] = $msgTxt;
-            $details[$i] = $detail;
-            continue;
-        }
+        if ($isSvg) {
+            if (!function_exists('is_likely_svg_file') || !is_likely_svg_file($tmp)) {
+                $msgTxt = "非有效 SVG 檔";
+                $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
+                $detail['error'] = $msgTxt;
+                $details[$i] = $detail;
+                continue;
+            }
+        } else {
+            // 魔數驗證（點陣圖）
+            $img_type = @exif_imagetype($tmp);
+            if ($img_type === false || !in_array($img_type, $allowed_types, true)) {
+                $msgTxt = "非有效圖片檔";
+                $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
+                $detail['error'] = $msgTxt;
+                $details[$i] = $detail;
+                continue;
+            }
 
-        // 尺寸檢查
-        $dim = @getimagesize($tmp);
-        if ($dim === false) {
-            $msgTxt = "無法讀取尺寸";
-            $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
-            $detail['error'] = $msgTxt;
-            $details[$i] = $detail;
-            continue;
-        }
-        [$w, $h] = $dim;
-        if ($w <= 0 || $h <= 0) {
-            $msgTxt = "尺寸異常";
-            $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
-            $detail['error'] = $msgTxt;
-            $details[$i] = $detail;
-            continue;
-        }
-        if ($w > $max_width || $h > $max_height) {
-            $msgTxt = "圖片過大（{$w}x{$h}）";
-            $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
-            $detail['error'] = $msgTxt;
-            $details[$i] = $detail;
-            continue;
+            // 尺寸檢查
+            $dim = @getimagesize($tmp);
+            if ($dim === false) {
+                $msgTxt = "無法讀取尺寸";
+                $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
+                $detail['error'] = $msgTxt;
+                $details[$i] = $detail;
+                continue;
+            }
+            [$w, $h] = $dim;
+            if ($w <= 0 || $h <= 0) {
+                $msgTxt = "尺寸異常";
+                $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
+                $detail['error'] = $msgTxt;
+                $details[$i] = $detail;
+                continue;
+            }
+            if ($w > $max_width || $h > $max_height) {
+                $msgTxt = "圖片過大（{$w}x{$h}）";
+                $messages .= "檔案 {$i}: ({$orig_name}) {$msgTxt}\n";
+                $detail['error'] = $msgTxt;
+                $details[$i] = $detail;
+                continue;
+            }
         }
 
         // 大小限制
@@ -684,7 +735,7 @@ function upload_images(array $file_array, string $upload_folder, array $options 
             $need_webp = true;
         }
 
-        if ($need_webp && function_exists('convert_uploaded_to_webp')) {
+        if ($need_webp && !$isSvg && function_exists('convert_uploaded_to_webp')) {
             $saveDir  = rtrim($upload_folder . $monthfolder,) . DIRECTORY_SEPARATOR;
             $result   = convert_uploaded_to_webp($safe_name, $saveDir, $webp_quality); // 成功回傳 webp 完整路徑
 
@@ -725,7 +776,7 @@ function upload_files(array $file_array, string $upload_root, array $options = [
 
     // 白名單（副檔名）
     $limitedext    = $options['limitedext']   ?? ['.gif','.png','.jpg','.pdf','.doc','.docx','.ppt','.pptx','.xls','.xlsx','.txt','.zip','.rar'];
-    $allowed_exts  = $options['allowed_exts'] ?? ['gif','png','jpg','jpeg','pdf','doc','docx','ppt','pptx','xls','xlsx','txt','zip','rar'];
+    $allowed_exts  = $options['allowed_exts'] ?? ['gif','png','jpg','jpeg','webp','svg','pdf','doc','docx','ppt','pptx','xls','xlsx','txt','zip','rar'];
     // MIME 白名單（留空代表不檢查 MIME）
     $allowed_mimes = $options['allowed_mimes'] ?? [];
 
@@ -815,13 +866,24 @@ function upload_files(array $file_array, string $upload_root, array $options = [
         // MIME（真實）
         $mime = $finfo ? (finfo_file($finfo, $tmp) ?: '') : '';
         $d['mime'] = $mime;
+        $isSvg = ($ext === 'svg');
         if (!empty($allowed_mimes)) {
-            if (!in_array($mime, $allowed_mimes, true)) {
+            $mimeOk = in_array($mime, $allowed_mimes, true);
+            if (!$mimeOk && $isSvg && function_exists('svg_allowed_mimes') && in_array($mime, svg_allowed_mimes(), true)) {
+                $mimeOk = true;
+            }
+            if (!$mimeOk) {
                 $d['error'] = "內容類型不符（{$mime}）";
                 $messages  .= "檔案 {$i}: ({$display_name}) {$d['error']}\n";
                 $details[$i] = $d;
                 continue;
             }
+        }
+        if ($isSvg && function_exists('is_likely_svg_file') && !is_likely_svg_file($tmp)) {
+            $d['error'] = '非有效 SVG 檔';
+            $messages  .= "檔案 {$i}: ({$display_name}) {$d['error']}\n";
+            $details[$i] = $d;
+            continue;
         }
 
         // 檔案大小
@@ -834,9 +896,9 @@ function upload_files(array $file_array, string $upload_root, array $options = [
             continue;
         }
 
-        // 若是圖片，額外做尺寸驗證（不影響文件型別）
-        $is_image = in_array($ext, ['gif','png','jpg','jpeg','bmp','ico'], true) || str_starts_with((string)$mime, 'image/');
-        if ($is_image) {
+        // 若是圖片，額外做尺寸驗證（不影響文件型別；SVG 略過）
+        $is_image = in_array($ext, ['gif','png','jpg','jpeg','bmp','ico','webp','svg'], true) || str_starts_with((string)$mime, 'image/');
+        if ($is_image && !$isSvg) {
             $dim = @getimagesize($tmp);
             if ($dim !== false) {
                 [$w, $h] = $dim;
@@ -867,8 +929,8 @@ function upload_files(array $file_array, string $upload_root, array $options = [
         $files[$i]     = $safe_name;
         $d['saved_as'] = $safe_name;
 
-        // 若前端指定 intType{i}==1 且為圖片 → 嘗試轉 WebP
-        if ($is_image && !empty($filter_array['intType' . $i]) && (int)$filter_array['intType' . $i] === 1) {
+        // 若前端指定 intType{i}==1 且為點陣圖 → 嘗試轉 WebP（SVG 略過）
+        if ($is_image && !$isSvg && !empty($filter_array['intType' . $i]) && (int)$filter_array['intType' . $i] === 1) {
 
             // 寬高若前面沒抓到，再抓一次
             if ($d['width'] === null || $d['height'] === null) {

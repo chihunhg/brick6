@@ -86,8 +86,8 @@ for ($i = 1; $i <= $maxSlots; $i++) {
 $uploadResult = crud_upload_file_slots($file_array, $upload_foder, $indices, [
     'forder_prefix' => $ForderName,
     'size_bytes'    => $size_bytes,
-    'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
-    'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+    'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg'],
+    'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
     'field_prefix'  => 'Photo',
     'resize_thumb'  => true,
 ]);

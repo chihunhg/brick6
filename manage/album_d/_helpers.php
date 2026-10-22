@@ -504,8 +504,8 @@ if (!function_exists('album_d_upload_staged_file')) {
         $uploadResult = crud_upload_file_slots($file_array, $uploadDirInfo['dir'], [1], [
             'forder_prefix' => (string)($detailConfig['forder_prefix'] ?? 'album_'),
             'size_bytes'    => $size_bytes,
-            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp'],
-            'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp'],
+            'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg'],
+            'allowed_mimes' => ['image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
             'field_prefix'  => 'Photo',
             'resize_thumb'  => true,
         ]);

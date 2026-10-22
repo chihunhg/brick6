@@ -69,12 +69,12 @@ $indices       = $photoSlots['indices'];
 $maxSlots      = $photoSlots['max_slots'];
 
 $allowed_exts = [
-    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'ico',
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'ico', 'webp', 'svg',
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt',
     'zip', 'rar',
 ];
 $allowed_mimes = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/vnd.microsoft.icon',
+    'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/vnd.microsoft.icon', 'image/webp', 'image/svg+xml',
     'application/pdf',
     'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

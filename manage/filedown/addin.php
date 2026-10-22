@@ -160,7 +160,7 @@ if ($uploadIndices !== []) {
 
         'size_bytes'    => $size_bytes,
 
-        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'],
+        'allowed_exts'  => ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', 'txt'],
 
         'allowed_mimes' => [],
 

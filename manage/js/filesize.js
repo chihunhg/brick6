@@ -156,6 +156,8 @@ function preview(input, num) {
       case 'image/jpeg':
       case 'image/gif':
       case 'image/png':
+      case 'image/webp':
+      case 'image/svg+xml':
         $img.attr('src', e.target.result)
           .css({ display: 'block', visibility: 'visible', maxWidth: '150px', maxHeight: '150px' })
           .show();
@@ -215,8 +217,8 @@ function chkSize(field, sizeKB, type) {
 
 // filetype: 'img' | 'file' | 'pdf' | 'csv' | 'excel'
 function checkFile(field, sizeKB, filetype) {
-  var ImageTypeLimit = 'JPG,JPEG,GIF,PNG';
-  var FileTypeLimit  = '.JPG.GIF.PNG.PDF.DOC.DOCX.PPT.XLS.XLSX.TXT.ZIP.RAR';
+  var ImageTypeLimit = 'JPG,JPEG,GIF,PNG,WEBP,SVG';
+  var FileTypeLimit  = '.JPG.GIF.PNG.WEBP.SVG.PDF.DOC.DOCX.PPT.XLS.XLSX.TXT.ZIP.RAR';
   var PdfTypeLimit   = '.PDF';
   var CsvLimit       = '.CSV.TXT.XLS.XLSX';
   var ExcelLimit     = 'XLS.XLSX';
