@@ -482,6 +482,198 @@ if (!function_exists('manage_mfa_verify_for_user')) {
     }
 }
 
+
+if (!function_exists('manage_mfa_matching_time_step')) {
+    /** 驗證 TOTP 並回傳命中的 30 秒時間步；不符回傳 null */
+    function manage_mfa_matching_time_step(string $secretBase32, string $code, int $window = 1): ?int
+    {
+        $code = preg_replace('/\D/', '', $code) ?? '';
+        if (!preg_match('/^\d{6}$/', $code) || $secretBase32 === '') {
+            return null;
+        }
+        $counter = (int) floor(time() / 30);
+        for ($i = -$window; $i <= $window; $i++) {
+            $step = $counter + $i;
+            if (hash_equals(manage_mfa_hotp($secretBase32, $step), $code)) {
+                return $step;
+            }
+        }
+        return null;
+    }
+}
+
+if (!function_exists('manage_export_fail')) {
+    /** 匯出失敗：清掉二進位緩衝後以 alert 提示（隱藏 iframe 仍看得到） */
+    function manage_export_fail(string $message): never
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        if (!headers_sent()) {
+            header('Content-Type: text/html; charset=utf-8');
+        }
+        if (function_exists('manage_alert_script')) {
+            manage_alert_script($message);
+        }
+        echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+        exit;
+    }
+}
+
+if (!function_exists('manage_export_totp_state')) {
+    /** @return array{fails:int,lock_until:int,last_step:int} */
+    function manage_export_totp_state(): array
+    {
+        $state = $_SESSION['Export_TOTP'] ?? null;
+        if (!is_array($state)) {
+            return ['fails' => 0, 'lock_until' => 0, 'last_step' => 0];
+        }
+        return [
+            'fails' => (int)($state['fails'] ?? 0),
+            'lock_until' => (int)($state['lock_until'] ?? 0),
+            'last_step' => (int)($state['last_step'] ?? 0),
+        ];
+    }
+}
+
+if (!function_exists('manage_export_log_totp')) {
+    function manage_export_log_totp(string $action, string $detail): void
+    {
+        if (!function_exists('manage_history')) {
+            return;
+        }
+        $loginId = (string)($_SESSION['Login_ID'] ?? '');
+        manage_history(
+            (int)($GLOBALS['Module_PKey'] ?? 0),
+            (string)($GLOBALS['Module_Name'] ?? '匯出'),
+            $detail,
+            (string)($GLOBALS['WorkFile'] ?? ($_SERVER['PHP_SELF'] ?? 'output.php')),
+            $loginId !== '' ? $loginId : 'system',
+            $action,
+            'Upload/export_log'
+        );
+    }
+}
+
+if (!function_exists('manage_export_assert_module_access')) {
+    /** 與 _module.php 相同：最高權限或 FunctionID 含此單元才可進入 */
+    function manage_export_assert_module_access(): void
+    {
+        $loginId = trim((string)($_SESSION['Login_ID'] ?? ''));
+        $modulePKey = (int)($GLOBALS['Module_PKey'] ?? 0);
+        $moduleName = trim((string)($GLOBALS['Module_Name'] ?? ''));
+        $moduleList = [];
+        if (!empty($_SESSION['FunctionID'])) {
+            $moduleList = array_values(array_unique(array_filter(
+                array_map('intval', explode(',', (string)$_SESSION['FunctionID'])),
+                static fn(int $id): bool => $id > 0
+            )));
+        }
+        $isSuper = function_exists('manage_is_super_admin') && manage_is_super_admin();
+        $inModule = $modulePKey > 0 && in_array($modulePKey, $moduleList, true);
+        if ($loginId !== '' && ($isSuper || $inModule)) {
+            return;
+        }
+        $denyMsg = '無進入[' . $moduleName . ']權限!';
+        manage_export_log_totp('匯出拒絕', $denyMsg);
+        manage_export_fail($denyMsg);
+    }
+}
+
+if (!function_exists('manage_export_require_totp')) {
+    /**
+     * 匯出前閘門：須為 POST、CSRF 正確、可進入此單元，且本次 TOTP／備用碼正確。
+     * 通過後才可產生 Excel。不記錄驗證碼。
+     *
+     * @param array<string, mixed> $filter
+     */
+    function manage_export_require_totp(string $csrfKey, array $filter): void
+    {
+        if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? '')) !== 'POST') {
+            manage_export_fail('請由列表頁送出匯出');
+        }
+        if (function_exists('crud_csrf_normalize')) {
+            crud_csrf_normalize();
+        }
+        $postedToken = '';
+        if (isset($filter['csrf_token']) && is_scalar($filter['csrf_token'])) {
+            $postedToken = (string)$filter['csrf_token'];
+        }
+        $sessionToken = (string)($_SESSION['csrf'][$csrfKey] ?? '');
+        if ($postedToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $postedToken)) {
+            manage_export_fail('表單已逾期，請重新整理列表後再匯出');
+        }
+
+        manage_export_assert_module_access();
+
+        if (!manage_mfa_schema_ready()) {
+            manage_export_fail('MFA 資料表欄位尚未建立，請先執行 sql/webcontrol_totp_mfa.sql');
+        }
+
+        $pkey = (int)($_SESSION['Login_PKey'] ?? 0);
+        $row = manage_mfa_fetch_user($pkey);
+        if ($row === null || !manage_mfa_is_enabled_for_user($row)) {
+            manage_export_log_totp('匯出拒絕', '尚未啟用 TOTP');
+            manage_export_fail('尚未啟用雙因素驗證，請先完成 TOTP 綁定後再匯出');
+        }
+
+        $state = manage_export_totp_state();
+        $now = time();
+        if ($state['lock_until'] > $now) {
+            $waitMin = (int) ceil(($state['lock_until'] - $now) / 60);
+            manage_export_fail('驗證失敗次數過多，請 ' . max(1, $waitMin) . ' 分鐘後再試');
+        }
+        if ($state['lock_until'] > 0 && $state['lock_until'] <= $now) {
+            $state['fails'] = 0;
+            $state['lock_until'] = 0;
+        }
+
+        $code = '';
+        if (isset($filter['totp_code']) && is_scalar($filter['totp_code'])) {
+            $code = trim((string)$filter['totp_code']);
+        }
+        $code = preg_replace('/\s+/', '', $code) ?? '';
+        if ($code === '' || !preg_match('/^[0-9A-Za-z-]{6,16}$/', $code)) {
+            manage_export_fail('請輸入 TOTP 驗證碼');
+        }
+
+        $secret = manage_mfa_user_secret($row);
+        $matchedStep = manage_mfa_matching_time_step($secret, $code);
+        if ($matchedStep !== null) {
+            if ($matchedStep <= $state['last_step']) {
+                manage_export_log_totp('匯出拒絕', 'TOTP 驗證碼已使用');
+                manage_export_fail('此驗證碼已使用，請等待下一組驗證碼');
+            }
+            $state['fails'] = 0;
+            $state['lock_until'] = 0;
+            $state['last_step'] = $matchedStep;
+            $_SESSION['Export_TOTP'] = $state;
+            return;
+        }
+
+        if (manage_mfa_verify_backup_code($pkey, $code)) {
+            $state['fails'] = 0;
+            $state['lock_until'] = 0;
+            $_SESSION['Export_TOTP'] = $state;
+            return;
+        }
+
+        $state['fails']++;
+        $maxFails = 5;
+        if ($state['fails'] >= $maxFails) {
+            $state['fails'] = 0;
+            $state['lock_until'] = $now + 600;
+            $_SESSION['Export_TOTP'] = $state;
+            manage_export_log_totp('匯出拒絕', 'TOTP 失敗次數過多');
+            manage_export_fail('驗證失敗次數過多，請 10 分鐘後再試');
+        }
+        $_SESSION['Export_TOTP'] = $state;
+        $remaining = $maxFails - $state['fails'];
+        manage_export_log_totp('匯出拒絕', 'TOTP 驗證失敗，剩餘 ' . $remaining . ' 次');
+        manage_export_fail('驗證碼錯誤，剩餘 ' . $remaining . ' 次');
+    }
+}
+
 if (!function_exists('manage_mfa_required_globally')) {
     function manage_mfa_required_globally(): bool
     {

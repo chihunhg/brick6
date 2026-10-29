@@ -780,6 +780,62 @@
         hidden.value = '搜尋';
     }
 
+    /** 匯出前詢問 TOTP；取消或格式錯誤回傳 null */
+    function promptExportTotpCode() {
+        var code = window.prompt('請輸入 TOTP 驗證碼（Authenticator 6 位數，或備用碼）', '');
+        if (code === null) {
+            return null;
+        }
+        code = String(code).replace(/\s+/g, '');
+        if (!/^[0-9A-Za-z-]{6,16}$/.test(code)) {
+            window.alert('驗證碼格式不正確');
+            return null;
+        }
+        return code;
+    }
+
+    /** 以目前列表條件 POST 到 output.php，附上一次性 TOTP */
+    function submitListExport(form, frameName, frameTitle) {
+        if (!form || !validateListOpenDateRange(form)) {
+            return;
+        }
+        var totpCode = promptExportTotpCode();
+        if (totpCode === null) {
+            return;
+        }
+        ensureListSearchSubmit(form);
+        var totpInput = form.querySelector('input[name="totp_code"]');
+        if (!totpInput) {
+            totpInput = document.createElement('input');
+            totpInput.type = 'hidden';
+            totpInput.name = 'totp_code';
+            form.appendChild(totpInput);
+        }
+        var zipPwInput = form.querySelector('input[name="zip_password"]');
+        if (zipPwInput) {
+            zipPwInput.value = '';
+        }
+        totpInput.value = totpCode;
+        var frame = document.getElementById(frameName);
+        if (!frame) {
+            frame = document.createElement('iframe');
+            frame.id = frameName;
+            frame.name = frameName;
+            frame.setAttribute('title', frameTitle);
+            frame.style.display = 'none';
+            document.body.appendChild(frame);
+        }
+        var prevAction = form.action;
+        var prevTarget = form.target;
+        form.action = 'output.php';
+        form.target = frameName;
+        form.submit();
+        form.target = prevTarget || '';
+        form.action = prevAction || '';
+        totpInput.value = '';
+    }
+
+
     function validateListOpenDateRange(form) {
         if (!form) {
             return true;
@@ -1083,30 +1139,7 @@
             case 'member-export': {
                 var exportForm = document.getElementById(el.getAttribute('data-form-id') || 'form1')
                     || document.forms['form1'];
-                if (!exportForm) {
-                    break;
-                }
-                if (!validateListOpenDateRange(exportForm)) {
-                    break;
-                }
-                ensureListSearchSubmit(exportForm);
-                var frameName = 'member-export-frame';
-                var frame = document.getElementById(frameName);
-                if (!frame) {
-                    frame = document.createElement('iframe');
-                    frame.id = frameName;
-                    frame.name = frameName;
-                    frame.setAttribute('title', '會員匯出');
-                    frame.style.display = 'none';
-                    document.body.appendChild(frame);
-                }
-                var prevAction = exportForm.action;
-                var prevTarget = exportForm.target;
-                exportForm.action = 'output.php';
-                exportForm.target = frameName;
-                exportForm.submit();
-                exportForm.target = prevTarget || '';
-                exportForm.action = prevAction || '';
+                submitListExport(exportForm, 'member-export-frame', '會員匯出');
                 break;
             }
             case 'epaper-export': {
@@ -1141,30 +1174,7 @@
             case 'order-export': {
                 var orderExportForm = document.getElementById(el.getAttribute('data-form-id') || 'form1')
                     || document.forms['form1'];
-                if (!orderExportForm) {
-                    break;
-                }
-                if (!validateListOpenDateRange(orderExportForm)) {
-                    break;
-                }
-                ensureListSearchSubmit(orderExportForm);
-                var orderFrameName = 'order-export-frame';
-                var orderFrame = document.getElementById(orderFrameName);
-                if (!orderFrame) {
-                    orderFrame = document.createElement('iframe');
-                    orderFrame.id = orderFrameName;
-                    orderFrame.name = orderFrameName;
-                    orderFrame.setAttribute('title', '訂單匯出');
-                    orderFrame.style.display = 'none';
-                    document.body.appendChild(orderFrame);
-                }
-                var orderPrevAction = orderExportForm.action;
-                var orderPrevTarget = orderExportForm.target;
-                orderExportForm.action = 'output.php';
-                orderExportForm.target = orderFrameName;
-                orderExportForm.submit();
-                orderExportForm.target = orderPrevTarget || '';
-                orderExportForm.action = orderPrevAction || '';
+                submitListExport(orderExportForm, 'order-export-frame', '訂單匯出');
                 break;
             }
             case 'coupon-export': {

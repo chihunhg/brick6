@@ -272,3 +272,62 @@ if (!function_exists('member_list_apply_keyword_search')) {
         return $kw;
     }
 }
+
+
+if (!function_exists('member_export_write_log')) {
+    /**
+     * 會員匯出稽核：寫入 managelog，並存檔至 Upload/export_log/
+     * （不記錄 TOTP 驗證碼）
+     *
+     * @param array<string, mixed> $filter
+     */
+    function member_export_write_log(int $rowCount, string $exportFilename, array $filter = []): void
+    {
+        $loginId = (string)($_SESSION['Login_ID'] ?? $GLOBALS['Login_ID'] ?? '');
+        $modulePKey = (int)($GLOBALS['Module_PKey'] ?? 0);
+        $moduleName = trim((string)($GLOBALS['Module_Name'] ?? '會員'));
+        if ($moduleName === '') {
+            $moduleName = '會員';
+        }
+        $workFile = (string)($GLOBALS['WorkFile'] ?? 'manage/member/output.php');
+
+        $kw = trim((string)($filter['Keywords'] ?? ''));
+        $openDate = trim((string)($filter['OpenDate'] ?? ''));
+        $endDate = trim((string)($filter['EndDate'] ?? ''));
+
+        $detail = sprintf(
+            'file=%s; rows=%d; keywords=%s; OpenDate=%s; EndDate=%s',
+            $exportFilename,
+            max(0, $rowCount),
+            $kw,
+            $openDate,
+            $endDate
+        );
+
+        if (function_exists('manage_history')) {
+            manage_history(
+                $modulePKey,
+                $moduleName,
+                $detail,
+                $workFile,
+                $loginId !== '' ? $loginId : 'system',
+                '匯出會員',
+                'Upload/export_log'
+            );
+            return;
+        }
+
+        if (function_exists('write_log')) {
+            write_log(
+                Module_Name: $moduleName,
+                MSG: '匯出會員',
+                SqlCommand: $detail,
+                strLink: $workFile,
+                UserID: $loginId !== '' ? $loginId : 'system',
+                LogType: 'web',
+                subDir: 'Upload/export_log',
+                filePrefix: 'member_export_'
+            );
+        }
+    }
+}

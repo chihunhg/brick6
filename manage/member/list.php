@@ -200,6 +200,8 @@ $clearUrl = ($WorkFile ?? 'list.php')
                         <ul class="notes__list">
                             <li>會員帳號（Email）不可重複。</li>
                             <li>列表依加入日期由新至舊排序；匯出 Excel 依目前搜尋條件。</li>
+                            <li>匯出帳號須具備進入本單元的權限，並通過 TOTP 驗證後才會產生 Excel。</li>
+                            <li>每次匯出會寫入稽核紀錄（Upload/export_log、後台操作紀錄），不記錄驗證碼。</li>
                         </ul>
                     </div>
                     <div class="notes__spacer"></div>

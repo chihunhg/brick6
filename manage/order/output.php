@@ -10,6 +10,9 @@ require_once '../_module.php';
 require_once __DIR__ . '/_form_data.php';
 
 $filter = is_array($filter_array ?? null) ? $filter_array : [];
+manage_export_require_totp('order_list', $filter);
+unset($filter['totp_code'], $filter['zip_password']);
+
 $rows = order_export_fetch_rows($filter);
 
 $exportCell = static function (array $row, string $col): string {
@@ -62,4 +65,9 @@ foreach ($rows as $row) {
     ];
 }
 
-xlsx_download($tableData, 'order_' . date('Ymd_His') . '.xlsx', '訂單');
+$xlsxName = 'order_' . date('Ymd_His') . '.xlsx';
+
+$dataRows = max(0, count($tableData) - 1);
+order_export_write_log($dataRows, $xlsxName, $filter);
+
+xlsx_download($tableData, $xlsxName, '訂單');

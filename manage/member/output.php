@@ -9,9 +9,11 @@ require_once '../_inc.php';
 require_once '../_module.php';
 require_once __DIR__ . '/_form_data.php';
 
-[$PDO_Cond, $Cond_Array] = crud_module_where();
-
 $filter = is_array($filter_array ?? null) ? $filter_array : [];
+manage_export_require_totp('member_list', $filter);
+unset($filter['totp_code'], $filter['zip_password']);
+
+[$PDO_Cond, $Cond_Array] = crud_module_where();
 $kwPlaceholder = '請輸入姓名或帳號搜尋';
 member_list_apply_keyword_search($PDO_Cond, $Cond_Array, $filter, $kwPlaceholder);
 crud_list_apply_opendate_range($PDO_Cond, $Cond_Array, $filter, 'dtDate');
@@ -66,4 +68,9 @@ foreach ($rows as $row) {
     ];
 }
 
-xlsx_download($tableData, 'member_' . date('Ymd_His') . '.xlsx', 'member');
+$xlsxName = 'member_' . date('Ymd_His') . '.xlsx';
+
+$dataRows = max(0, count($tableData) - 1);
+member_export_write_log($dataRows, $xlsxName, $filter);
+
+xlsx_download($tableData, $xlsxName, 'member');
