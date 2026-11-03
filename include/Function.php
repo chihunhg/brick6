@@ -432,20 +432,64 @@ function __safe_join(string $baseDir, string $rel): ?string {
 }
 
 /**
+ * 轉成 UPLOAD_BASE 下的相對路徑。
+ * 相對路徑直接正規化；絕對路徑只接受落在 UPLOAD_BASE 之內的檔案。
+ */
+function __upload_relative_path(string $path): ?string {
+    $path = str_replace('\\', '/', trim($path));
+    if ($path === '' || strpos($path, "\0") !== false) {
+        return null;
+    }
+
+    if (!preg_match('#^(?:/|[A-Za-z]:/)#', $path)) {
+        return __normalize_rel_path($path);
+    }
+
+    $base = defined('UPLOAD_BASE') ? rtrim(str_replace('\\', '/', (string)UPLOAD_BASE), '/') : '';
+    if ($base === '') {
+        return null;
+    }
+
+    $norm = rtrim($path, '/');
+    $prefix = $base . '/';
+    if (stripos($norm, $prefix) !== 0) {
+        if (!is_file($norm)) {
+            return null;
+        }
+        $real = realpath($norm);
+        if ($real === false) {
+            return null;
+        }
+        $real = str_replace('\\', '/', $real);
+        if (stripos($real, $prefix) !== 0) {
+            return null;
+        }
+        $norm = $real;
+    }
+
+    return __normalize_rel_path(substr($norm, strlen($prefix)));
+}
+
+/**
  * 安全刪檔（只允許 UPLOAD_BASE 之下的檔案）
  * 相容呼叫：
- *  - DelFile($file)                → 刪除 $file
+ *  - DelFile($file)                → 相對路徑，或 Upload 底下的絕對路徑
  *  - DelFile($anyBase, $file)      → 忽略 $anyBase，仍只在 UPLOAD_BASE 底下刪 $file
  */
 function DelFile(string $Forder = '', string $sFileName = ''): bool {
     try {
-        // 兼容：若只傳一參數，視為「檔名/相對路徑」
-        $rel = ($sFileName !== '') ? $sFileName : $Forder;
+        // 兼容：若只傳一參數，視為「檔名/相對路徑」或 Upload 絕對路徑
+        $raw = ($sFileName !== '') ? $sFileName : $Forder;
+        $rel = __upload_relative_path($raw);
+        if ($rel === null) {
+            error_log("[DelFile] rejected path under UPLOAD_BASE: file={$raw}");
+            return false;
+        }
 
         // 只以 UPLOAD_BASE 為基底
         $target = __safe_join(UPLOAD_BASE, $rel);
         if ($target === null) {
-            error_log("[DelFile] rejected path under UPLOAD_BASE: file={$rel}");
+            error_log("[DelFile] rejected path under UPLOAD_BASE: file={$raw}");
             return false;
         }
 

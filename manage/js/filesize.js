@@ -333,21 +333,27 @@ function del_file(pkey, num, type) {
         var $preview = $('#preview' + num);
         var $prefile = $('#prefile' + num);
 
-        // 清 icon
-        $prefile.removeClass('fas fa-file-pdf fa-file-word fa-file-excel fa-file-archive fa-file-alt').text('');
+        // 清 icon，並拿掉還原用快照，避免之後驗證失敗又把已刪圖檔畫回來
+        $prefile
+          .removeClass('fas fa-file-pdf fa-file-word fa-file-excel fa-file-powerpoint fa-file-archive fa-file-alt')
+          .removeAttr('data-original-html')
+          .removeAttr('data-original-class')
+          .removeAttr('data-original-style')
+          .text('')
+          .hide();
 
-        if (type === 'img') {
-          $preview.attr('src', '');
-          $prefile.hide();
-        } else {
-          var iconMap = {
-            pdf:'fa-file-pdf', doc:'fa-file-word', docx:'fa-file-word',
-            xls:'fa-file-excel', xlsx:'fa-file-excel',
-            rar:'fa-file-archive', zip:'fa-file-archive', default:'fa-file-alt'
-          };
-          var icon = iconMap[type] || iconMap.default;
-          $prefile.addClass('fas ' + icon).show().text('');
-          $preview.hide();
+        // 不可把 src 設成空字串：瀏覽器會改去抓目前頁面，畫面上只剩破圖
+        if ($preview.length) {
+          $preview
+            .hide()
+            .css({ display: 'none', visibility: 'hidden' })
+            .removeAttr('src')
+            .removeAttr('data-original-src');
+        }
+
+        var sizeEl = document.getElementById('size' + num);
+        if (sizeEl) {
+          sizeEl.textContent = '';
         }
 
         var $fileInput = $('#Photo' + num);
