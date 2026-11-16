@@ -29,6 +29,10 @@ $show_type = (int)($show_type ?? 2);
 <head>
     <?php require_once '../_in_code_head.php'; ?>
     <?php require_once '../_in_javascript.php'; ?>
+    <?php
+    require_once dirname(__DIR__) . '/_quill_assets.php';
+    manage_echo_quill_assets('../quill/', 'style');
+    ?>
 <?php echo script_open(); ?>
 $(function() {
 	is_show(<?php echo (int)$show_type; ?>);
@@ -514,7 +518,7 @@ function fieldCheck0(theForm) {
                                             require dirname(__DIR__) . '/_detail_ckeditor_ai_button.php';
                                             ?>
                                             <textarea name="Contents<?php echo $n.'_'.$i?>" id="Contents<?php echo $n.'_'.$i?>"
-                                                class="ckeditor formInput"><?php echo e_editor_html((string)($Contents[$n][$i] ?? '')); ?></textarea>
+                                                class="quill-editor formInput"><?php echo e_editor_html((string)($Contents[$n][$i] ?? '')); ?></textarea>
                                         </div>
                                     </div>
                                     <?php } ?>
@@ -543,6 +547,7 @@ function fieldCheck0(theForm) {
     </div>
 
     <?php require_once '../_in_code_bottom.php'; ?>
+    <?php manage_echo_quill_assets('../quill/', 'script'); ?>
     <?php if ($showTagField) {
         echo script_src_tag('../js/tag-relation.js?ver=' . $__tagRelJsVer);
     } ?>
