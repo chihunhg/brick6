@@ -426,7 +426,8 @@
   var config = {
     language: "zh_tw",
     iframe: true,
-    iframeSandbox: "allow-same-origin",
+    // 必須含 allow-scripts，否則 Chrome 會擋住 iframe 的 document.write，編輯器無法建立。
+    iframeSandbox: "allow-same-origin allow-scripts",
     iframeCSSLinks: IFRAME_CSS,
     editorClassName: BODY_CLASS,
     iframeStyle:
