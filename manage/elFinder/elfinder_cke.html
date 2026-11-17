@@ -33,8 +33,6 @@
       var m = location.search.match(new RegExp('[?&]'+name+'=([^&]+)'));
       return m ? decodeURIComponent(m[1]) : '';
     }
-    var funcNum = getUrlParam('CKEditorFuncNum');
-
     function setStatus(ok, msg){
       var el = document.getElementById('status');
       el.className = ok ? 'ok' : 'err';
@@ -60,45 +58,31 @@
 			var url = file && (file.url || file.href || file.path) || '';
 			if (!url) { alert('未取得檔案 URL，請檢查後端回傳'); return; }
 
-			var w = window.opener || window.parent;
+			var editorId = getUrlParam('editor');
+			var token = getUrlParam('token');
+			var mime = (file && file.mime) || '';
+			var w = window.opener;
+			var delivered = false;
 
-			// A) 標準：CKEditor 4 以 CKEditorFuncNum 回呼
-			if (w && w.CKEDITOR && funcNum && typeof w.CKEDITOR.tools.callFunction === 'function') {
-			  w.CKEDITOR.tools.callFunction(funcNum, url);
+			if (w && !w.closed && editorId && typeof w.editorElfinderPick === 'function') {
+			  delivered = !!w.editorElfinderPick(editorId, url, mime);
+			}
+
+			// 後台頁有 COOP，彈窗若對不上標頭時 opener 會是 null。
+			// 用同源 BroadcastChannel 把選到的檔案送回開窗那一頁。
+			if (!delivered && editorId && token && typeof BroadcastChannel === 'function') {
+			  var ch = new BroadcastChannel('brick6-elfinder');
+			  ch.postMessage({ editorId: editorId, url: url, mime: mime, token: token });
+			  ch.close();
+			  delivered = true;
+			}
+
+			if (delivered) {
 			  window.close();
 			  return;
 			}
 
-			// B) 備援：若 URL 沒帶 CKEditorFuncNum，但有指定 instance 名稱，直接插入
-			var editorKey = (function(){
-			  var m = location.search.match(/[?&]CKEditor=([^&]+)/i);
-			  return m ? decodeURIComponent(m[1]) : '';
-			})();
-			if (w && w.CKEDITOR && editorKey && w.CKEDITOR.instances && w.CKEDITOR.instances[editorKey]) {
-			  var ed = w.CKEDITOR.instances[editorKey];
-			  if (ed.mode === 'wysiwyg') {
-				ed.insertHtml('<img src="' + url.replace(/"/g,'&quot;') + '" alt="">');
-			  } else {
-				ed.setData(ed.getData() + '\n' + url);
-			  }
-			  window.close();
-			  return;
-			}
-
-			// C) 再備援：非 CKEditor 4（例如你是自訂彈窗或 CKEditor 5），就用自定事件/回呼
-			if (w && typeof w.onElfinderFileSelected === 'function') {
-			  w.onElfinderFileSelected(url, file);
-			  window.close();
-			  return;
-			}
-			// 也可用 postMessage 給父視窗（CKEditor 5 或自製整合）
-			if (w && w.postMessage) {
-			  w.postMessage({ type: 'elfinder:selected', url: url, file: file }, '*');
-			  window.close();
-			  return;
-			}
-
-			alert('找不到 CKEditor 回呼（CKEditorFuncNum）。請確認是由 CKEditor 開啟。');
+			alert('找不到編輯器，請回到內容頁再選一次。');
 		  } catch (e) {
 			console.error(e);
 			alert('傳回編輯器時發生錯誤：' + (e.message || e));

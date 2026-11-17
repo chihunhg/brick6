@@ -19,6 +19,7 @@ $__tagRelJsVer = is_file($__tagRelJs) ? (string)filemtime($__tagRelJs) : '1';
 $__imgSlotFallback = 7;
 require dirname(__DIR__) . '/_detail_img_slot_init.php';
 $PhotoS = is_array($PhotoS ?? null) ? $PhotoS : [];
+$PhotoM = is_array($PhotoM ?? null) ? $PhotoM : [];
 $Ext = is_array($Ext ?? null) ? $Ext : [];
 $show_type = (int)($show_type ?? 2);
 
@@ -29,10 +30,6 @@ $show_type = (int)($show_type ?? 2);
 <head>
     <?php require_once '../_in_code_head.php'; ?>
     <?php require_once '../_in_javascript.php'; ?>
-    <?php
-    require_once dirname(__DIR__) . '/_quill_assets.php';
-    manage_echo_quill_assets('../quill/', 'style');
-    ?>
 <?php echo script_open(); ?>
 $(function() {
 	is_show(<?php echo (int)$show_type; ?>);
@@ -233,17 +230,27 @@ function fieldCheck0(theForm) {
                             </div>
                         </div>
 
-                        <article class="editView__body">
-                            <div class="editView__section">
-                                <h4 class="editView__sectionTitle">基本設定</h4>
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx" data-a11y="true">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-1"
+                                    id="accordion-header-1">基本設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-1"
+                                    role="region"
+                                    aria-labelledby="accordion-header-1"
+                                    aria-hidden="true">
+                                    <div class="inner">
                                 <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Sort">
+                                    <label class="col--2 inputLabel editView__formLabel">
                                     顯示語系 <span class="inputLabel__required">*</span>
                                     </label>
-                                    <div class="col--10 inputGroup">
-                                        <input name="button" type="button" class="btn btn-outline-secondary" value="全選"
+                                    <div class="col--10 inputGroup row">
+                                        <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="all">
-                                        <input name="button2" type="button" class="btn btn-outline-secondary" value="取消全選"
+                                        <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="none">
                                         <?php for($i=1;$i<=count($array_lang);$i++){?>
                                             <label for="Show<?php echo $i?>">
@@ -257,7 +264,7 @@ function fieldCheck0(theForm) {
                                 </div>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">顯示方式</label>
-                                    <div class="col--10 inputGroup">
+                                    <div class="col--10 inputGroup row">
                                         <label class="editView__radioLabel">
                                             <input name="show_type" type="radio" value="2" <?php echo $show_type === 2 ? 'checked' : ''; ?> /> 內容
                                         </label>
@@ -367,29 +374,119 @@ function fieldCheck0(theForm) {
                                 </div>
                                 <?php endif;?>
                                 <?php require_once '../_tag_relation_block.php'; ?>
-                                <?php if ($showHomeField) { ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Home">首頁呈現</label>
-                                    <div class="col--10">
-                                    <label class="flex flex--itCenter gap--2 editView__radioLabel">
-                                    <input name="Home" type="checkbox" id="Home" value="Yes" <?php if (!empty($Home) && $Home=='Yes'){ echo 'checked="checked"';}?> />是，首頁區塊呈現 </label>
                                     </div>
                                 </div>
-                                <?php } ?>
-                                <?php if (!$isAdd) { ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel">修改日期</label>
-                                    <div class="col--10">
-                                        <span class="dateSpan"><?php require_once '../_modify.php'; ?></span>
-                                    </div>
-                                </div>
-                                <?php } ?>
                             </div>
                         </article>
 
-                        <article class="editView__body" id="tr_img">
-                            <div class="editView__section">
-                                <h4 class="editView__sectionTitle">內容區塊</h4>
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-2"
+                                    id="accordion-header-2">文章內容</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-2"
+                                    role="region"
+                                    aria-labelledby="accordion-header-2"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <article class="editView__tabs tabsGp">
+                                            <ul class="tabsGp__tabs">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <li id="group2_tabNav_<?php echo $i; ?>"
+                                                    class="tabsGp__link --color<?php echo $i; ?>"
+                                                    data-tab-target="group2_tabCon_<?php echo $i; ?>">
+                                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
+                                                </li>
+                                                <?php } ?>
+                                            </ul>
+                                            <div class="tabsGp__body">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <div id="group2_tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
+                                                    <div class="formGrid">
+                                                        <label class="col--2 inputLabel editView__formLabel" for="strName<?php echo $i; ?>">
+                                                            標題 <span class="inputLabel__required">*</span>
+                                                        </label>
+                                                        <div class="col--10">
+                                                            <input name="strName<?php echo $i; ?>" type="text"
+                                                                id="strName<?php echo $i; ?>" class="formInput"
+                                                                value="<?php echo e((string)($strName[$i] ?? '')); ?>">
+                                                        </div>
+                                                    </div>
+                                                    <?php if ($showInterviewField) { ?>
+                                                    <div class="formGrid">
+                                                        <label class="col--2 inputLabel editView__formLabel" for="Interview<?php echo $i; ?>">簡述</label>
+                                                        <div class="col--10">
+                                                            <textarea name="Interview<?php echo $i; ?>" id="Interview<?php echo $i; ?>"
+                                                                class="formInput" style="height:100px"><?php echo e((string)($Interview[$i] ?? '')); ?></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <?php } ?>
+                                                    <div class="formGrid" id="tr_strLinkUrl<?php echo $i; ?>">
+                                                        <label class="col--2 inputLabel editView__formLabel" for="strURL<?php echo $i; ?>">連結 <span class="inputLabel__required">*</span></label>
+                                                        <div class="col--10 inputGroup">
+                                                            <label class="editView__radioLabel">
+                                                                <input name="intLink<?php echo $i; ?>" id="intLink<?php echo $i; ?>_page" type="radio" value="1"
+                                                                    <?php echo (int)($intLink[$i] ?? 2) === 1 ? 'checked' : ''; ?> /> 本頁開啟 (_self)
+                                                            </label>
+                                                            <label class="editView__radioLabel">
+                                                                <input name="intLink<?php echo $i; ?>" id="intLink<?php echo $i; ?>_ext" type="radio" value="2"
+                                                                    <?php echo (int)($intLink[$i] ?? 2) !== 1 ? 'checked' : ''; ?> /> 另開視窗 (_blank)
+                                                            </label>
+                                                            <input name="strURL<?php echo $i; ?>" type="text" class="formInput" id="strURL<?php echo $i; ?>"
+                                                                value="<?php echo e((string)($strURL[$i] ?? '')); ?>" maxlength="500">
+                                                            <span id="strURL<?php echo $i; ?>_txt" class="input__errorTxt"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="formGrid" id="tr_Movielink<?php echo $i; ?>">
+                                                        <label class="col--2 inputLabel editView__formLabel" for="Movielink<?php echo $i?>">
+                                                            影音連結
+                                                        </label>
+                                                        <div class="col--10">
+                                                            <span>https://www.youtube.com/watch?v=</span>
+                                                            <input type="text" name="Movielink<?php echo $i?>"
+                                                                id="Movielink<?php echo $i?>" class="formInput w--auto"
+                                                                value="<?php echo e((string)($Movielink[$i] ?? '')); ?>">
+                                                                <p> (影音連結例：https://www.youtube.com/watch?v=<span class="red">QEWV6fiYaDU</span>) </p>
+                                                        </div>
+                                                    </div>
+                                                    <?php for($n=1;$n<=6;$n++){ ?>
+                                                    <div class="formGrid" id="tr_contents<?php echo $n . $i; ?>">
+                                                        <label class="col--2 inputLabel editView__formLabel">內容<?php echo $n?></label>
+                                                        <div class="col--10">
+                                                            <?php
+                                                            $editorAiFieldId = 'Contents' . $n . '_' . $i;
+                                                            require dirname(__DIR__) . '/_detail_ckeditor_ai_button.php';
+                                                            ?>
+                                                            <textarea name="Contents<?php echo $n.'_'.$i?>" id="Contents<?php echo $n.'_'.$i?>"
+                                                                class="ckeditor formInput"><?php echo e_editor_html((string)($Contents[$n][$i] ?? '')); ?></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <?php } ?>
+                                                </div>
+                                                <?php } ?>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="editView__body accordionGp" id="tr_img">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-3"
+                                    id="accordion-header-3">圖片設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-3"
+                                    role="region"
+                                    aria-labelledby="accordion-header-3"
+                                    aria-hidden="true">
+                                    <div class="inner">
                                 <?php if ($showListField) { ?>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">列表圖</label>
@@ -399,6 +496,10 @@ function fieldCheck0(theForm) {
                                         $photoPath = (!$isAdd) ? (string)($Photo[$n] ?? '') : '';
                                         manage_render_upload_image_slot($n, $isAdd, $photoPath, (int)($PhotoS[$n] ?? 0));
                                         ?>
+                                        <label class="inputLabel" for="PhotoM<?php echo $n; ?>">圖說</label>
+                                        <input name="PhotoM<?php echo $n; ?>" id="PhotoM<?php echo $n; ?>" type="text"
+                                            class="formInput" maxlength="100"
+                                            value="<?php echo e((string)($PhotoM[$n] ?? '')); ?>">
                                         <div class="notes">
                                             <ul class="notes__list">
                                                 <li>圖片：寬750px，高不限。</li>
@@ -428,6 +529,10 @@ function fieldCheck0(theForm) {
                                             false
                                         );
                                         ?>
+                                        <label class="inputLabel" for="PhotoM<?php echo $n; ?>">圖說</label>
+                                        <input name="PhotoM<?php echo $n; ?>" id="PhotoM<?php echo $n; ?>" type="text"
+                                            class="formInput" maxlength="100"
+                                            value="<?php echo e((string)($PhotoM[$n] ?? '')); ?>">
                                     </div>
                                 </div>
                                 <?php } ?>
@@ -440,88 +545,66 @@ function fieldCheck0(theForm) {
                                         <li>下圖上文：寬1140px，高不限。</li>
                                     </ul>
                                 </div>
+                                    </div>
+                                </div>
                             </div>
                         </article>
 
-                        <article class="editView__tabs tabsGp">
-                            <ul class="tabsGp__tabs">
-                                <?php 
-                                for ($i = 1; $i <= count($array_lang); $i++) {
-                                ?>
-                                <li id="tabNav_<?php echo $i; ?>"
-                                    class="tabsGp__link --color<?php echo $i; ?>"
-                                    data-tab-target="tabCon_<?php echo $i; ?>">
-                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
-                                </li>
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-4"
+                                    id="accordion-header-4">SEO 設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-4"
+                                    role="region"
+                                    aria-labelledby="accordion-header-4"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <article class="editView__tabs tabsGp">
+                                            <ul class="tabsGp__tabs">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <li id="group1_tabNav_<?php echo $i; ?>"
+                                                    class="tabsGp__link --color<?php echo $i; ?>"
+                                                    data-tab-target="group1_tabCon_<?php echo $i; ?>">
+                                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
+                                                </li>
+                                                <?php } ?>
+                                            </ul>
+                                            <div class="tabsGp__body">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <div id="group1_tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
+                                                    <?php require dirname(__DIR__) . '/_detail_lang_seo_fields.php'; ?>
+                                                    <?php require dirname(__DIR__) . '/_detail_lang_summary_field.php'; ?>
+                                                </div>
+                                                <?php } ?>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="editView__body">
+                            <div class="editView__section">
+                                <h4 class="editView__sectionTitle">上下架顯示</h4>
+                                <?php if ($showHomeField) { ?>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="Home">首頁呈現</label>
+                                    <div class="col--10">
+                                    <label class="flex flex--itCenter gap--2 editView__radioLabel">
+                                    <input name="Home" type="checkbox" id="Home" value="Yes" <?php if (!empty($Home) && $Home=='Yes'){ echo 'checked="checked"';}?> />是，首頁區塊呈現 </label>
+                                    </div>
+                                </div>
                                 <?php } ?>
-                            </ul>
-                            <div class="tabsGp__body">
-                                <?php 
-                                for ($i = 1; $i <= count($array_lang); $i++) {
-                                ?>
-                                <div id="tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="strName<?php echo $i; ?>">
-                                            標題 <span class="inputLabel__required">*</span>
-                                        </label>
-                                        <div class="col--10">
-                                            <input name="strName<?php echo $i; ?>" type="text"
-                                                id="strName<?php echo $i; ?>" class="formInput"
-                                                value="<?php echo e((string)($strName[$i] ?? '')); ?>">
-                                        </div>
+                                <?php if (!$isAdd) { ?>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">修改日期</label>
+                                    <div class="col--10">
+                                        <span class="dateSpan"><?php require_once '../_modify.php'; ?></span>
                                     </div>
-                                    <?php require dirname(__DIR__) . '/_detail_lang_seo_fields.php'; ?>
-                                    <div class="formGrid" id="tr_strLinkUrl<?php echo $i; ?>">
-                                        <label class="col--2 inputLabel editView__formLabel" for="strURL<?php echo $i; ?>">連結 <span class="inputLabel__required">*</span></label>
-                                        <div class="col--10 inputGroup">
-                                            <label class="editView__radioLabel">
-                                                <input name="intLink<?php echo $i; ?>" id="intLink<?php echo $i; ?>_page" type="radio" value="1"
-                                                    <?php echo (int)($intLink[$i] ?? 2) === 1 ? 'checked' : ''; ?> /> 本頁
-                                            </label>
-                                            <label class="editView__radioLabel">
-                                                <input name="intLink<?php echo $i; ?>" id="intLink<?php echo $i; ?>_ext" type="radio" value="2"
-                                                    <?php echo (int)($intLink[$i] ?? 2) !== 1 ? 'checked' : ''; ?> /> 外連
-                                            </label>
-                                            <input name="strURL<?php echo $i; ?>" type="text" class="formInput" id="strURL<?php echo $i; ?>"
-                                                value="<?php echo e((string)($strURL[$i] ?? '')); ?>" maxlength="500">
-                                            <span id="strURL<?php echo $i; ?>_txt" class="input__errorTxt"></span>
-                                        </div>
-                                    </div>
-                                    <?php if ($showInterviewField) { ?>
-                                    <div class="formGrid">
-                                        <label class="col--2 inputLabel editView__formLabel" for="Interview<?php echo $i?>">簡述</label>
-                                        <div class="col--10">
-                                            <textarea name="Interview<?php echo $i?>" id="Interview<?php echo $i?>"
-                                                class="formInput" style="height:100px"><?php echo e((string)($Interview[$i] ?? '')); ?></textarea>
-                                        </div>
-                                    </div>
-                                    <?php } ?>
-                                    <?php require dirname(__DIR__) . '/_detail_lang_summary_field.php'; ?>
-                                    <div class="formGrid" id="tr_Movielink<?php echo $i; ?>">
-                                        <label class="col--2 inputLabel editView__formLabel" for="Movielink<?php echo $i?>">
-                                            影音連結
-                                        </label>
-                                        <div class="col--10">
-                                            <span>https://www.youtube.com/watch?v=</span>
-                                            <input type="text" name="Movielink<?php echo $i?>"
-                                                id="Movielink<?php echo $i?>" class="formInput w--auto"
-                                                value="<?php echo e((string)($Movielink[$i] ?? '')); ?>">
-                                                <p> (影音連結例：https://www.youtube.com/watch?v=<span class="red">QEWV6fiYaDU</span>) </p>
-                                        </div>
-                                    </div>
-                                    <?php for($n=1;$n<=6;$n++){ ?>
-                                    <div class="formGrid" id="tr_contents<?php echo $n . $i; ?>">
-                                        <label class="col--2 inputLabel editView__formLabel">內容<?php echo $n?></label>
-                                        <div class="col--10">
-                                            <?php
-                                            $editorAiFieldId = 'Contents' . $n . '_' . $i;
-                                            require dirname(__DIR__) . '/_detail_ckeditor_ai_button.php';
-                                            ?>
-                                            <textarea name="Contents<?php echo $n.'_'.$i?>" id="Contents<?php echo $n.'_'.$i?>"
-                                                class="quill-editor formInput"><?php echo e_editor_html((string)($Contents[$n][$i] ?? '')); ?></textarea>
-                                        </div>
-                                    </div>
-                                    <?php } ?>
                                 </div>
                                 <?php } ?>
                             </div>
@@ -547,7 +630,22 @@ function fieldCheck0(theForm) {
     </div>
 
     <?php require_once '../_in_code_bottom.php'; ?>
-    <?php manage_echo_quill_assets('../quill/', 'script'); ?>
+<?php echo script_open(); ?>
+(function () {
+	document.querySelectorAll('.tabsGp').forEach(function (group) {
+		var first = group.querySelector('.tabsGp__link');
+		var targetId = first ? first.getAttribute('data-tab-target') : '';
+		if (!first || !targetId) {
+			return;
+		}
+		first.classList.add('--active', 'active');
+		var panel = group.querySelector('#' + targetId);
+		if (panel) {
+			panel.classList.add('--active', 'active');
+		}
+	});
+})();
+<?php echo script_close(); ?>
     <?php if ($showTagField) {
         echo script_src_tag('../js/tag-relation.js?ver=' . $__tagRelJsVer);
     } ?>
@@ -555,6 +653,57 @@ function fieldCheck0(theForm) {
 $(function() {
 	<?php manage_echo_strdate_picker_init('strDate', $strDate ?? ''); ?>
 });
+function newsBindDetailTabs() {
+	document.querySelectorAll('.tabsGp').forEach(function (group) {
+		var navItems = group.querySelectorAll('.tabsGp__link');
+		var contents = group.querySelectorAll('.tabContent');
+		function activate(nav) {
+			navItems.forEach(function (item) {
+				item.classList.remove('--active', 'is-active', 'active', 'on');
+			});
+			contents.forEach(function (content) {
+				content.classList.remove('--active', 'is-active', 'active', 'on');
+			});
+			nav.classList.add('--active', 'is-active', 'active', 'on');
+			var targetId = nav.getAttribute('data-tab-target');
+			var activeContent = targetId ? group.querySelector('#' + targetId) : null;
+			if (activeContent) {
+				activeContent.classList.add('--active', 'is-active', 'active', 'on');
+			}
+			window.setTimeout(function () {
+				window.dispatchEvent(new Event('resize'));
+			}, 0);
+		}
+		navItems.forEach(function (nav, index) {
+			if (index === 0) {
+				activate(nav);
+			}
+			nav.addEventListener('click', function () {
+				activate(nav);
+			});
+		});
+	});
+	window.view_ans = function (num) {
+		var n = parseInt(String(num || ''), 10);
+		var tab = n ? document.getElementById('group2_tabNav_' + n) : null;
+		if (tab) {
+			tab.click();
+		}
+	};
+	var newsForm = document.querySelector('form[action="addin.php"]');
+	if (newsForm) {
+		newsForm.addEventListener('submit', function () {
+			newsForm.querySelectorAll('textarea[name^="Interview"]').forEach(function (el) {
+				el.disabled = false;
+			});
+		});
+	}
+}
+if (document.readyState === "loading") {
+	document.addEventListener("DOMContentLoaded", newsBindDetailTabs);
+} else {
+	newsBindDetailTabs();
+}
 <?php echo script_close(); ?>
 </body>
 </html>
