@@ -16,25 +16,8 @@ if (ob_get_level() === 0) {
     ob_start();
 }
 
-/** 後台登入檢查（須已登入且 Manage=Yes） */
-function elfinder_require_auth(): void {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-    if (empty($_SESSION['Login_ID']) || (string)($_SESSION['Manage'] ?? '') !== 'Yes') {
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        if (!headers_sent()) {
-            header('Content-Type: application/json; charset=utf-8');
-            http_response_code(403);
-        }
-        echo json_encode(['error' => ['Unauthorized']], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-}
-
-elfinder_require_auth();
+require_once __DIR__ . '/_auth.php';
+elfinder_require_backend_login('json');
 
 // ---- Polyfill: PHP 7 也可用 ----
 if (!function_exists('_starts_with')) {

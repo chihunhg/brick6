@@ -1,0 +1,15 @@
+# elFinder 目錄：頁面與靜態檔都要先通過後台登入（見 _gate.php）
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always unset Cache-Control
+    Header always set Cache-Control "private, no-store"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule \.php$ - [L]
+    RewriteRule ^$ _gate.php [L]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule . _gate.php [L]
+</IfModule>

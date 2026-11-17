@@ -9,6 +9,9 @@ declare(strict_types=1);
  * 這裡只補上與後台相同的跨來源標頭，不套用後台 CSP（本頁要載入 cdnjs 的 elFinder）。
  */
 
+require_once __DIR__ . '/_auth.php';
+elfinder_require_backend_login('page');
+
 require_once dirname(__DIR__, 2) . '/include/sec.php';
 
 foreach (security_cross_origin_headers(false) as $name => $value) {
