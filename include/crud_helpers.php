@@ -715,7 +715,7 @@ if (!function_exists('crud_lang_table_select_meta')) {
         }
         $select = [];
         foreach ([
-            'Sort', 'intLang', 'isShow', 'strName', 'strNote', 'Title', 'Description', 'Keywords', 'Summary', 'Movielink', 'Contents',
+            'Sort', 'intLang', 'isShow', 'strName', 'strNote', 'Title', 'Category', 'Description', 'Keywords', 'Summary', 'Movielink', 'Contents',
             'intLink', 'strLink', 'strURL', 'Target', 'FileName', 'FileSize', 'Forder',
         ] as $col) {
             if (crud_table_has_column($tableLang, $col)) {
@@ -754,6 +754,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
         $isShow   = [];
         $strName  = [];
         $Title    = [];
+        $Category = [];
         $Subject  = [];
         $Description = [];
         $Keywords = [];
@@ -775,6 +776,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
             'strName'     => $strName,
             'strNote'     => $strNote,
             'Title'       => $Title,
+            'Category'    => $Category,
             'Subject'     => $Subject,
             'Description' => $Description,
             'Keywords'    => $Keywords,
@@ -813,6 +815,9 @@ if (!function_exists('crud_load_lang_slots_data')) {
             $strName[$i]  = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'strName') : ($r['strName'] ?? ''));
             if (crud_table_has_column($tableLang, 'Title')) {
                 $Title[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Title') : ($r['Title'] ?? ''));
+            }
+            if (crud_table_has_column($tableLang, 'Category')) {
+                $Category[$i] = (string)(function_exists('crud_row_val') ? crud_row_val($r, 'Category') : ($r['Category'] ?? ''));
             }
             if ($meta['subject_col'] !== null) {
                 $col = $meta['subject_col'];
@@ -864,6 +869,7 @@ if (!function_exists('crud_load_lang_slots_data')) {
             'isShow'      => $isShow,
             'strName'     => $strName,
             'Title'       => $Title,
+            'Category'    => $Category,
             'Subject'     => $Subject,
             'Description' => $Description,
             'Keywords'    => $Keywords,
@@ -1119,6 +1125,9 @@ if (!function_exists('crud_save_ad_lang_slots')) {
                 'Subject'  => SqlFilter((string)($filter['Subject' . $n] ?? ''), 'tab'),
                 'dtDate'   => date('Y-m-d H:i:s'),
             ];
+            if (isset($filter['Title' . $n]) && crud_table_has_column($tableLang, 'Title')) {
+                $row['Title'] = SqlFilter((string)$filter['Title' . $n], 'tab');
+            }
             if (isset($filter['Interview' . $n]) && crud_table_has_column($tableLang, 'Interview')) {
                 $row['Interview'] = SqlFilter((string)$filter['Interview' . $n], 'tab');
             }
@@ -3842,6 +3851,14 @@ if (!function_exists('crud_handle_list_sort')) {
             $msg .= '，失敗 ' . $failCnt . ' 筆（PKey: ' . implode(',', array_keys($res['fail'])) . '）';
         }
 
+        $isAjax = (isset($filter_array['AjaxSort']) && (string)$filter_array['AjaxSort'] === '1')
+            || strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+        if ($isAjax) {
+            header('Content-Type: text/plain; charset=utf-8');
+            echo $failCnt > 0 ? $msg : 'OK';
+            exit;
+        }
+
         $backUrl = $backUrl ?? ($GLOBALS['WorkFile'] ?? 'list.php');
         if (function_exists('manage_alert_script')) {
             manage_alert_script($msg, $backUrl);
@@ -4294,8 +4311,7 @@ if (!function_exists('crud_remove_dangerous_html_embeds')) {
         $previousLibxmlState = libxml_use_internal_errors(true);
         $wrapperId = 'crud_html_root_' . bin2hex(random_bytes(4));
         $document->loadHTML(
-            '<!DOCTYPE html><meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
-            . '<div id="' . $wrapperId . '">' . $html . '</div>',
+            '<?xml encoding="utf-8"><div id="' . $wrapperId . '">' . $html . '</div>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING
         );
         libxml_clear_errors();
@@ -4316,7 +4332,7 @@ if (!function_exists('crud_remove_dangerous_html_embeds')) {
             $node->parentNode?->removeChild($node);
         }
 
-        foreach ($xpath->query('.//*[@href or @src or @style]', $wrapper) as $node) {
+        foreach ($xpath->query('.//*', $wrapper) as $node) {
             if (!$node instanceof DOMElement) {
                 continue;
             }
@@ -4324,6 +4340,17 @@ if (!function_exists('crud_remove_dangerous_html_embeds')) {
                 $name = strtolower($attribute->nodeName);
                 if (str_starts_with($name, 'on')) {
                     $node->removeAttribute($attribute->nodeName);
+                    continue;
+                }
+                if ($name === 'style') {
+                    $safeStyle = function_exists('filter_ckeditor_style_value')
+                        ? filter_ckeditor_style_value((string)$attribute->nodeValue)
+                        : '';
+                    if ($safeStyle === '') {
+                        $node->removeAttribute($attribute->nodeName);
+                    } else {
+                        $node->setAttribute('style', $safeStyle);
+                    }
                     continue;
                 }
                 if (in_array($name, ['href', 'src', 'xlink:href'], true)) {
@@ -4339,6 +4366,18 @@ if (!function_exists('crud_remove_dangerous_html_embeds')) {
         foreach ($wrapper->childNodes as $child) {
             $output .= $document->saveHTML($child);
         }
+        $output = preg_replace_callback('/&#(x[0-9a-f]+|\d+);/i', static function (array $match): string {
+            $raw = $match[1];
+            $codepoint = str_starts_with(strtolower($raw), 'x')
+                ? hexdec(substr($raw, 1))
+                : (int)$raw;
+            if ($codepoint < 128 || $codepoint > 0x10FFFF) {
+                return $match[0];
+            }
+            $char = mb_chr($codepoint, 'UTF-8');
+
+            return $char !== false ? $char : $match[0];
+        }, $output) ?? $output;
 
         return trim($output);
     }
@@ -4346,7 +4385,7 @@ if (!function_exists('crud_remove_dangerous_html_embeds')) {
 
 if (!function_exists('crud_sanitize_ckeditor_html_for_storage')) {
     /**
-     * CKEditor / AI 產文 HTML 寫入 DB 前清理，防 XSS
+     * CKEditor 寫入 DB 前只移除危險標籤與危險字元，保留 span style（色碼、字級）
      */
     function crud_sanitize_ckeditor_html_for_storage(string $html): string {
         $html = trim($html);
@@ -4354,22 +4393,7 @@ if (!function_exists('crud_sanitize_ckeditor_html_for_storage')) {
             return '';
         }
 
-        if (!function_exists('gemini_sanitize_editor_html')) {
-            $helper = __DIR__ . '/gemini_editor_helpers.php';
-            if (is_file($helper)) {
-                require_once $helper;
-            }
-        }
-
-        $hasRichMedia = (bool)preg_match('/<(img|iframe|video|audio|embed|object)\b/i', $html);
-
-        if (!$hasRichMedia && function_exists('gemini_sanitize_editor_html')) {
-            return gemini_sanitize_editor_html($html);
-        }
-
-        if (function_exists('filter_html')) {
-            $html = filter_html($html, 'tab');
-        }
+        $html = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $html) ?? $html;
 
         return crud_remove_dangerous_html_embeds($html);
     }
@@ -4470,13 +4494,27 @@ if (!function_exists('crud_save_lang_slots')) {
             ];
 
             if ($subjectCol !== null) {
-                $filterKey = $subjectCol === 'Interview' ? 'Interview' . $n : 'Subject' . $n;
-                if (isset($filter[$filterKey])) {
-                    $row[$subjectCol] = SqlFilter((string)$filter[$filterKey], 'tab');
+                // 表單欄位名是 Interview{n}；資料表可能是 Interview 或 Subject。空白也要覆寫，否則清空後舊值還在。
+                $postedSubject = null;
+                if (array_key_exists('Interview' . $n, $filter)) {
+                    $postedSubject = (string)$filter['Interview' . $n];
+                } elseif (array_key_exists('Subject' . $n, $filter)) {
+                    $postedSubject = (string)$filter['Subject' . $n];
+                }
+                if ($postedSubject !== null) {
+                    $storedSubject = SqlFilter($postedSubject, 'tab');
+                    foreach (['Interview', 'Subject'] as $col) {
+                        if ($col === $subjectCol || crud_table_has_column($tableLang, $col)) {
+                            $row[$col] = $storedSubject;
+                        }
+                    }
                 }
             }
             if (isset($filter['Title' . $n]) && crud_table_has_column($tableLang, 'Title')) {
                 $row['Title'] = SqlFilter((string)$filter['Title' . $n], 'tab');
+            }
+            if (array_key_exists('Category' . $n, $filter) && crud_table_has_column($tableLang, 'Category')) {
+                $row['Category'] = SqlFilter((string)$filter['Category' . $n], 'tab');
             }
             if (isset($filter['Description' . $n]) && crud_table_has_column($tableLang, 'Description')) {
                 $row['Description'] = SqlFilter((string)$filter['Description' . $n], 'tab');
@@ -4511,7 +4549,7 @@ if (!function_exists('crud_save_lang_slots')) {
                 if ($html === '' && isset($filter['Contents' . $n])) {
                     $html = (string)$filter['Contents' . $n];
                 }
-                $row['Contents'] = SqlFilter(crud_sanitize_ckeditor_html_for_storage($html), 'tab');
+                $row['Contents'] = crud_sanitize_ckeditor_html_for_storage($html);
             }
             if (isset($filter['intLink' . $n]) && crud_table_has_column($tableLang, 'intLink')) {
                 $row['intLink'] = SqlFilter($filter['intLink' . $n], 'int');
@@ -4565,17 +4603,33 @@ if (!function_exists('crud_save_lang_slots')) {
 
             $row = crud_filter_row_for_table($tableLang, $row);
 
-            $existing = crud_fetch_one(
-                "SELECT PKey FROM {$tableLang} WHERE {$fkName} = :fk AND intLang = :lang",
-                ['fk' => $parentPKey, 'lang' => $n]
-            );
+            // 編輯頁以 Sort 對應語系欄位（Interview2 = Sort 2）。先改這些列，避免 intLang 對到另一筆而畫面仍顯示舊簡述。
+            $targets = [];
+            if (crud_table_has_column($tableLang, 'Sort')) {
+                $targets = crud_fetch_all(
+                    "SELECT PKey FROM {$tableLang} WHERE {$fkName} = :fk AND Sort = :sort ORDER BY PKey",
+                    ['fk' => $parentPKey, 'sort' => $n]
+                );
+            }
+            if ($targets === []) {
+                $targets = crud_fetch_all(
+                    "SELECT PKey FROM {$tableLang} WHERE {$fkName} = :fk AND intLang = :lang ORDER BY PKey",
+                    ['fk' => $parentPKey, 'lang' => $n]
+                );
+            }
 
             $pdo = new dbPDO();
-            if ($existing !== null) {
-                $childPk = (int)$existing['PKey'];
-                $pdo->update($tableLang, $row, 'PKey', $childPk);
-                $sqlLog = $pdo->getLastSql() . "\nPKey=" . $childPk;
+            $sqlLog = '';
+            if ($targets !== []) {
                 $action = '語系' . $n . '修改成功';
+                foreach ($targets as $existing) {
+                    $childPk = (int)($existing['PKey'] ?? 0);
+                    if ($childPk <= 0) {
+                        continue;
+                    }
+                    $pdo->update($tableLang, $row, 'PKey', $childPk);
+                    $sqlLog .= $pdo->getLastSql() . "\nPKey=" . $childPk . "\n";
+                }
             } else {
                 $pdo->insert($tableLang, $row);
                 $childPk = (int)$pdo->getLastId();

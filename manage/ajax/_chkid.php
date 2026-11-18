@@ -15,26 +15,18 @@ if (!function_exists('CheckMail') || !CheckMail($EMail)) {
     json_out(['success' => false, 'error' => '【會員帳號】格式錯誤'], 400);
 }
 
-// -------- 查詢是否已存在 --------
-$sql = 'SELECT 1 AS x FROM member WHERE EMail = :EMail LIMIT 1';
-$rs  = new recordset($sql, ['EMail' => $EMail]);
-
-// 錯誤處理（不把細節回給前端）
-if (method_exists($rs, 'getErrorMessage')) {
-    $err = (string)$rs->getErrorMessage();
-    if ($err !== '') {
-        // 後端記錄詳細錯誤
-        if (function_exists('sql_error')) {
-            sql_error($sql . PHP_EOL . 'EMail=' . $EMail, $err, $WorkFile ?? __FILE__, 'system');
-        } else {
-            error_log('[email_check] ' . $err);
-        }
-        json_out(['success' => false, 'error' => '系統忙碌，請稍後再試'], 500);
+// -------- 查詢是否已存在（EMail 為密文，走 member_email_exists 解密比對）--------
+require_once dirname(__DIR__) . '/member/_form_data.php';
+try {
+    $exists = member_email_exists($EMail, 0);
+} catch (Throwable $e) {
+    if (function_exists('sql_error')) {
+        sql_error('member_email_exists', $e->getMessage(), $WorkFile ?? __FILE__, 'system');
+    } else {
+        error_log('[email_check] ' . $e->getMessage());
     }
+    json_out(['success' => false, 'error' => '系統忙碌，請稍後再試'], 500);
 }
-
-$exists = !$rs->eof;
-if (method_exists($rs, 'close')) $rs->close();
 
 // -------- 依情境回覆 --------
 // register：明確回覆是否重複（註冊表單常見需求）

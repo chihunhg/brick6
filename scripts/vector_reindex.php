@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
-
+echo '1|OK';
+exit;
 /**
  * 批次補建 Pinecone 向量
  *

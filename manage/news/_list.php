@@ -100,8 +100,8 @@ foreach ($listRows as $row) {
 
     $c1 = (int)($row['Class1_PKey'] ?? 0);
     $previewUrl = $webRoot !== ''
-        ? $webRoot . '/news_detail' . $rowPKey . '_' . $c1 . '.htm'
-        : 'news_detail' . $rowPKey . '_' . $c1 . '.htm';
+        ? $webRoot . '/news-detail' . $rowPKey . '.htm'
+        : 'news_detail' . $rowPKey . '-' . '.htm';
     ?>
     <div class="tableRow__item" data-id="<?php echo $rowPKey; ?>">
         <div class="tableRow__data <?php echo e($gridClass); ?>">

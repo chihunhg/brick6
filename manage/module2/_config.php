@@ -6,7 +6,7 @@ declare(strict_types=1);
 return [
     'master'             => 'module_p',
     'img'                => '',
-    'lang'               => 'module_lang',
+    'lang'               => 'module_lang', // UI 已單語系，寫入時仍同步各 intLang
     'qa'                 => 'module_qa',
     'msg'                => '',
     'link'               => '',

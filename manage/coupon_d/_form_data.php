@@ -178,8 +178,24 @@ if (!function_exists('coupon_d_member_exists_by_email')) {
         if ($email === '') {
             return null;
         }
-        $row = crud_fetch_one('SELECT PKey, strName, EMail FROM member WHERE EMail = :em LIMIT 1', ['em' => $email]);
-        return is_array($row) ? $row : null;
+        if (!function_exists('member_sec_decrypt_field')) {
+            require_once dirname(__DIR__) . '/member/_form_data.php';
+        }
+        $emailNorm = strtolower($email);
+        $rows = crud_fetch_all('SELECT PKey, strName, EMail FROM member', []);
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $stored = strtolower(member_sec_decrypt_field((string)($row['EMail'] ?? '')));
+            if ($stored !== '' && $stored === $emailNorm) {
+                $row['EMail'] = member_sec_decrypt_field((string)($row['EMail'] ?? ''));
+
+                return $row;
+            }
+        }
+
+        return null;
     }
 }
 

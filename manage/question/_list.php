@@ -105,7 +105,9 @@ foreach ($listRows as $row) {
             </div>
             <div class="textCenter">
                 <button type="button" class="btnStyle btnStyle--sm btnStyle--outline"
-                    onclick="window.open('output.php?PKey=<?php echo $rowPKey; ?>', '_blank');">
+                    data-manage-action="survey-export"
+                    data-url="output.php?PKey=<?php echo htmlspecialchars((string)$rowPKey, ENT_QUOTES, 'UTF-8'); ?>"
+                    data-filename="survey.xlsx">
                     匯出(<?php echo $reportCount; ?>)
                 </button>
             </div>

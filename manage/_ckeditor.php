@@ -1,33 +1,10 @@
 <?php
-$ckeJs = __DIR__ . '/ckeditor/ckeditor.js';
-$ckeCfg = __DIR__ . '/ckeditor/config.js';
-$ckeVer = is_file($ckeJs) ? (string)filemtime($ckeJs) : '1';
-$cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
 
-echo script_src_tag('ckeditor/ckeditor.js?ver=' . $ckeVer);
-echo script_src_tag('ckeditor/config.js?ver=' . $cfgVer);
-echo manage_inline_script(<<<'JS'
-(function () {
-  function initEditors() {
-    if (typeof CKEDITOR === 'undefined') {
-      return;
-    }
-    var nodes = document.querySelectorAll('textarea.ckeditor');
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
-      if (!el.id) {
-        continue;
-      }
-      if (CKEDITOR.instances[el.id]) {
-        continue;
-      }
-      CKEDITOR.replace(el.id);
-    }
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEditors);
-  } else {
-    initEditors();
-  }
-})();
-JS);
+declare(strict_types=1);
+
+/**
+ * 內容編輯器資源。知識庫內文頁在版尾再引入一次；
+ * 資產已由 _in_code_bottom.php 輸出時不會重複。
+ */
+require_once __DIR__ . '/_jodit_assets.php';
+manage_echo_jodit_assets('../jodit/');

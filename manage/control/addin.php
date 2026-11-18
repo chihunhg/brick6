@@ -46,7 +46,8 @@ if ($formPKey > 0) {
         'SELECT PKey, intType FROM webcontrol WHERE PKey = :pk LIMIT 1',
         ['pk' => $formPKey]
     );
-    if ($row === null || (int)($row['intType'] ?? -1) !== 0) {
+    $superType = function_exists('manage_super_admin_int_type') ? manage_super_admin_int_type() : 1;
+    if ($row === null || (int)($row['intType'] ?? -1) !== $superType) {
         crud_form_error_redirect('查無要修改資料或無權限', $returnUrl);
     }
 }
@@ -55,7 +56,11 @@ $isNew = $formPKey <= 0;
 $hashPw = $isNew || trim((string)($filter_array['strPW'] ?? '')) !== '';
 $data_array = control_build_master_data($filter_array, $modulePKey, $Login_ID, $hashPw);
 if ($isNew) {
-    $data_array['intType'] = SqlFilter(0, 'int');
+    // 權限管理帳號＝最高權限（舊設定 intType=1）
+    $data_array['intType'] = SqlFilter(
+        function_exists('manage_super_admin_int_type') ? manage_super_admin_int_type() : 1,
+        'int'
+    );
     if (function_exists('manage_mfa_onboard_schema_ready') && manage_mfa_onboard_schema_ready()) {
         $data_array['mfa_setup_pending'] = 1;
     }

@@ -85,7 +85,7 @@ $ldjson = [
                 </div>
                 <div class="aboutBox__media">
                     <figure class="cover --about1 wow fadeIn" data-wow-delay="0.5s">
-                        <img src="<?php echo $web_url?>images/about/1.jpg?20260324" class="cover__pic img-fluid" alt="">
+                        <img src="<?php echo $web_root?>images/about/1.jpg?20260324" class="cover__pic img-fluid" alt="">
                     </figure>
                 </div>
             </div>

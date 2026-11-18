@@ -340,11 +340,22 @@
 
     function updateDragListSortInputs(list) {
         var items = list.querySelectorAll('.drag-item');
-        items.forEach(function (item, index) {
+        var inputs = [];
+        var values = [];
+        items.forEach(function (item) {
             var sortInput = item.querySelector('.tableRow__sortInput');
-            if (sortInput) {
-                sortInput.value = String(index + 1);
+            if (!sortInput || sortInput.disabled) {
+                return;
             }
+            inputs.push(sortInput);
+            var n = parseInt(sortInput.value, 10);
+            values.push(isNaN(n) ? 0 : n);
+        });
+        values.sort(function (a, b) {
+            return a - b;
+        });
+        inputs.forEach(function (sortInput, index) {
+            sortInput.value = String(values[index]);
         });
     }
 
@@ -451,6 +462,7 @@
             });
             updateDragListSortInputs(list);
             handleOrderChange();
+            persistListSort();
         });
 
         list.addEventListener('dragover', function (e) {
@@ -525,6 +537,90 @@
         if (form) {
             form.submit();
         }
+    }
+
+    var sortSaveInFlight = false;
+    var sortSavePending = false;
+
+    function listSortRowsChanged(form) {
+        var inputs = form.querySelectorAll('.tableRow__sortInput');
+        var i;
+        for (i = 0; i < inputs.length; i++) {
+            var match = (inputs[i].id || '').match(/^Sort(\d+)$/);
+            if (!match) {
+                continue;
+            }
+            var oldInput = form.querySelector('#O_Sort' + match[1]);
+            if (oldInput && String(oldInput.value) !== String(inputs[i].value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function syncListSortOriginals(form) {
+        form.querySelectorAll('.tableRow__sortInput').forEach(function (input) {
+            var match = (input.id || '').match(/^Sort(\d+)$/);
+            if (!match) {
+                return;
+            }
+            var oldInput = form.querySelector('#O_Sort' + match[1]);
+            if (oldInput) {
+                oldInput.value = input.value;
+            }
+        });
+    }
+
+    /** 拖曳或改順序後立即寫入目前列表的 Sort */
+    function persistListSort() {
+        var form = getListForm();
+        if (!form) {
+            return;
+        }
+        if (!listSortRowsChanged(form)) {
+            hasOrderChanged = false;
+            updateToolbar();
+            return;
+        }
+        if (sortSaveInFlight) {
+            sortSavePending = true;
+            return;
+        }
+        sortSaveInFlight = true;
+        var body = new FormData(form);
+        body.set('SortUpdate', '更新順序');
+        body.set('AjaxSort', '1');
+        var action = form.getAttribute('action') || '';
+        var url = action !== '' ? new URL(action, window.location.href).href : window.location.href;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            body: body
+        })
+            .then(function (res) {
+                return res.text();
+            })
+            .then(function (text) {
+                var msg = (text || '').trim();
+                if (msg !== 'OK') {
+                    alert(msg.charAt(0) === '<' ? '更新排序失敗' : msg.slice(0, 300));
+                    return;
+                }
+                syncListSortOriginals(form);
+                hasOrderChanged = false;
+                updateToolbar();
+            })
+            .catch(function () {
+                alert('更新排序失敗');
+            })
+            .finally(function () {
+                sortSaveInFlight = false;
+                if (sortSavePending) {
+                    sortSavePending = false;
+                    persistListSort();
+                }
+            });
     }
 
     function handleUpdateSort() {
@@ -835,7 +931,6 @@
         totpInput.value = '';
     }
 
-
     function validateListOpenDateRange(form) {
         if (!form) {
             return true;
@@ -947,6 +1042,22 @@
         if (url) {
             window.open(url, '_blank', 'noopener,noreferrer');
         }
+    }
+
+    /** 同源附件下載：避免 window.open 導向 .php／ZIP 而被瀏覽器標成危險檔 */
+    function downloadSameOriginFile(url, filename) {
+        if (!url) {
+            return;
+        }
+        var link = document.createElement('a');
+        link.href = url;
+        if (filename) {
+            link.setAttribute('download', filename);
+        }
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     function gotoPage(page, formId) {
@@ -1180,14 +1291,30 @@
             case 'coupon-export': {
                 var couponPkey = el.getAttribute('data-pkey') || '';
                 if (couponPkey) {
-                    openExternalUrl('output.php?PKey=' + encodeURIComponent(couponPkey));
+                    downloadSameOriginFile(
+                        'output.php?PKey=' + encodeURIComponent(couponPkey),
+                        'coupon.xlsx'
+                    );
                 }
                 break;
             }
             case 'coupon-d-export': {
                 var couponDetailPkey = el.getAttribute('data-coupon-pkey') || '';
                 if (couponDetailPkey) {
-                    openExternalUrl('output.php?Coupon_PKey=' + encodeURIComponent(couponDetailPkey));
+                    downloadSameOriginFile(
+                        'output.php?Coupon_PKey=' + encodeURIComponent(couponDetailPkey),
+                        'coupon.xlsx'
+                    );
+                }
+                break;
+            }
+            case 'survey-export': {
+                var surveyUrl = el.getAttribute('data-url') || '';
+                if (surveyUrl) {
+                    downloadSameOriginFile(
+                        surveyUrl,
+                        el.getAttribute('data-filename') || 'survey.xlsx'
+                    );
                 }
                 break;
             }
@@ -1461,6 +1588,12 @@
     document.addEventListener('input', function (e) {
         if (e.target && e.target.classList && e.target.classList.contains('tableRow__sortInput')) {
             handleOrderChange();
+        }
+    });
+
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('tableRow__sortInput')) {
+            persistListSort();
         }
     });
 

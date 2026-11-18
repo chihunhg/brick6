@@ -23,10 +23,10 @@ if (!function_exists('module_next_sort')) {
 }
 
 if (!function_exists('module_require_admin')) {
-    /** 僅 Admin 可進入單元設定 */
+    /** 僅最高權限（webcontrol.intType=1）可進入單元設定 */
     function module_require_admin(): void {
-        global $Login_ID, $m98;
-        if (($Login_ID ?? '') !== 'Admin') {
+        global $m98;
+        if (!manage_is_super_admin()) {
             manage_alert_script('無進入[' . ($m98 ?? '單元設定') . ']權限!', '../index.php');
             exit;
         }

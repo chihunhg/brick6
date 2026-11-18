@@ -186,7 +186,7 @@ if (!function_exists('frontend_visit_http_get')) {
             CURLOPT_USERAGENT      => 'brick6-visit-log/1.0',
         ]);
         $body = curl_exec($ch);
-        curl_close($ch);
+        //curl_close($ch);
 
         return is_string($body) ? $body : '';
     }

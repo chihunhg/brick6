@@ -4,7 +4,10 @@
     Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always edit Set-Cookie (.*) "$1; HttpOnly; Secure; SameSite=Lax"
+    # 與網站根目錄 .htaccess 相同：HTTP 不強制 Secure，且不重複附加屬性
+    Header always edit Set-Cookie "(?i)^(?!.*HttpOnly)(.*)$" "$1; HttpOnly"
+    Header always edit Set-Cookie "(?i)^(?!.*SameSite=)(.*)$" "$1; SameSite=Lax"
+    Header always edit Set-Cookie "(?i)^(?!.*Secure)(.*)$" "$1; Secure" env=HTTPS
     # HSTS 由 Plesk/nginx 或 Conn.php（APP_ENABLE_HSTS=1）擇一送出，勿重複
     # Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains" env=HTTPS
  

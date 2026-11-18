@@ -11,8 +11,9 @@ declare(strict_types=1);
  *   php scripts/frontend_visit_log_archive.php --dry-run      試跑
  *
  * HTTP 排程（Plesk「執行 URL」；需 .env FRONTEND_VISIT_LOG_ARCHIVE_TOKEN）：
- *   https://tsg5.com.tw/brick6/scripts/frontend_visit_log_archive.php?token=YOUR_SECRET
- *   https://tsg5.com.tw/brick6/scripts/frontend-visit-log-archive.php?token=YOUR_SECRET
+ *   token 含 + 或 = 時請 URL 編碼（rawurlencode），否則 GET 會把 + 當成空白。
+ *   https://tsg5.com.tw/brick6/frontend-visit-log-archive.php?token=URLENCODED_TOKEN
+ *   https://tsg5.com.tw/brick6/scripts/frontend_visit_log_archive.php?token=URLENCODED_TOKEN
  *
  * 建議排程（每月 1 日 00:10）：
  *   Linux cron: 10 0 1 * * cd /path/to/brick6 && php scripts/frontend_visit_log_archive.php
@@ -30,12 +31,13 @@ if (PHP_SAPI !== 'cli') {
     $token = trim((string)($_GET['token'] ?? $_POST['token'] ?? ''));
     if (frontend_visit_log_archive_token() === '') {
         http_response_code(503);
-        echo "[ERROR] FRONTEND_VISIT_LOG_ARCHIVE_TOKEN is not configured in .env\n";
+        echo "[ERROR] FRONTEND_VISIT_LOG_ARCHIVE_TOKEN is not configured in .env\n"
+            . "hint: brick6/.env 若仍是 change_me 占位符，請改成真實 token，或刪除該行讓 private/.env 補上。\n";
         exit(1);
     }
     if (!frontend_visit_log_archive_verify_token($token)) {
         http_response_code(403);
-        echo "[ERROR] invalid token\n";
+        echo frontend_visit_log_archive_invalid_token_message($token);
         exit(1);
     }
 

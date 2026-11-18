@@ -27,7 +27,7 @@ if ($pageName == "index") { ?>
 						<source srcset="<?php echo e_attr($slideImgUrl); ?>" type="image/jpg" media="(max-width: 768px)">
 						<img src="<?php echo e_attr($slideImgUrl); ?>" alt="<?php echo e_attr($altText); ?>" class="img-fluid" loading="eager" fetchpriority="high" width="1920" height="900">
 					</picture>
-					<div class="bnTxt__box <?php echo e($alignClass); ?>">
+					<div class="bnTxt__box <?php echo e_attr($alignClass); ?>">
 						<div class="container">
 							<h4 class="bnTit" data-splitting><?php echo $titleText; ?></h4>
 							<p class="bnTxt" data-splitting><?php echo $subjectText; ?></p>

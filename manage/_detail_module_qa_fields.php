@@ -10,7 +10,7 @@ if ($qaLangSlot <= 0) {
 }
 $Question = is_array($Question ?? null) ? $Question : [];
 $Answer = is_array($Answer ?? null) ? $Answer : [];
-$qaSlotMax = function_exists('module_qa_slot_max') ? module_qa_slot_max() : 5;
+$qaSlotMax = function_exists('module_qa_slot_max') ? module_qa_slot_max() : 10;
 ?>
                                     <div class="editView__section editView__section--nested">
                                         <h5 class="editView__sectionTitle">FAQ（結構化資料）</h5>

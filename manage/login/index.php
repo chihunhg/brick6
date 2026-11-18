@@ -37,7 +37,7 @@ if (isset($_SESSION['Manage'], $_SESSION['Login_ID'])
     exit;
 }
 
-// ---- 若無 Admin，依 .env ADMIN_INITIAL_PASSWORD 建立（未設定則略過）----
+// ---- 若尚無 intType=1 最高權限帳號，依 .env ADMIN_INITIAL_PASSWORD 建立／校正 ----
 manage_bootstrap_admin_account();
 // reCAPTCHA（從 .env 讀）
 $site_key = $_ENV['RECAPTCHA_SITE_KEY'] ?? '';
@@ -128,6 +128,7 @@ if (!empty($submit) && $submit === '送出') {
                 'strID'      => (string)$rs->field('strID'),
                 'strName'    => (string)$rs->field('strName'),
                 'FunctionID' => (string)$rs->field('FunctionID'),
+                'intType'    => (int)$rs->field('intType'),
                 'mfa_enabled' => 0,
                 'totp_secret' => '',
             ];

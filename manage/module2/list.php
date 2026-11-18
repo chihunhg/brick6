@@ -38,8 +38,6 @@ $i = 0;
 $list_show_expand_row = $list_show_expand_row ?? false;
 manage_list_expand_enabled($list_show_expand_row);
 $listGridClass = manage_list_grid_class('module-class');
-require_once __DIR__ . '/../_list_lang_bootstrap.php';
-$listGridClass = manage_list_grid_with_lang($listGridClass, (bool)($listShowLangColumn ?? false));
 
 $breadcrumbs = [
     ['label' => '單元管理'],

@@ -1,8 +1,38 @@
 <?php
 declare(strict_types=1);
 
+if (!function_exists('frontend_visit_log_archive_normalize_env_token')) {
+    /** 去除 .env 值外層引號與空白 */
+    function frontend_visit_log_archive_normalize_env_token(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        if ((str_starts_with($value, '"') && str_ends_with($value, '"'))
+            || (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
+            $value = substr($value, 1, -1);
+        }
+
+        return trim($value);
+    }
+}
+
+if (!function_exists('frontend_visit_log_archive_token_is_placeholder')) {
+    function frontend_visit_log_archive_token_is_placeholder(string $token): bool
+    {
+        if (function_exists('host_env_is_placeholder')) {
+            return host_env_is_placeholder($token);
+        }
+        $v = strtolower(trim($token));
+
+        return $v === '' || str_starts_with($v, 'change_me');
+    }
+}
+
 if (!function_exists('frontend_visit_log_archive_token')) {
-    /** 讀取 .env FRONTEND_VISIT_LOG_ARCHIVE_TOKEN */
+    /** 讀取 .env FRONTEND_VISIT_LOG_ARCHIVE_TOKEN（占位符視為未設定） */
     function frontend_visit_log_archive_token(): string
     {
         $raw = $_ENV['FRONTEND_VISIT_LOG_ARCHIVE_TOKEN'] ?? null;
@@ -11,12 +41,121 @@ if (!function_exists('frontend_visit_log_archive_token')) {
             $raw = ($fromGetenv !== false) ? $fromGetenv : '';
         }
 
-        return trim((string)$raw);
+        $token = frontend_visit_log_archive_normalize_env_token((string)$raw);
+        if ($token === '' || frontend_visit_log_archive_token_is_placeholder($token)) {
+            return '';
+        }
+
+        return $token;
+    }
+}
+
+if (!function_exists('frontend_visit_log_archive_token_fingerprint')) {
+    /**
+     * @return array{len:int, sha256_8:string, plus:int, space:int, pct:int}
+     */
+    function frontend_visit_log_archive_token_fingerprint(string $token): array
+    {
+        $token = trim($token);
+
+        return [
+            'len'      => strlen($token),
+            'sha256_8' => $token === '' ? '-' : substr(hash('sha256', $token), 0, 8),
+            'plus'     => str_contains($token, '+') ? 1 : 0,
+            'space'    => str_contains($token, ' ') ? 1 : 0,
+            'pct'      => str_contains($token, '%') ? 1 : 0,
+        ];
+    }
+}
+
+if (!function_exists('frontend_visit_log_archive_request_token_candidates')) {
+    /**
+     * GET query 會把 + 解成空白，需還原比對
+     *
+     * @return list<string>
+     */
+    function frontend_visit_log_archive_request_token_candidates(string $token): array
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return [];
+        }
+
+        $candidates = [$token];
+
+        $plusFixed = str_replace(' ', '+', $token);
+        if ($plusFixed !== $token) {
+            $candidates[] = $plusFixed;
+        }
+
+        foreach ([rawurldecode($token), urldecode($token)] as $decoded) {
+            if (!is_string($decoded) || $decoded === '' || $decoded === $token) {
+                continue;
+            }
+            $candidates[] = $decoded;
+            $decodedPlus = str_replace(' ', '+', $decoded);
+            if ($decodedPlus !== $decoded) {
+                $candidates[] = $decodedPlus;
+            }
+        }
+
+        $unique = [];
+        foreach ($candidates as $item) {
+            $item = trim($item);
+            if ($item !== '' && !in_array($item, $unique, true)) {
+                $unique[] = $item;
+            }
+        }
+
+        return $unique;
+    }
+}
+
+if (!function_exists('frontend_visit_log_archive_collect_request_tokens')) {
+    /**
+     * 收集 HTTP 請求中的 token（GET／POST／QUERY_STRING 原始值／Bearer）
+     *
+     * @return list<string>
+     */
+    function frontend_visit_log_archive_collect_request_tokens(): array
+    {
+        $tokens = [];
+        $fromParam = trim((string)($_GET['token'] ?? $_POST['token'] ?? ''));
+        if ($fromParam !== '') {
+            $tokens[] = $fromParam;
+        }
+
+        $qs = (string)($_SERVER['QUERY_STRING'] ?? '');
+        if ($qs !== '' && preg_match('/(?:^|&)token=([^&]*)/', $qs, $m) === 1) {
+            $raw = (string)$m[1];
+            if ($raw !== '') {
+                $tokens[] = $raw;
+                $tokens[] = str_replace('+', '%2B', $raw);
+                $tokens[] = rawurldecode($raw);
+            }
+        }
+
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $auth = trim((string)$_SERVER['HTTP_AUTHORIZATION']);
+            if (preg_match('/^Bearer\s+(\S+)/i', $auth, $m) === 1) {
+                $tokens[] = trim($m[1]);
+            }
+        }
+
+        $unique = [];
+        foreach ($tokens as $item) {
+            $item = trim((string)$item);
+            if ($item !== '' && !in_array($item, $unique, true)) {
+                $unique[] = $item;
+            }
+        }
+
+        return $unique;
     }
 }
 
 if (!function_exists('frontend_visit_log_archive_verify_token')) {
-    /** 以 hash_equals 驗證排程 token */
+    /** 以 hash_equals 驗證排程 token（支援 URL 解碼與 + 還原） */
     function frontend_visit_log_archive_verify_token(string $token): bool
     {
         $expected = frontend_visit_log_archive_token();
@@ -24,7 +163,76 @@ if (!function_exists('frontend_visit_log_archive_verify_token')) {
             return false;
         }
 
-        return hash_equals($expected, trim($token));
+        $expectedList = [$expected];
+        $decodedExpected = rawurldecode($expected);
+        if (is_string($decodedExpected) && $decodedExpected !== '' && $decodedExpected !== $expected) {
+            $expectedList[] = $decodedExpected;
+        }
+
+        $seen = [];
+        $sources = $token !== '' ? [$token] : [];
+        foreach (frontend_visit_log_archive_collect_request_tokens() as $extra) {
+            $sources[] = $extra;
+        }
+
+        foreach ($sources as $source) {
+            foreach (frontend_visit_log_archive_request_token_candidates($source) as $candidate) {
+                if (isset($seen[$candidate])) {
+                    continue;
+                }
+                $seen[$candidate] = true;
+                foreach ($expectedList as $want) {
+                    if (hash_equals($want, $candidate)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('frontend_visit_log_archive_invalid_token_message')) {
+    function frontend_visit_log_archive_invalid_token_message(?string $received = null): string
+    {
+        $received = trim((string)($received ?? ($_GET['token'] ?? $_POST['token'] ?? '')));
+        $plusFixed = str_replace(' ', '+', $received);
+        if ($plusFixed !== '') {
+            $received = $plusFixed;
+        }
+
+        $rawEnv = frontend_visit_log_archive_normalize_env_token((string)(
+            $_ENV['FRONTEND_VISIT_LOG_ARCHIVE_TOKEN'] ?? (getenv('FRONTEND_VISIT_LOG_ARCHIVE_TOKEN') ?: '')
+        ));
+        $expected = frontend_visit_log_archive_token();
+        $expFp = frontend_visit_log_archive_token_fingerprint($expected !== '' ? $expected : $rawEnv);
+        $gotFp = frontend_visit_log_archive_token_fingerprint($received);
+
+        $lines = [
+            '[ERROR] invalid token',
+            sprintf(
+                'diag: expected len=%d sha256_8=%s plus=%d placeholder=%d',
+                $expFp['len'],
+                $expFp['sha256_8'],
+                $expFp['plus'],
+                frontend_visit_log_archive_token_is_placeholder($rawEnv) ? 1 : 0
+            ),
+            sprintf(
+                'diag: received len=%d sha256_8=%s plus=%d space=%d',
+                $gotFp['len'],
+                $gotFp['sha256_8'],
+                $gotFp['plus'],
+                $gotFp['space']
+            ),
+        ];
+        if (frontend_visit_log_archive_token_is_placeholder($rawEnv) || $expected === '') {
+            $lines[] = 'hint: brick6/.env 仍是 change_me 占位符時，private/.env 的 token 不會生效；請把真實 token 寫進實際載入的 .env，或刪除占位符。';
+        } else {
+            $lines[] = 'hint: 網址 token 與伺服器 .env 的 FRONTEND_VISIT_LOG_ARCHIVE_TOKEN 不一致（比對 sha256_8）。';
+        }
+
+        return implode("\n", $lines) . "\n";
     }
 }
 
@@ -170,14 +378,15 @@ if (!function_exists('frontend_visit_log_archive_handle_http')) {
         if (frontend_visit_log_archive_token() === '') {
             header('Content-Type: text/plain; charset=utf-8');
             http_response_code(503);
-            echo "[ERROR] FRONTEND_VISIT_LOG_ARCHIVE_TOKEN is not configured in .env\n";
+            echo "[ERROR] FRONTEND_VISIT_LOG_ARCHIVE_TOKEN is not configured in .env\n"
+                . "hint: brick6/.env 若仍是 change_me 占位符，請改成真實 token，或刪除該行讓 private/.env 補上。\n";
             exit(1);
         }
 
         if (!frontend_visit_log_archive_verify_token($token)) {
             header('Content-Type: text/plain; charset=utf-8');
             http_response_code(403);
-            echo "[ERROR] invalid token\n";
+            echo frontend_visit_log_archive_invalid_token_message($token);
             exit(1);
         }
 

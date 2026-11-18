@@ -20,8 +20,10 @@ $csrf_token = crud_csrf_ensure($listCsrfKey);
 
 require_once __DIR__ . '/_form_data.php';
 
-$PDO_Cond = ' WHERE intType = 0';
-$Cond_Array = [];
+// 權限管理只列最高權限帳號（舊設定 webcontrol.intType = 1）
+$superType = function_exists('manage_super_admin_int_type') ? manage_super_admin_int_type() : 1;
+$PDO_Cond = ' WHERE intType = :SuperIntType';
+$Cond_Array = ['SuperIntType' => $superType];
 
 $kwPlaceholder = '請輸入名稱或帳號搜尋';
 $Keywords = control_list_apply_keyword_search(

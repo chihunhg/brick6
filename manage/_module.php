@@ -145,12 +145,16 @@ $rs->movenext();
 $rs->close();
 unset($Cond_Array);
 
-$Module_List = array();
-if(!empty($_SESSION['FunctionID'])){
-	$Module_List = explode(',',$_SESSION['FunctionID']);
+$Module_PKey = (int)($Module_PKey ?? 0);
+$Module_List = [];
+if (!empty($_SESSION['FunctionID'])) {
+	$Module_List = array_values(array_unique(array_filter(
+		array_map('intval', explode(',', (string)$_SESSION['FunctionID'])),
+		static fn(int $id): bool => $id > 0
+	)));
 }
 
-$GLOBALS['Module_PKey']   = $Module_PKey ?? 0;
+$GLOBALS['Module_PKey']   = $Module_PKey;
 $GLOBALS['Module_Name']   = $Module_Name ?? '未知模組';
 $GLOBALS['Module_D_PKey'] = (int)($Module_D_PKey ?? 0);
 $GLOBALS['Layer']         = (int)($Layer ?? 0);
@@ -160,7 +164,11 @@ $GLOBALS['subname']       = (string)($subname ?? '');
 $GLOBALS['Class_Name']    = is_array($Class_Name ?? null) ? $Class_Name : [];
 $GLOBALS['mgw1']          = (string)($mgw1 ?? '管理');
 
-if (! isset($Login_ID)|| ($Login_ID != 'Admin' && !in_array($Module_PKey,$Module_List))){
+$loginId = (string)($Login_ID ?? ($_SESSION['Login_ID'] ?? ''));
+$canEnterModule = $loginId !== ''
+	&& (manage_is_super_admin() || ($Module_PKey > 0 && in_array($Module_PKey, $Module_List, true)));
+
+if (!$canEnterModule) {
 	$denyMsg = '無進入[' . ($Module_Name ?? '') . ']權限!';
 	if (function_exists('manage_alert_script')) {
 		manage_alert_script($denyMsg, '../index.php');

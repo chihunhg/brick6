@@ -457,6 +457,16 @@ if (!function_exists('manage_semantic_expand_terms')) {
                 ))
                 ->generateContent($prompt);
 
+            if (!function_exists('gemini_token_usage_record')) {
+                require_once __DIR__ . '/gemini_token_usage.php';
+            }
+            gemini_token_usage_record($response->usageMetadata ?? null, [
+                'module' => (string)($GLOBALS['gemini_token_usage_module'] ?? 'semantic'),
+                'feature' => 'search',
+                'model' => gemini_generative_model_id(),
+                'success' => true,
+            ]);
+
             $jsonText = trim($response->text() ?? '');
             $data = json_decode($jsonText, true);
             $terms = is_array($data['terms'] ?? null) ? $data['terms'] : [];
@@ -707,6 +717,14 @@ if (!function_exists('manage_semantic_apply_keyword_filter')) {
         $columns = is_array($columns) ? $columns : [$columns];
         if ($columns === []) {
             $columns = ['strName'];
+        }
+
+        if (!function_exists('gemini_token_usage_bind_module')) {
+            require_once __DIR__ . '/gemini_token_usage.php';
+        }
+        $usageTable = trim((string)($semanticContext['table'] ?? ''));
+        if ($usageTable !== '') {
+            gemini_token_usage_bind_module(gemini_token_usage_module_from_table($usageTable));
         }
 
         $terms = manage_semantic_expand_terms($query);

@@ -28,8 +28,7 @@ crud_csrf_guard_list($listCsrfKey);
 $csrf_token = crud_csrf_ensure($listCsrfKey);
 
 $listRows = crud_fetch_all(
-    'SELECT * FROM ' . $table_name . ' WHERE intType = :intType ORDER BY Home DESC, Sort ASC, PKey ASC',
-    ['intType' => 1]
+    'SELECT * FROM ' . $table_name . ' ORDER BY Home DESC, Sort ASC, PKey ASC'
 );
 $listRows = module_list_enrich_rows($listRows);
 
@@ -37,8 +36,6 @@ $i = 0;
 $list_show_expand_row = $list_show_expand_row ?? false;
 manage_list_expand_enabled($list_show_expand_row);
 $listGridClass = manage_list_grid_class('module');
-require_once __DIR__ . '/../_list_lang_bootstrap.php';
-$listGridClass = manage_list_grid_with_lang($listGridClass, (bool)($listShowLangColumn ?? false));
 
 $breadcrumbs = [
     ['label' => '單元管理'],
@@ -64,7 +61,6 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                                 <div class="textCenter">選取</div>
                                 <div class="textCenter">順序</div>
                                 <div>單元名稱</div>
-                                <?php manage_list_render_lang_header((bool)($listShowLangColumn ?? false)); ?>
                                 <div>模組類別</div>
                                 <div>單元型態</div>
                                 <div>功能模組</div>
@@ -124,7 +120,6 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                                                 <span class="badge notes__badge" title="首頁單元">首頁</span>
                                             <?php } ?>
                                         </div>
-                                        <?php manage_list_render_lang_cell($rowPKey, (bool)($listShowLangColumn ?? false), is_array($listLangMap ?? null) ? $listLangMap : []); ?>
                                         <div><?php echo e((string)($row['module_class_name'] ?? '')); ?></div>
                                         <div><?php echo e((string)($row['type_label'] ?? '')); ?></div>
                                         <div><?php echo e((string)($row['program_name'] ?? '')); ?></div>
@@ -185,9 +180,11 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                             <i class="bi bi-info-circle notes__icon"></i> 系統備註
                         </div>
                         <ul class="notes__list">
+                            <li>本列表顯示全部單元（含功能頁面與美工頁面）。</li>
                             <li>單元下架後，網站前台不顯示。</li>
                             <li>網站前台顯示順序，依照「單元順序」由小至大排序；首頁單元順序不可編輯。</li>
                             <li>刪除單元時會一併清除 module_d、module_lang 等子表資料。</li>
+                            <li>美工頁的 SEO/GEO、FAQ 請至「美工頁面」編輯。</li>
                         </ul>
                     </section>
                     <div class="notes__spacer"></div>

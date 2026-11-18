@@ -18,4 +18,6 @@ return [
     'forder_prefix'           => 'news_',        // 上傳檔案目錄前綴
     'list_show_type'          => true,           // 列表是否顯示類型欄
     'tag_relation_parent_col' => 'News_PKey',    // 標籤關聯父欄位名
+    'list_show_sort'   => false,                // 隱藏確認更新排序
+    'list_show_upload' => false,                // 隱藏批次發佈／批次下架
 ];

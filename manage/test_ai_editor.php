@@ -16,10 +16,7 @@ if (!manage_ai_generate_enabled()) {
 
 $pageTitle = 'AI 產文測試';
 $industryOptions = gemini_industry_options();
-$ckeJs = __DIR__ . '/ckeditor/ckeditor.js';
-$ckeCfg = __DIR__ . '/ckeditor/config.js';
-$ckeVer = is_file($ckeJs) ? (string)filemtime($ckeJs) : '1';
-$cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
+require_once __DIR__ . '/_jodit_assets.php';
 ?>
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -98,7 +95,7 @@ $cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
     </section>
 
     <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-3">
-        <h2 class="text-lg font-semibold">CKEditor 預覽</h2>
+        <h2 class="text-lg font-semibold">編輯器預覽</h2>
         <textarea id="editor_preview" name="editor_preview" class="ckeditor w-full"></textarea>
     </section>
 
@@ -115,9 +112,8 @@ $cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
     </section>
 </div>
 
-<script src="ckeditor/ckeditor.js?ver=<?php echo htmlspecialchars($ckeVer, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="ckeditor/config.js?ver=<?php echo htmlspecialchars($cfgVer, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script>
+<?php manage_echo_jodit_assets('jodit/'); ?>
+<?php echo script_open(); ?>
 (function () {
     'use strict';
 
@@ -239,6 +235,6 @@ $cfgVer = is_file($ckeCfg) ? (string)filemtime($ckeCfg) : '1';
         }
     });
 })();
-</script>
+<?php echo script_close(); ?>
 </body>
 </html>

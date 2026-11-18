@@ -34,8 +34,9 @@
             $Module_PKey = isset($Module_PKey) ? (int)$Module_PKey : 0;
             $subitem = (string)($subitem ?? '');
 
-            $canSee = static function (int $navPKey) use ($Left_Menu, $Login_ID): bool {
-                return in_array($navPKey, $Left_Menu, true) || $Login_ID === 'Admin';
+            $isSuperAdmin = manage_is_super_admin();
+            $canSee = static function (int $navPKey) use ($Left_Menu, $isSuperAdmin): bool {
+                return in_array($navPKey, $Left_Menu, true) || $isSuperAdmin;
             };
 
             $sidebarMenu = [];
@@ -108,6 +109,11 @@
                     $navName  = (string)$rs->field('strName');
                     $navLink  = $sanitize_link($rs->field('strLink'));
                     $navLayer = (int)$rs->field('intLayer');
+                    $navType  = (int)$rs->field('intType');
+                    if ($navType !== 1) {
+                        $rs->movenext();
+                        continue;
+                    }
                     if ($canSee($navPKey)) {                        
 						switch($navPKey){
 							case 5:
@@ -130,12 +136,12 @@
                 array &$menu,
                 array $control_array,
                 array $Left_Menu,
-                string $loginId,
+                bool $isSuperAdmin,
                 int $modulePKey,
                 int $manNo,
                 string $subitem
             ): void {
-                if (!empty(array_intersect($control_array, $Left_Menu)) || $loginId === 'Admin') {
+                if (!empty(array_intersect($control_array, $Left_Menu)) || $isSuperAdmin) {
                     $menu[] = [
                         'type'     => 'LINK',
                         'label'    => '權限管理',
@@ -143,12 +149,28 @@
                         'isActive' => $modulePKey === 3,
                     ];
                 }
-                if ($loginId === 'Admin') {
+                if ($isSuperAdmin) {
+                    $menu[] = [
+                        'type'     => 'LINK',
+                        'label'    => (string)($GLOBALS['Array_MU_Name'][98] ?? '單元設定'),
+                        'link'     => '../module/list.php',
+                        'isActive' => str_contains(str_replace('\\', '/', (string)($_SERVER['PHP_SELF'] ?? '')), '/module/'),
+                    ];
                     $menu[] = [
                         'type'     => 'LINK',
                         'label'    => (string)($GLOBALS['Array_MU_Name'][97] ?? '語系設定'),
                         'link'     => '../language/list.php?manNo=97',
                         'isActive' => $manNo === 97,
+                    ];
+                }
+                $selfPath = str_replace('\\', '/', (string)($_SERVER['PHP_SELF'] ?? ''));
+                $canSeeTokenUsage = $isSuperAdmin || in_array(31, $Left_Menu, true);
+                if ($canSeeTokenUsage) {
+                    $menu[] = [
+                        'type'     => 'LINK',
+                        'label'    => 'Token 用量',
+                        'link'     => '../control/token_usage.php?manNo=31',
+                        'isActive' => str_contains($selfPath, '/control/token_usage.php'),
                     ];
                 }
                 $menu[] = [
@@ -184,8 +206,8 @@
                         $className = '模組類別';
                     }
 
-                    $rsModSql = 'SELECT * FROM module_p WHERE Upload = :Upload AND Class1_PKey = :Class1_PKey';
-                    $rsModParams = ['Upload' => 'Yes', 'Class1_PKey' => $classPKey];
+                    $rsModSql = 'SELECT * FROM module_p WHERE Upload = :Upload AND intType = :intType AND Class1_PKey = :Class1_PKey';
+                    $rsModParams = ['Upload' => 'Yes', 'intType' => 1, 'Class1_PKey' => $classPKey];
                     if ($classPKey === $systemModuleClassPKey) {
                         $rsModSql .= ' AND PKey NOT IN (3, 97)';
                     }
@@ -209,7 +231,7 @@
                             $sectionMenu,
                             $control_array,
                             $Left_Menu,
-                            $Login_ID,
+                            $isSuperAdmin,
                             $Module_PKey,
                             $manNo,
                             $subitem
@@ -227,9 +249,9 @@
                 $rsClass->close();
 
                 $rsUncat = new recordset(
-                    'SELECT * FROM module_p WHERE Upload = :Upload AND (Class1_PKey IS NULL OR Class1_PKey = 0)'
+                    'SELECT * FROM module_p WHERE Upload = :Upload AND intType = :intType AND (Class1_PKey IS NULL OR Class1_PKey = 0)'
                     . ' AND PKey NOT IN (' . $in_list($control_array) . ') ORDER BY Sort ASC, PKey ASC',
-                    ['Upload' => 'Yes']
+                    ['Upload' => 'Yes', 'intType' => 1]
                 );
                 $uncatMenu = [];
                 $appendModuleRowsFromRs(
@@ -250,7 +272,7 @@
                 }
             } else {
                 // 網站管理（legacy：未啟用 module_class / Class1_PKey 時）
-                if (!empty(array_intersect($web_array, $Left_Menu)) || $Login_ID === 'Admin') {
+                if (!empty(array_intersect($web_array, $Left_Menu)) || $isSuperAdmin) {
                     $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND PKey IN (' . $in_list($web_array) . ') ORDER BY Sort, PKey';
                     $rs  = new recordset($sql, ['Upload' => 'Yes']);
                     if (!$rs->eof) {
@@ -261,7 +283,7 @@
                 }
 
                 // 首頁管理
-                if (!empty(array_intersect($home_array, $Left_Menu)) || $Login_ID === 'Admin') {
+                if (!empty(array_intersect($home_array, $Left_Menu)) || $isSuperAdmin) {
                     $sql = 'SELECT * FROM module_p WHERE Upload = :Upload AND PKey IN (' . $in_list($home_array) . ') ORDER BY Sort, PKey';
                     $rs  = new recordset($sql, ['Upload' => 'Yes']);
                     if (!$rs->eof) {
@@ -283,7 +305,7 @@
                     $sidebarMenu,
                     $control_array,
                     $Left_Menu,
-                    $Login_ID,
+                    $isSuperAdmin,
                     $Module_PKey,
                     $manNo,
                     $subitem
@@ -294,29 +316,10 @@
             $sidebarMenu[] = ['type' => 'HEADER', 'label' => '其他'];
             $sidebarMenu[] = [
                 'type'   => 'LINK',
-                'label'  => '後台操作教學',
-                'link'   => 'https://www.youtube.com/playlist?list=PLhUDwpflj2e0gwtZBJIVxcdcRgoAyAmFG',
-                'target' => '_blank',
-                'rel'    => 'noopener noreferrer',
-            ];
-            $sidebarMenu[] = [
-                'type'   => 'LINK',
                 'label'  => '後台操作影音教學',
                 'link'   => 'https://youtube.com/playlist?list=PLhUDwpflj2e0gwtZBJIVxcdcRgoAyAmFG',
                 'target' => '_blank',
                 'rel'    => 'noopener noreferrer',
-            ];
-            $sidebarMenu[] = [
-                'type'        => 'TOOL',
-                'label'       => '圖片壓縮工具',
-                'externalUrl' => 'https://imagecompressor.com/zh/',
-                'description' => '如圖片過大，可借此工具壓縮。',
-            ];
-            $sidebarMenu[] = [
-                'type'        => 'TOOL',
-                'label'       => '調整圖片大小',
-                'externalUrl' => 'https://www.iloveimg.com/zh-tw/resize-image',
-                'description' => '如圖片過大，可借此工具調整圖片大小。',
             ];
             $sidebarMenu[] = [
                 'type'   => 'LINK',
@@ -324,6 +327,18 @@
                 'link'   => 'https://www.tsg.com.tw/education/網頁編輯器操作手冊【編輯器圖插文elFinder】.pdf',
                 'target' => '_blank',
                 'rel'    => 'noopener noreferrer',
+            ];
+            $sidebarMenu[] = [
+                'type'        => 'TOOL',
+                'label'       => '圖片壓縮工具',
+                'externalUrl' => 'https://www.iloveimg.com/zh-tw/compress-image/compress-jpg',
+                'description' => '如圖片過大，可借此工具壓縮。',
+            ];
+            $sidebarMenu[] = [
+                'type'        => 'TOOL',
+                'label'       => '調整圖片大小',
+                'externalUrl' => 'https://www.iloveimg.com/zh-tw/resize-image',
+                'description' => '如圖片過大，可借此工具調整圖片大小。',
             ];
             ?>
             <?php foreach ($sidebarMenu as $item):

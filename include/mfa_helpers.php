@@ -222,7 +222,7 @@ if (!function_exists('manage_mfa_fetch_user')) {
             return null;
         }
         return crud_fetch_one(
-            'SELECT PKey, strID, strName, FunctionID' . manage_mfa_user_extra_select_sql()
+            'SELECT PKey, strID, strName, FunctionID, intType' . manage_mfa_user_extra_select_sql()
             . ' FROM webcontrol WHERE PKey = :pk LIMIT 1',
             ['pk' => $pkey]
         );
@@ -238,7 +238,7 @@ if (!function_exists('manage_mfa_fetch_user_by_login')) {
             return null;
         }
         return crud_fetch_one(
-            'SELECT PKey, strID, strName, FunctionID' . manage_mfa_user_extra_select_sql()
+            'SELECT PKey, strID, strName, FunctionID, intType' . manage_mfa_user_extra_select_sql()
             . ' FROM webcontrol WHERE strID = :id LIMIT 1',
             ['id' => $loginId]
         );
@@ -401,9 +401,17 @@ if (!function_exists('manage_mfa_begin_pending_login')) {
         $_SESSION['MFA_strID'] = (string)($row['strID'] ?? '');
         $_SESSION['MFA_UserName'] = (string)($row['strName'] ?? '');
         $_SESSION['MFA_FunctionID'] = (string)($row['FunctionID'] ?? '');
+        $_SESSION['MFA_intType'] = (int)($row['intType'] ?? -1);
         $_SESSION['MFA_Started'] = time();
         $_SESSION['MFA_Attempts'] = 0;
-        unset($_SESSION['Manage'], $_SESSION['Login_ID'], $_SESSION['UserName'], $_SESSION['FunctionID'], $_SESSION['Login_PKey']);
+        unset(
+            $_SESSION['Manage'],
+            $_SESSION['Login_ID'],
+            $_SESSION['UserName'],
+            $_SESSION['FunctionID'],
+            $_SESSION['Login_PKey'],
+            $_SESSION['Login_intType']
+        );
         regenerate_session_on_login();
     }
 }
@@ -432,6 +440,7 @@ if (!function_exists('manage_mfa_clear_pending_login')) {
             $_SESSION['MFA_strID'],
             $_SESSION['MFA_UserName'],
             $_SESSION['MFA_FunctionID'],
+            $_SESSION['MFA_intType'],
             $_SESSION['MFA_Started'],
             $_SESSION['MFA_Attempts']
         );
@@ -449,6 +458,7 @@ if (!function_exists('manage_mfa_complete_login')) {
         $_SESSION['UserName'] = (string)($_SESSION['MFA_UserName'] ?? '');
         $_SESSION['FunctionID'] = (string)($_SESSION['MFA_FunctionID'] ?? '');
         $_SESSION['Login_PKey'] = (int)($_SESSION['MFA_User_PKey'] ?? 0);
+        $_SESSION['Login_intType'] = (int)($_SESSION['MFA_intType'] ?? -1);
         manage_mfa_clear_pending_login();
         regenerate_session_on_login();
     }
@@ -462,6 +472,7 @@ if (!function_exists('manage_mfa_establish_session')) {
         $_SESSION['Login_ID'] = (string)($row['strID'] ?? '');
         $_SESSION['FunctionID'] = (string)($row['FunctionID'] ?? '');
         $_SESSION['Login_PKey'] = (int)($row['PKey'] ?? 0);
+        $_SESSION['Login_intType'] = (int)($row['intType'] ?? -1);
         manage_mfa_clear_pending_login();
         regenerate_session_on_login();
     }
@@ -481,7 +492,6 @@ if (!function_exists('manage_mfa_verify_for_user')) {
         return manage_mfa_verify_backup_code($pkey, $code);
     }
 }
-
 
 if (!function_exists('manage_mfa_matching_time_step')) {
     /** 驗證 TOTP 並回傳命中的 30 秒時間步；不符回傳 null */
@@ -843,7 +853,8 @@ if (!function_exists('manage_mfa_resend_onboard_mail')) {
             . ' FROM webcontrol WHERE PKey = :pk LIMIT 1',
             ['pk' => $pkey]
         );
-        if ($row === null || (int)($row['intType'] ?? -1) !== 0) {
+        $superType = function_exists('manage_super_admin_int_type') ? manage_super_admin_int_type() : 1;
+        if ($row === null || (int)($row['intType'] ?? -1) !== $superType) {
             return ['ok' => false, 'message' => '查無帳號或無權限', 'skipped' => false];
         }
 

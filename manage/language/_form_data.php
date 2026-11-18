@@ -5,10 +5,10 @@ declare(strict_types=1);
  */
 
 if (!function_exists('language_require_admin')) {
-    /** 僅 Admin 可進入語系設定 */
+    /** 僅最高權限（webcontrol.intType=1）可進入語系設定 */
     function language_require_admin(): void {
-        global $Login_ID, $s3;
-        if (($Login_ID ?? '') !== 'Admin') {
+        global $s3;
+        if (!manage_is_super_admin()) {
             manage_alert_script('無進入[' . ($s3 ?? '語系設定') . ']權限!', '../index.php');
             exit;
         }

@@ -1,0 +1,15 @@
+/**
+ * Jodit 編輯器外框樣式（本檔為 web_p 自有，非套件檔；載入於 manage/_in_javascript.php）。
+ *
+ * 編輯區內文不在這裡：編輯區是 iframe，直接載前台 CSS（include/jodit/config.js 的 IFRAME_CSS），本檔不抄前台規則。
+ */
+
+/* 編輯器外框：與舊版 width 99% 一致；高度由 config.js 的 minHeight 控制 */
+.jodit-container.jodit {
+  width: 99% !important;
+}
+
+.jodit-container.jodit .jodit-workplace,
+.jodit-container.jodit .jodit-wysiwyg {
+  background: #fff;
+}

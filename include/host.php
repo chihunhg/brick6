@@ -83,20 +83,43 @@ if (!function_exists('host_env_raw')) {
     }
 }
 
+if (!function_exists('host_env_is_placeholder')) {
+    /** 範本／占位值視為未設定，讓 private/.env 可覆蓋 brick6/.env 的 change_me */
+    function host_env_is_placeholder(string $value): bool
+    {
+        $v = strtolower(trim($value));
+        if ($v === '') {
+            return true;
+        }
+        if (str_starts_with($v, 'change_me')) {
+            return true;
+        }
+        if (str_contains($v, 'your_db_') || str_contains($v, 'your-mail') || str_contains($v, 'your_secret')) {
+            return true;
+        }
+
+        return $v === 'pcsk_...' || str_starts_with($v, 'pcsk_...');
+    }
+}
+
 if (!function_exists('host_env_assign')) {
     /**
      * 寫入環境變數至 $_ENV 與 putenv
      *
-     * @param bool $onlyIfMissing true 時已有值則不覆寫（load_env_supplement_dir 用）
+     * @param bool $onlyIfMissing true 時已有「真實值」則不覆寫（load_env_supplement_dir 用）
      */
     function host_env_assign(string $name, string $value, bool $onlyIfMissing = false): void
     {
         if ($onlyIfMissing) {
-            if (host_env_raw($name) !== null) {
+            $existing = host_env_raw($name);
+            if ($existing !== null && !host_env_is_placeholder($existing)) {
                 return;
             }
         } elseif (getenv($name) !== false || array_key_exists($name, $_ENV)) {
-            return;
+            $existing = host_env_raw($name);
+            if ($existing !== null && !host_env_is_placeholder($existing)) {
+                return;
+            }
         }
 
         $_ENV[$name] = $value;
@@ -253,7 +276,12 @@ if (!function_exists('load_env_text')) {
                 continue;
             }
 
-            // 同一 .env 重複 key：後者覆蓋前者（避免 PINECONE_API_KEY=pcsk_... 占位符蓋掉真實金鑰）
+            // 同一 .env 重複 key：真實值覆蓋占位符；占位符不覆蓋已有真實值
+            $existing = host_env_raw($name);
+            if (host_env_is_placeholder($value) && $existing !== null && !host_env_is_placeholder($existing)) {
+                continue;
+            }
+
             $_ENV[$name] = $value;
             putenv($name . '=' . $value);
         }

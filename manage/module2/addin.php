@@ -44,17 +44,12 @@ $tdkOpts = [
 ];
 $filter_array['intType'] = (string)$listIntType;
 
-$MSG = module_addin_validate($filter_array, $tdkOpts);
-if ($MSG !== '') {
-    crud_form_error_redirect($MSG, $returnUrl);
-}
-
 if ($formPKey <= 0) {
     crud_form_error_redirect('參數錯誤：PKey 無效', $listUrl);
 }
 
 $exists = crud_fetch_one(
-    'SELECT PKey, intType FROM ' . $table_name . ' WHERE PKey = :pk LIMIT 1',
+    'SELECT PKey, intType, strName FROM ' . $table_name . ' WHERE PKey = :pk LIMIT 1',
     ['pk' => $formPKey]
 );
 if ($exists === null) {
@@ -62,6 +57,15 @@ if ($exists === null) {
 }
 if ((int)($exists['intType'] ?? 0) !== $listIntType) {
     crud_form_error_redirect('此單元非美工頁面類型', $returnUrl);
+}
+
+$filter_array['strName'] = trim((string)($exists['strName'] ?? ''));
+$filter_array = module_expand_single_lang_filter($filter_array);
+$GLOBALS['filter_array'] = $filter_array;
+
+$MSG = module_addin_validate($filter_array, $tdkOpts);
+if ($MSG !== '') {
+    crud_form_error_redirect($MSG, $returnUrl);
 }
 
 $data_array = module_addin_build_master_data($filter_array, $tdkOpts);

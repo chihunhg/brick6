@@ -30,6 +30,7 @@ foreach ($rows as $row) {
     if (!is_array($row)) {
         continue;
     }
+    $row = order_decrypt_row_sensitive($row);
     $price = (int)($row['Price'] ?? 0);
     $qty = (int)($row['Quantity'] ?? 0);
     $addr = $exportCell($row, 'PostCode')

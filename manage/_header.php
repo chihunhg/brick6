@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 // 自函式內 require 時（如 manage_child_list_render）需從 $GLOBALS 取路徑變數
 $web_root = (string)($web_root ?? $GLOBALS['web_root'] ?? (defined('APP_WEB_ROOT') ? APP_WEB_ROOT : '/'));
+if ($web_root === '') {
+    $web_root = '/';
+}
 $Web_Name = (string)($Web_Name ?? $GLOBALS['Web_Name'] ?? $GLOBALS['WebName'] ?? '');
 
 $__header_site_url = rtrim($web_root, '/');

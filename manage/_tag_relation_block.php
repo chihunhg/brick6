@@ -31,7 +31,7 @@ if (!$showTagRelation) {
             <div class="enter">
                 <input type="text" id="tag_query" name="tag_query" class="formInput"
                     placeholder="請輸入標籤名稱，選取後完成新增。"
-                    style="max-width:50%" autocomplete="off">
+                    autocomplete="off">
             </div>
             <div class="box">
                 <ul id="tag_item_list">

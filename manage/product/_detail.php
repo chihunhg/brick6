@@ -145,17 +145,28 @@ function fieldCheck0(theForm) {
                             </div>
                         </div>
 
-                        <article class="editView__body">
-                            <div class="editView__section">
-                                <h4 class="editView__sectionTitle">基本設定</h4>
+                        <!-- ==================== 第一組：基本設定 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx" data-a11y="true">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-1"
+                                    id="accordion-header-1">基本設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-1"
+                                    role="region"
+                                    aria-labelledby="accordion-header-1"
+                                    aria-hidden="true">
+                                <div class="inner">
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel" for="Sort">
                                     顯示語系 <span class="inputLabel__required">*</span>
                                     </label>
-                                    <div class="col--10 inputGroup">
-                                        <input name="button" type="button" class="btn btn-outline-secondary" value="全選"
+                                    <div class="col--10 inputGroup row">
+                                        <input name="button" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="all">
-                                        <input name="button2" type="button" class="btn btn-outline-secondary" value="取消全選"
+                                        <input name="button2" type="button" class="btnStyle btnStyle--sm btnStyle--outline" value="取消全選"
                                             data-manage-action="class1-lang-select" data-lang-mode="none">
                                         <?php for($i=1;$i<=count($array_lang);$i++){?>
                                             <label for="Show<?php echo $i?>">
@@ -288,39 +299,25 @@ function fieldCheck0(theForm) {
                                         <p class="notes" style="margin-top:0.5rem">僅能關聯同單元且已上架的產品；儲存表單後寫入資料庫。</p>
                                     </div>
                                 </div>
-                                <?php if ($showHomeField) { ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Home">首頁呈現</label>
-                                    <div class="col--10">
-                                    <label class="flex flex--itCenter gap--2 editView__radioLabel">
-                                    <input name="Home" type="checkbox" id="Home" value="Yes" <?php if (!empty($Home) && $Home=='Yes'){ echo 'checked="checked"';}?> />是，首頁區塊呈現 </label>
-                                    </div>
                                 </div>
-                                <?php } ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel" for="Upload">上下架</label>
-                                    <div class="col--10">
-                                        <select name="Upload" id="Upload" class="formSelect">
-                                            <option value="Yes"<?php echo $Upload === 'Yes' ? ' selected' : ''; ?>>上架</option>
-                                            <option value="No"<?php echo $Upload === 'No' ? ' selected' : ''; ?>>下架</option>
-                                        </select>
-                                    </div>
                                 </div>
-
-                                <?php if (!$isAdd) { ?>
-                                <div class="formGrid">
-                                    <label class="col--2 inputLabel editView__formLabel">修改日期</label>
-                                    <div class="col--10">
-                                        <span class="dateSpan"><?php require_once '../_modify.php'; ?></span>
-                                    </div>
-                                </div>
-                                <?php } ?>
                             </div>
                         </article>
 
-                        <article class="editView__body">
-                            <div class="editView__section">
-                                <h4 class="editView__sectionTitle">內容區塊</h4>
+                        <!-- ==================== 第二組：圖片／檔案 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-2"
+                                    id="accordion-header-2">內容區塊</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-2"
+                                    role="region"
+                                    aria-labelledby="accordion-header-2"
+                                    aria-hidden="true">
+                                <div class="inner">
                                 <?php if ($showListField) { ?>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel">列表圖</label>
@@ -377,17 +374,33 @@ function fieldCheck0(theForm) {
                                     </div>
                                 </div>
                                 <?php } ?>
+                                </div>
+                                </div>
                             </div>
                         </article>
 
+                        <!-- ==================== 第三組：產品內容（語系） ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-3"
+                                    id="accordion-header-3">產品內容</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-3"
+                                    role="region"
+                                    aria-labelledby="accordion-header-3"
+                                    aria-hidden="true">
+                                <div class="inner">
                         <article class="editView__tabs tabsGp">
                             <ul class="tabsGp__tabs">
                                 <?php 
                                 for ($i = 1; $i <= count($array_lang); $i++) {
                                 ?>
-                                <li id="tabNav_<?php echo $i; ?>"
+                                <li id="group2_tabNav_<?php echo $i; ?>"
                                     class="tabsGp__link --color<?php echo $i; ?>"
-                                    data-tab-target="tabCon_<?php echo $i; ?>">
+                                    data-tab-target="group2_tabCon_<?php echo $i; ?>">
                                     <?php echo e((string)($array_lang[$i] ?? '')); ?>
                                 </li>
                                 <?php } ?>
@@ -396,7 +409,7 @@ function fieldCheck0(theForm) {
                                 <?php 
                                 for ($i = 1; $i <= count($array_lang); $i++) {
                                 ?>
-                                <div id="tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
+                                <div id="group2_tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="strName<?php echo $i; ?>">
                                             標題 <span class="inputLabel__required">*</span>
@@ -407,7 +420,6 @@ function fieldCheck0(theForm) {
                                                 value="<?php echo e((string)($strName[$i] ?? '')); ?>">
                                         </div>
                                     </div>
-                                    <?php require dirname(__DIR__) . '/_detail_lang_seo_fields.php'; ?>
                                     <?php if ($showInterviewField) { ?>
                                     <div class="formGrid">
                                         <label class="col--2 inputLabel editView__formLabel" for="Interview<?php echo $i?>">簡述</label>
@@ -446,6 +458,81 @@ function fieldCheck0(theForm) {
                                 <?php } ?>
                             </div>
                         </article>
+                                </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- ==================== SEO 設定 ==================== -->
+                        <article class="editView__body accordionGp">
+                            <div class="editView__section accordionBx">
+                                <h4 class="editView__sectionTitle accordionBx__hd active" tabindex="0"
+                                    role="button"
+                                    aria-expanded="false"
+                                    aria-controls="accordion-panel-4"
+                                    id="accordion-header-4">SEO 設定</h4>
+                                <div class="accordionBx__panel"
+                                    id="accordion-panel-4"
+                                    role="region"
+                                    aria-labelledby="accordion-header-4"
+                                    aria-hidden="true">
+                                    <div class="inner">
+                                        <article class="editView__tabs tabsGp">
+                                            <ul class="tabsGp__tabs">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <li id="group1_tabNav_<?php echo $i; ?>"
+                                                    class="tabsGp__link --color<?php echo $i; ?>"
+                                                    data-tab-target="group1_tabCon_<?php echo $i; ?>">
+                                                    <?php echo e((string)($array_lang[$i] ?? '')); ?>
+                                                </li>
+                                                <?php } ?>
+                                            </ul>
+                                            <div class="tabsGp__body">
+                                                <?php for ($i = 1; $i <= count($array_lang); $i++) { ?>
+                                                <div id="group1_tabCon_<?php echo $i; ?>" class="tabContent --color<?php echo $i; ?>">
+                                                    <?php require dirname(__DIR__) . '/_detail_lang_seo_fields.php'; ?>
+                                                </div>
+                                                <?php } ?>
+                                            </div>
+                                        </article>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <!-- ==================== 上下架顯示 ==================== -->
+                        <article class="editView__body">
+                            <div class="editView__section">
+                                <h4 class="editView__sectionTitle">上下架顯示</h4>
+                                <?php if ($showHomeField) { ?>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="Home">首頁呈現</label>
+                                    <div class="col--10">
+                                    <label class="flex flex--itCenter gap--2 editView__radioLabel">
+                                    <input name="Home" type="checkbox" id="Home" value="Yes" <?php if (!empty($Home) && $Home=='Yes'){ echo 'checked="checked"';}?> />是，首頁區塊呈現 </label>
+                                    </div>
+                                </div>
+                                <?php } ?>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel" for="Upload">上下架</label>
+                                    <div class="col--10">
+                                        <select name="Upload" id="Upload" class="formSelect">
+                                            <option value="Yes"<?php echo $Upload === 'Yes' ? ' selected' : ''; ?>>上架</option>
+                                            <option value="No"<?php echo $Upload === 'No' ? ' selected' : ''; ?>>下架</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <?php if (!$isAdd) { ?>
+                                <div class="formGrid">
+                                    <label class="col--2 inputLabel editView__formLabel">修改日期</label>
+                                    <div class="col--10">
+                                        <span class="dateSpan"><?php require_once '../_modify.php'; ?></span>
+                                    </div>
+                                </div>
+                                <?php } ?>
+                            </div>
+                        </article>
 
                         <?php require_once '../_submit.php'; ?>
                         </form>
@@ -468,5 +555,35 @@ function fieldCheck0(theForm) {
 
     <?php require_once '../_in_code_bottom.php'; ?>
     <?php echo script_src_tag('../js/product-relation.js?ver=' . $__productRelJsVer); ?>
+<?php echo script_open(); ?>
+document.addEventListener('DOMContentLoaded', function () {
+	document.querySelectorAll('.tabsGp').forEach(function (group) {
+		var navItems = group.querySelectorAll('.tabsGp__link');
+		var contents = group.querySelectorAll('.tabContent');
+		function activate(nav) {
+			navItems.forEach(function (item) {
+				item.classList.remove('--active', 'is-active', 'active', 'on');
+			});
+			contents.forEach(function (content) {
+				content.classList.remove('--active', 'is-active', 'active', 'on');
+			});
+			nav.classList.add('--active', 'is-active', 'active', 'on');
+			var targetId = nav.getAttribute('data-tab-target');
+			var activeContent = targetId ? group.querySelector('#' + targetId) : null;
+			if (activeContent) {
+				activeContent.classList.add('--active', 'is-active', 'active', 'on');
+			}
+		}
+		navItems.forEach(function (nav, index) {
+			if (index === 0) {
+				activate(nav);
+			}
+			nav.addEventListener('click', function () {
+				activate(nav);
+			});
+		});
+	});
+});
+<?php echo script_close(); ?>
 </body>
 </html>

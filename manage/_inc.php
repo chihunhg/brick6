@@ -1,5 +1,19 @@
 <?php
-session_start();  //啟動 session
+if (session_status() !== PHP_SESSION_ACTIVE) {
+	$__sessHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+		|| (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+		|| (strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https');
+	session_set_cookie_params([
+		'lifetime' => 0,
+		'path' => '/',
+		'domain' => '',
+		'secure' => $__sessHttps,
+		'httponly' => true,
+		'samesite' => 'Lax',
+	]);
+	session_start();
+	unset($__sessHttps);
+}
 /* ---- 輸出編碼 & 快取 ---- */
 if (!empty($manage_binary_export)) {
 	// Excel／二進位下載：勿送 text/html，由 output.php 設定 Content-Type
@@ -21,8 +35,8 @@ require_once dirname(dirname(__FILE__)).'/include/Function.php';//引入文件
 require_once dirname(dirname(__FILE__)).'/include/mfa_helpers.php';//TOTP 多因素驗證
 require_once dirname(dirname(__FILE__)).'/include/log.php';//引入文件
 require_once dirname(dirname(__FILE__)).'/include/sec.php';//引入文件
-send_frame_options_header('DENY');
 if (empty($manage_binary_export)) {
+	send_frame_options_header('DENY');
 	if (!empty($manage_csp_editor)) {
 		send_manage_editor_security_headers();
 	} else {

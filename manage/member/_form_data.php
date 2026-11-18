@@ -61,10 +61,73 @@ if (!function_exists('member_detail_export_vars')) {
     }
 }
 
+if (!function_exists('member_sec_encrypt_field')) {
+    /** 敏感欄位寫入 DB 前加密；空白維持空白 */
+    function member_sec_encrypt_field(string $plaintext): string
+    {
+        $plaintext = trim($plaintext);
+        if ($plaintext === '') {
+            return '';
+        }
+        if (!function_exists('sec_encrypt')) {
+            return $plaintext;
+        }
+
+        return sec_encrypt($plaintext);
+    }
+}
+
+if (!function_exists('member_sec_decrypt_field')) {
+    /**
+     * 敏感欄位自 DB 取出後解密；失敗時相容尚未加密的舊明文
+     */
+    function member_sec_decrypt_field(string $ciphertext): string
+    {
+        $ciphertext = trim($ciphertext);
+        if ($ciphertext === '') {
+            return '';
+        }
+        if (function_exists('sec_decrypt')) {
+            $plain = sec_decrypt($ciphertext);
+            if ($plain !== '') {
+                return $plain;
+            }
+        }
+        // 舊資料可能仍為明文（Email / 電話）
+        if (str_contains($ciphertext, '@')
+            || (bool)preg_match('/^[0-9+\-\s()]{6,20}$/', $ciphertext)
+        ) {
+            return $ciphertext;
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('member_decrypt_row_sensitive')) {
+    /**
+     * 解密列上的 EMail / Tel / Mobile（就地回傳新陣列）
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    function member_decrypt_row_sensitive(array $row): array
+    {
+        foreach (['EMail', 'Tel', 'Mobile'] as $f) {
+            if (array_key_exists($f, $row)) {
+                $row[$f] = member_sec_decrypt_field((string)$row[$f]);
+            }
+        }
+
+        return $row;
+    }
+}
+
 if (!function_exists('member_detail_apply_master')) {
     /** @param array<string, mixed> $row */
     function member_detail_apply_master(array $row): void
     {
+        $row = member_decrypt_row_sensitive($row);
         $v = &$GLOBALS['member_form_vars'];
         $fields = [
             'intLang', 'EMail', 'strName', 'Sex', 'Birth_Y', 'Birth_M', 'Birth_D',
@@ -125,21 +188,68 @@ if (!function_exists('member_detail_load')) {
 }
 
 if (!function_exists('member_email_exists')) {
-    /** Email 是否已被其他會員使用 */
+    /**
+     * Email 是否已被其他會員使用
+     * （EMail 為 sec_encrypt 密文，需解密後比對）
+     */
     function member_email_exists(string $email, int $excludePKey = 0): bool
     {
         $email = trim($email);
         if ($email === '') {
             return false;
         }
-        $sql = 'SELECT PKey FROM member WHERE EMail = :em';
-        $params = ['em' => $email];
+        $emailNorm = strtolower($email);
+        $sql = 'SELECT PKey, EMail FROM member';
+        $params = [];
         if ($excludePKey > 0) {
-            $sql .= ' AND PKey <> :pk';
+            $sql .= ' WHERE PKey <> :pk';
             $params['pk'] = $excludePKey;
         }
-        $sql .= ' LIMIT 1';
-        return crud_fetch_one($sql, $params) !== null;
+        $rows = crud_fetch_all($sql, $params);
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $stored = strtolower(member_sec_decrypt_field((string)($row['EMail'] ?? '')));
+            if ($stored !== '' && $stored === $emailNorm) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('member_find_pkeys_by_sensitive_keyword')) {
+    /**
+     * 以關鍵字比對解密後的 EMail / Mobile / Tel，回傳符合的 PKey 清單
+     *
+     * @return list<int>
+     */
+    function member_find_pkeys_by_sensitive_keyword(string $keyword): array
+    {
+        $keyword = trim($keyword);
+        if ($keyword === '') {
+            return [];
+        }
+        $needle = str_replace(' ', '', mb_strtolower($keyword));
+        $rows = crud_fetch_all('SELECT PKey, EMail, Mobile, Tel FROM member', []);
+        $pkeys = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $hay = str_replace(' ', '', mb_strtolower(
+                member_sec_decrypt_field((string)($row['EMail'] ?? ''))
+                . member_sec_decrypt_field((string)($row['Mobile'] ?? ''))
+                . member_sec_decrypt_field((string)($row['Tel'] ?? ''))
+            ));
+            if ($hay !== '' && mb_strpos($hay, $needle) !== false) {
+                $pkeys[] = (int)($row['PKey'] ?? 0);
+            }
+        }
+
+        return array_values(array_filter($pkeys, static fn(int $pk): bool => $pk > 0));
     }
 }
 
@@ -211,14 +321,14 @@ if (!function_exists('member_build_master_data')) {
         $data = [
             'Module_PKey' => SqlFilter($modulePKey, 'int'),
             'intLang'     => SqlFilter($filter['intLang'] ?? 1, 'int'),
-            'EMail'       => SqlFilter(trim((string)($filter['EMail'] ?? '')), 'tab'),
+            'EMail'       => member_sec_encrypt_field((string)SqlFilter(trim((string)($filter['EMail'] ?? '')), 'tab')),
             'strName'     => SqlFilter(trim((string)($filter['strName'] ?? '')), 'tab'),
             'Sex'         => SqlFilter(trim((string)($filter['Sex'] ?? '')), 'tab'),
             'Birth_Y'     => SqlFilter(trim((string)($filter['Birth_Y'] ?? '')), 'tab'),
             'Birth_M'     => SqlFilter(trim((string)($filter['Birth_M'] ?? '')), 'tab'),
             'Birth_D'     => SqlFilter(trim((string)($filter['Birth_D'] ?? '')), 'tab'),
-            'Tel'         => SqlFilter(trim((string)($filter['Tel'] ?? '')), 'tab'),
-            'Mobile'      => SqlFilter(trim((string)($filter['Mobile'] ?? '')), 'tab'),
+            'Tel'         => member_sec_encrypt_field((string)SqlFilter(trim((string)($filter['Tel'] ?? '')), 'tab')),
+            'Mobile'      => member_sec_encrypt_field((string)SqlFilter(trim((string)($filter['Mobile'] ?? '')), 'tab')),
             'PostCode'    => SqlFilter(trim((string)($filter['PostCode'] ?? '')), 'tab'),
             'strCounty'   => SqlFilter(trim((string)($filter['strCounty'] ?? '')), 'tab'),
             'strCity'     => SqlFilter(trim((string)($filter['strCity'] ?? '')), 'tab'),
@@ -234,7 +344,10 @@ if (!function_exists('member_build_master_data')) {
 }
 
 if (!function_exists('member_list_apply_keyword_search')) {
-    /** 會員列表關鍵字／語意搜尋條件 */
+    /**
+     * 會員列表關鍵字／語意搜尋條件
+     * 姓名走 SQL；EMail／Mobile／Tel 為密文，改解密後比對 PKey
+     */
     function member_list_apply_keyword_search(
         string &$where,
         array &$params,
@@ -252,27 +365,48 @@ if (!function_exists('member_list_apply_keyword_search')) {
             return $placeholder;
         }
 
-        if (!function_exists('manage_semantic_apply_keyword_filter')) {
+        if (!function_exists('manage_semantic_expand_terms')) {
             require_once dirname(__DIR__, 2) . '/include/manage_semantic_search_helpers.php';
         }
 
-        manage_semantic_apply_keyword_filter(
-            $where,
-            $params,
-            $kw,
-            ['strName', 'EMail', 'Mobile'],
-            [
-                'table' => 'member',
-                'pk' => 'PKey',
-                'base_where' => $where,
-                'base_params' => $params,
-            ]
-        );
+        $orParts = [];
+        if (!function_exists('gemini_token_usage_bind_module')) {
+            require_once dirname(__DIR__, 2) . '/include/gemini_token_usage.php';
+        }
+        gemini_token_usage_bind_module('member');
+        $terms = manage_semantic_expand_terms($kw);
+        $idx = 0;
+        foreach ($terms as $term) {
+            $paramKey = 'MemKw' . $idx++;
+            $needle = str_replace(' ', '', $term);
+            if (function_exists('manage_semantic_is_mostly_latin') && manage_semantic_is_mostly_latin($term)) {
+                $needle = strtolower($needle);
+                $params[$paramKey] = $needle;
+                $orParts[] = "LOCATE(:{$paramKey}, REPLACE(LOWER(strName), ' ', '')) > 0";
+            } else {
+                $params[$paramKey] = $needle;
+                $orParts[] = "LOCATE(:{$paramKey}, REPLACE(strName, ' ', '')) > 0";
+            }
+        }
+
+        $matchedPks = member_find_pkeys_by_sensitive_keyword($kw);
+        if ($matchedPks !== []) {
+            $inParts = [];
+            foreach ($matchedPks as $i => $pk) {
+                $paramKey = 'MemEncPk' . $i;
+                $params[$paramKey] = $pk;
+                $inParts[] = ':' . $paramKey;
+            }
+            $orParts[] = 'PKey IN (' . implode(', ', $inParts) . ')';
+        }
+
+        if ($orParts !== []) {
+            $where .= ' AND (' . implode(' OR ', $orParts) . ')';
+        }
 
         return $kw;
     }
 }
-
 
 if (!function_exists('member_export_write_log')) {
     /**

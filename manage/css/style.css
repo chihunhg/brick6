@@ -769,6 +769,25 @@ input[type="number"].formInput::-webkit-inner-spin-button{
   grid-template-columns:50px 50px minmax(100px,1.2fr) minmax(90px,1fr) minmax(160px,2fr) minmax(110px,0.95fr) 100px;
   width:100%;
 }
+.tableHeader.tableGrid--token-summary,
+.tableRow__data.tableGrid--token-summary{
+  grid-template-columns:7.5rem minmax(6rem,1fr) minmax(6rem,.9fr) 4.5rem 5.5rem 5.5rem 5rem 6rem;
+  width:100%;
+}
+.tableHeader.tableGrid--token-detail,
+.tableRow__data.tableGrid--token-detail{
+  grid-template-columns:10.5rem minmax(5.5rem,.8fr) minmax(5.5rem,.7fr) minmax(8rem,1.2fr) 5rem 5rem 4.5rem 5.5rem minmax(5rem,.7fr) 4.5rem;
+  width:100%;
+}
+.tokenUsageScroll{overflow-x:auto;}
+.tokenUsage__sum{font-weight:700;background-color:var(--cl-gray-50);}
+.tokenUsage__fail{color:var(--cl-danger-600);font-weight:700;}
+.tokenUsageChart,
+.tokenUsageBlock{margin-bottom:1.5rem;}
+.tokenUsageChart__head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.5rem 1.5rem;margin-bottom:1rem;}
+.tokenUsageChart__title{margin:0;font-size:1rem;font-weight:700;}
+.tokenUsageChart__hint{margin:0;color:var(--cl-gray-500);font-size:.875rem;}
+.tokenUsageChart__canvas{position:relative;height:320px;}
 .controlList__fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tableRow > .listEmpty{width:100%;}
 .tableHeader.tableGrid--ad,

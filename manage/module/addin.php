@@ -34,6 +34,9 @@ if ($formPKey <= 0) {
 $returnUrl = crud_addin_return_url($formPKey, 'add.php', 'update.php');
 $listUrl   = module_addin_list_redirect_url($filter_array);
 
+$filter_array = module_expand_single_lang_filter($filter_array);
+$GLOBALS['filter_array'] = $filter_array;
+
 $layerCtx = module_addin_normalize_layers($filter_array);
 
 $MSG = module_addin_validate($filter_array);

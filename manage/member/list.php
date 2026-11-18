@@ -147,6 +147,7 @@ $clearUrl = ($WorkFile ?? 'list.php')
                                 }
                                 foreach ($listRows as $row) {
                                     $i++;
+                                    $row = member_decrypt_row_sensitive(is_array($row) ? $row : []);
                                     $rowPKey = (int)($row['PKey'] ?? 0);
                                 ?>
                                 <div class="tableRow__item" data-id="<?php echo $rowPKey; ?>">

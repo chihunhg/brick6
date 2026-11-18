@@ -3,7 +3,11 @@
     Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always edit Set-Cookie (.*) "$1; HttpOnly; Secure; SameSite=Lax"
+    # Secure 只加在 HTTPS。HTTP 開發站若強制 Secure，瀏覽器會丟掉登入後換發的 session cookie。
+    # 負向預查避免根目錄與 manage/.htaccess 各加一次，造成重複屬性。
+    Header always edit Set-Cookie "(?i)^(?!.*HttpOnly)(.*)$" "$1; HttpOnly"
+    Header always edit Set-Cookie "(?i)^(?!.*SameSite=)(.*)$" "$1; SameSite=Lax"
+    Header always edit Set-Cookie "(?i)^(?!.*Secure)(.*)$" "$1; Secure" env=HTTPS
     # HSTS：Plesk/nginx 主機（如 tsg5.com.tw）通常已在伺服器層送出，勿在此重複（Observatory 會判無法辨識）
     # 僅 Apache 直連、且主機未送 HSTS 時，取消下行註解，並設 .env APP_ENABLE_HSTS=0
     # Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains" env=HTTPS
@@ -139,7 +143,22 @@ RewriteRule ^(.*.php-.*)$ / [R=301,NC]
 RewriteCond %{REQUEST_URI} !^[\/manage\/]+$
 RewriteRule ^en/(.*)\.htm$ $1.php?this_lang=2 [L]
 RewriteRule ^(.*)\.htm$ $1.php?this_lang=1 [L]
+#===========================================================
+#404 Code 第1部份(後面還有)
+RewriteRule ^404\.php$ - [L]
+ErrorDocument 404 404.php
+#===========================================================
+RewriteCond %{REQUEST_URI} !^/manage/
+RewriteRule ^en/(.*)\.htm$ $1.php?this_lang=2 [QSA,L]
 
+RewriteCond %{REQUEST_URI} !^/manage/
+RewriteRule ^(.*)\.htm$ $1.php?this_lang=1 [QSA,L]
+#===========================================================
+#404 Code 第2部份
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^.*$ 404.php [L]
+#===========================================================
 </IfModule>
 
 #ErrorDocument 404 https://www.xxxxxx.com/

@@ -81,10 +81,91 @@ if (!function_exists('order_detail_init_defaults')) {
     }
 }
 
+if (!function_exists('order_sec_encrypt_field')) {
+    /** 敏感欄位寫入 DB 前加密；空白維持空白 */
+    function order_sec_encrypt_field(string $plaintext): string
+    {
+        $plaintext = trim($plaintext);
+        if ($plaintext === '') {
+            return '';
+        }
+        if (!function_exists('sec_encrypt')) {
+            return $plaintext;
+        }
+
+        return sec_encrypt($plaintext);
+    }
+}
+
+if (!function_exists('order_sec_decrypt_field')) {
+    /**
+     * 敏感欄位自 DB 取出後解密；失敗時相容尚未加密的舊明文
+     */
+    function order_sec_decrypt_field(string $ciphertext): string
+    {
+        $ciphertext = trim($ciphertext);
+        if ($ciphertext === '') {
+            return '';
+        }
+        if (function_exists('sec_decrypt')) {
+            $plain = sec_decrypt($ciphertext);
+            if ($plain !== '') {
+                return $plain;
+            }
+        }
+        if (str_contains($ciphertext, '@')
+            || (bool)preg_match('/^[0-9+\-\s()]{6,20}$/', $ciphertext)
+        ) {
+            return $ciphertext;
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('order_decrypt_row_sensitive')) {
+    /**
+     * 解密列上的 EMail / Tel / Mobile / CVSTelephone
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    function order_decrypt_row_sensitive(array $row): array
+    {
+        foreach (['EMail', 'Tel', 'Mobile', 'CVSTelephone'] as $f) {
+            if (array_key_exists($f, $row)) {
+                $row[$f] = order_sec_decrypt_field((string)$row[$f]);
+            }
+        }
+
+        return $row;
+    }
+}
+
+if (!function_exists('order_encrypt_row_sensitive')) {
+    /**
+     * 寫入前加密敏感欄位（供結帳／匯入等寫入點呼叫）
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    function order_encrypt_row_sensitive(array $data): array
+    {
+        foreach (['EMail', 'Tel', 'Mobile', 'CVSTelephone'] as $f) {
+            if (array_key_exists($f, $data)) {
+                $data[$f] = order_sec_encrypt_field((string)$data[$f]);
+            }
+        }
+
+        return $data;
+    }
+}
+
 if (!function_exists('order_detail_apply_master')) {
     /** @param array<string, mixed> $row */
     function order_detail_apply_master(array $row): void
     {
+        $row = order_decrypt_row_sensitive($row);
         $v = &$GLOBALS['order_form_vars'];
         $fields = [
             'OrderNo', 'strName', 'EMail', 'Tel', 'Mobile', 'PostCode', 'strCounty', 'strCity',
@@ -357,7 +438,6 @@ if (!function_exists('order_export_fetch_rows')) {
         );
     }
 }
-
 
 if (!function_exists('order_export_write_log')) {
     /**

@@ -106,14 +106,19 @@ if (!function_exists('gemini_stream_generate_content_sse')) {
      * 使用 streamGenerateContent 串流輸出 SSE，完成後以 done 事件回傳整理後 payload
      *
      * @param callable(array<string, mixed>): array<string, mixed> $finalizePayload
+     * @param array{module?: string, feature?: string, model?: string} $usageContext
      */
     function gemini_stream_generate_content_sse(
         \Gemini\Resources\GenerativeModel $model,
         string $prompt,
         callable $finalizePayload,
+        array $usageContext = [],
     ): never {
         if (!function_exists('gemini_sanitize_utf8_text')) {
             require_once __DIR__ . '/gemini_editor_helpers.php';
+        }
+        if (!function_exists('gemini_token_usage_record')) {
+            require_once __DIR__ . '/gemini_token_usage.php';
         }
 
         $prompt = gemini_sanitize_utf8_text($prompt);
@@ -121,6 +126,8 @@ if (!function_exists('gemini_stream_generate_content_sse')) {
         gemini_sse_send('start', ['success' => true]);
 
         $accumulated = '';
+        $usage = null;
+        $succeeded = false;
 
         try {
             foreach ($model->streamGenerateContent($prompt) as $response) {
@@ -128,8 +135,14 @@ if (!function_exists('gemini_stream_generate_content_sse')) {
                     require_once __DIR__ . '/gemini_client.php';
                 }
 
+                $meta = $response->usageMetadata ?? null;
+                if ($meta instanceof \Gemini\Data\UsageMetadata && $meta->totalTokenCount > 0) {
+                    $usage = $meta;
+                }
+
                 $blocked = gemini_response_safety_blocked_message($response);
                 if ($blocked !== null) {
+                    gemini_token_usage_record($usage, $usageContext + ['success' => false]);
                     gemini_sse_send('error', ['success' => false, 'error' => $blocked]);
                     exit;
                 }
@@ -149,6 +162,7 @@ if (!function_exists('gemini_stream_generate_content_sse')) {
                 $payload = gemini_sanitize_utf8_array($payload);
             }
             gemini_sse_send('done', $payload);
+            $succeeded = true;
         } catch (Throwable $e) {
             if (!function_exists('gemini_api_error_message')) {
                 require_once __DIR__ . '/gemini_client.php';
@@ -160,6 +174,7 @@ if (!function_exists('gemini_stream_generate_content_sse')) {
             ]);
         }
 
+        gemini_token_usage_record($usage, $usageContext + ['success' => $succeeded]);
         exit;
     }
 }

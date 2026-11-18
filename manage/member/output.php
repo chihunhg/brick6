@@ -52,6 +52,7 @@ foreach ($rows as $row) {
     if (!is_array($row)) {
         continue;
     }
+    $row = member_decrypt_row_sensitive($row);
     $tableData[] = [
         $memberExportCell($row, 'EMail'),
         $memberExportCell($row, 'strName'),

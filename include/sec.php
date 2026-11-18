@@ -12,6 +12,7 @@ declare(strict_types=1);
  * - 同源檢查：check_same_origin()
  * - CSP（nonce + strict-dynamic）：csp_nonce(), csp_policy_frontend_string(), csp_frontend_script_elem_directives(), send_security_headers(), script_open(), script_close(), manage_inline_script(), json_ld_script_tag()
  * - Token 簽章：sign_id(), verify_id()
+ * - 對稱加解密：sec_encrypt(), sec_decrypt()（金鑰 APP_SECRET_KEY）
  * - 視圖常用安全輔助：safe_tel(), tel_href(), is_external_link(), safe_inline_html()
  */
 
@@ -434,6 +435,7 @@ if (!function_exists('sync_app_session_id_cookie')) {
 if (!function_exists('regenerate_session_on_login')) {
     /**
      * 登入成功（權限提升）時輪換 Session ID，並同步舊版自訂 SessionID cookie。
+     * 只送出一條新的 session cookie；換發失敗時保留原 session，避免登入後立刻被當成未登入。
      */
     function regenerate_session_on_login(): void
     {
@@ -442,22 +444,54 @@ if (!function_exists('regenerate_session_on_login')) {
         }
 
         $saved = $_SESSION;
-        $previousId = session_id();
+        $saved['logout'] = date('Y-m-d H:i:s', time() + 1800);
 
-        expire_named_cookie('SessionID');
-        session_regenerate_id(true);
-
-        if (session_id() === '' || session_id() === $previousId) {
-            expire_named_cookie(session_name());
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                $_SESSION = [];
-                session_destroy();
-            }
-            session_start();
+        if (headers_sent() || session_id() === '') {
+            $_SESSION = $saved;
+            return;
         }
 
+        $previousId = session_id();
         $_SESSION = $saved;
-        sync_app_session_id_cookie();
+        // session 進行中不能改 use_cookies；先寫入並關閉，再關掉自動 Set-Cookie 後換發
+        session_write_close();
+        ini_set('session.use_cookies', '0');
+        session_id($previousId);
+        session_start();
+        $_SESSION = $saved;
+
+        $rotated = session_regenerate_id(true);
+        $newId = session_id();
+        if (!$rotated || $newId === '' || $newId === $previousId) {
+            session_write_close();
+            ini_set('session.use_cookies', '1');
+            session_id($previousId);
+            session_start();
+            $_SESSION = $saved;
+            return;
+        }
+
+        session_write_close();
+        session_id($newId);
+        session_start();
+        if ((string)($_SESSION['Manage'] ?? '') !== (string)($saved['Manage'] ?? '')
+            || (string)($_SESSION['Login_ID'] ?? '') !== (string)($saved['Login_ID'] ?? '')) {
+            $_SESSION = $saved;
+        }
+
+        if (headers_sent()) {
+            return;
+        }
+
+        header_remove('Set-Cookie');
+        $opts = session_cookie_options();
+        $opts['path'] = '/';
+        $opts['httponly'] = true;
+        $opts['samesite'] = 'Lax';
+        $opts['secure'] = function_exists('_is_https') ? _is_https() : $opts['secure'];
+        setcookie(session_name(), $newId, $opts);
+        $GLOBALS['SessionID'] = $newId;
+        setcookie('SessionID', $newId, $opts);
     }
 }
 
@@ -682,7 +716,7 @@ if (!function_exists('csp_policy_frontend_string')) {
     /**
      * 前台 CSP：script / script-src-elem 用 nonce + strict-dynamic；
      * script-src / script-src-elem 皆含 unsafe-inline https: 後備（CSP3 下由 nonce 覆蓋，舊瀏覽器仍可用）；
-     * script-src-attr 'none'：禁止 onclick 等行內事件（問卷已改 jQuery change 綁定）
+     * script-src-attr 'none'：禁止 onclick 等行內事件（問卷已改 change 事件綁定）
      */
     function csp_policy_frontend_string(
         array $scriptHosts = [],
@@ -1057,8 +1091,10 @@ if (!function_exists('frontend_render_html')) {
 
         global $web_root;
         $base = rtrim((string)($web_root ?? ''), '/');
-        if ($base !== '') {
-            $uploadUrl = $base . '/Upload/';
+        $uploadUrl = (function_exists('storage_is_remote') && storage_is_remote() && function_exists('media_upload_prefix_url'))
+            ? media_upload_prefix_url()
+            : ($base !== '' ? $base . '/Upload/' : '');
+        if ($uploadUrl !== '') {
             $html = preg_replace(
                 '#(src|href)\s*=\s*(["\'])(?:\.\./\.\./|\.\./|/)?Upload/#iu',
                 '$1=$2' . $uploadUrl,
@@ -1120,5 +1156,146 @@ if (!function_exists('safe_inline_html')) {
         $out = trim($out);
         if ($out === '') $out = strip_tags($html, '<' . implode('><', $allowedTags) . '>');
         return $out;
+    }
+}
+
+/* -------------------------------------------------------
+ * 對稱加解密（.env APP_SECRET_KEY）
+ * -----------------------------------------------------*/
+
+if (!function_exists('sec_crypto_key_bytes')) {
+    /**
+     * 由 APP_SECRET_KEY（或自訂 key）衍生 32-byte 金鑰
+     *
+     * @throws RuntimeException 未設定金鑰時
+     */
+    function sec_crypto_key_bytes(?string $key = null): string
+    {
+        $raw = $key;
+        if ($raw === null || $raw === '') {
+            $raw = (string)($_ENV['APP_SECRET_KEY'] ?? getenv('APP_SECRET_KEY') ?: '');
+        }
+        $raw = trim($raw);
+        if ($raw === '') {
+            throw new RuntimeException('APP_SECRET_KEY 未設定，無法加解密。');
+        }
+
+        return hash('sha256', $raw, true);
+    }
+}
+
+if (!function_exists('sec_encrypt')) {
+    /**
+     * 對稱加密明文，回傳 base64url 密文（含 nonce）
+     * 優先 libsodium secretbox；否則 AES-256-GCM
+     *
+     * @throws RuntimeException 金鑰未設定或無可用加解密延伸模組
+     */
+    function sec_encrypt(string $plaintext, ?string $key = null): string
+    {
+        $keyBytes = sec_crypto_key_bytes($key);
+
+        if (extension_loaded('sodium') && function_exists('sodium_crypto_secretbox')) {
+            $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+            $cipher = sodium_crypto_secretbox($plaintext, $nonce, $keyBytes);
+            $packed = $nonce . $cipher;
+            if (function_exists('base64url_encode')) {
+                return base64url_encode($packed);
+            }
+
+            return rtrim(strtr(base64_encode($packed), '+/', '-_'), '=');
+        }
+
+        if (function_exists('openssl_encrypt')) {
+            $iv = random_bytes(12);
+            $tag = '';
+            $cipher = openssl_encrypt(
+                $plaintext,
+                'aes-256-gcm',
+                $keyBytes,
+                OPENSSL_RAW_DATA,
+                $iv,
+                $tag,
+                '',
+                16
+            );
+            if ($cipher === false) {
+                throw new RuntimeException('sec_encrypt：openssl_encrypt 失敗。');
+            }
+            $packed = $iv . $tag . $cipher;
+            if (function_exists('base64url_encode')) {
+                return base64url_encode($packed);
+            }
+
+            return rtrim(strtr(base64_encode($packed), '+/', '-_'), '=');
+        }
+
+        throw new RuntimeException('sec_encrypt：請啟用 libsodium 或 openssl。');
+    }
+}
+
+if (!function_exists('sec_decrypt')) {
+    /**
+     * 對稱解密（對應 sec_encrypt）；失敗回傳空字串
+     */
+    function sec_decrypt(string $ciphertext, ?string $key = null): string
+    {
+        $ciphertext = trim($ciphertext);
+        if ($ciphertext === '') {
+            return '';
+        }
+
+        try {
+            $keyBytes = sec_crypto_key_bytes($key);
+        } catch (Throwable) {
+            return '';
+        }
+
+        if (function_exists('base64url_decode')) {
+            $decoded = base64url_decode($ciphertext);
+        } else {
+            $replaced = strtr($ciphertext, '-_', '+/');
+            $pad = strlen($replaced) % 4;
+            if ($pad) {
+                $replaced .= str_repeat('=', 4 - $pad);
+            }
+            $decoded = base64_decode($replaced, true);
+        }
+        if ($decoded === false || $decoded === '') {
+            return '';
+        }
+
+        // 與 sec_encrypt 相同優先順序嘗試；失敗再試另一種格式
+        if (extension_loaded('sodium') && function_exists('sodium_crypto_secretbox_open')) {
+            $nonceLen = SODIUM_CRYPTO_SECRETBOX_NONCEBYTES;
+            if (strlen($decoded) > $nonceLen) {
+                $nonce = substr($decoded, 0, $nonceLen);
+                $cipher = substr($decoded, $nonceLen);
+                $plain = sodium_crypto_secretbox_open($cipher, $nonce, $keyBytes);
+                if ($plain !== false) {
+                    return $plain;
+                }
+            }
+        }
+
+        if (function_exists('openssl_decrypt') && strlen($decoded) >= 28) {
+            // iv(12) + tag(16) + cipher
+            $iv = substr($decoded, 0, 12);
+            $tag = substr($decoded, 12, 16);
+            $cipher = substr($decoded, 28);
+            $plain = openssl_decrypt(
+                $cipher,
+                'aes-256-gcm',
+                $keyBytes,
+                OPENSSL_RAW_DATA,
+                $iv,
+                $tag
+            );
+            if ($plain !== false) {
+                return $plain;
+            }
+        }
+
+        return '';
     }
 }

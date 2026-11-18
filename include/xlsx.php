@@ -58,6 +58,8 @@ if (!function_exists('xlsx_write_file')) {
 
         $sheetTitle = xlsx_sheet_title($sheetTitle);
         $sheetXml = xlsx_sheet_xml($rows);
+        $nowIso = gmdate('Y-m-d\TH:i:s\Z');
+        $titleXml = xlsx_xml_escape($sheetTitle);
 
         $zip = new ZipArchive();
         $open = $zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
@@ -65,37 +67,76 @@ if (!function_exists('xlsx_write_file')) {
             throw new RuntimeException('無法建立 Excel 檔');
         }
 
-        $zip->addFromString('[Content_Types].xml', <<<'XML'
+        // 補齊 OOXML 必要部件（docProps／styles），避免瀏覽器把檔案當成一般 ZIP 而跳出危險警告
+        $parts = [
+            '[Content_Types].xml' => <<<'XML'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 </Types>
-XML);
-        $zip->addFromString('_rels/.rels', <<<'XML'
+XML,
+            '_rels/.rels' => <<<'XML'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
 </Relationships>
-XML);
-        $zip->addFromString('xl/_rels/workbook.xml.rels', <<<'XML'
+XML,
+            'docProps/app.xml' => <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+  <Application>Microsoft Excel</Application>
+</Properties>
+XML,
+            'docProps/core.xml' => <<<XML
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:creator>brick6</dc:creator>
+  <cp:lastModifiedBy>brick6</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">{$nowIso}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">{$nowIso}</dcterms:modified>
+</cp:coreProperties>
+XML,
+            'xl/_rels/workbook.xml.rels' => <<<'XML'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>
-XML);
-        $titleXml = xlsx_xml_escape($sheetTitle);
-        $zip->addFromString('xl/workbook.xml', <<<XML
+XML,
+            'xl/styles.xml' => <<<'XML'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+  <fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+  <borders count="1"><border/></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+</styleSheet>
+XML,
+            'xl/workbook.xml' => <<<XML
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <workbookPr/>
   <sheets>
     <sheet name="{$titleXml}" sheetId="1" r:id="rId1"/>
   </sheets>
 </workbook>
-XML);
-        $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+XML,
+            'xl/worksheets/sheet1.xml' => $sheetXml,
+        ];
+
+        foreach ($parts as $name => $xml) {
+            $zip->addFromString($name, $xml);
+            $zip->setCompressionName($name, ZipArchive::CM_DEFLATE);
+        }
         $zip->close();
     }
 }
@@ -104,27 +145,36 @@ if (!function_exists('xlsx_sheet_xml')) {
     /** @param list<list<scalar|null>> $rows */
     function xlsx_sheet_xml(array $rows): string
     {
-        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+        $maxCol = 1;
+        $maxRow = 0;
+        $xmlRows = '';
         $r = 0;
         foreach ($rows as $line) {
             $r++;
             if (!is_array($line)) {
                 continue;
             }
-            $xml .= '<row r="' . $r . '">';
+            $maxRow = $r;
+            $xmlRows .= '<row r="' . $r . '">';
             $c = 0;
             foreach ($line as $cell) {
                 $c++;
+                $maxCol = max($maxCol, $c);
                 $ref = xlsx_col_letter($c) . $r;
                 $text = is_scalar($cell) ? (string)$cell : '';
-                $xml .= '<c r="' . $ref . '" t="inlineStr"><is><t xml:space="preserve">'
+                $xmlRows .= '<c r="' . $ref . '" t="inlineStr"><is><t xml:space="preserve">'
                     . xlsx_xml_escape($text) . '</t></is></c>';
             }
-            $xml .= '</row>';
+            $xmlRows .= '</row>';
         }
-        $xml .= '</sheetData></worksheet>';
-        return $xml;
+        if ($maxRow < 1) {
+            $maxRow = 1;
+        }
+        $dim = 'A1:' . xlsx_col_letter($maxCol) . $maxRow;
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<dimension ref="' . $dim . '"/>'
+            . '<sheetData>' . $xmlRows . '</sheetData></worksheet>';
     }
 }
 
@@ -158,25 +208,152 @@ if (!function_exists('xlsx_download')) {
             xlsx_fail_html('匯出失敗');
         }
 
+        xlsx_emit_download($tmpFile, $filename);
+    }
+}
+
+if (!function_exists('xlsx_download_encrypted_zip')) {
+    /**
+     * 產生 .xlsx 後打包為 AES-256 加密 ZIP 再下載（結束請求）。
+     * 需 PHP ZipArchive + libzip 支援 EM_AES_256。
+     *
+     * @param list<list<scalar|null>> $rows
+     */
+    function xlsx_download_encrypted_zip(
+        array $rows,
+        string $xlsxFilename,
+        string $password,
+        string $sheetTitle = 'Sheet1',
+        ?string $zipFilename = null
+    ): void {
+        $password = trim($password);
+        if ($password === '') {
+            xlsx_fail_html('請設定 ZIP 開啟密碼');
+        }
+        if (strlen($password) < 6) {
+            xlsx_fail_html('ZIP 密碼至少需 6 碼');
+        }
+        if (!class_exists('ZipArchive') || !defined('ZipArchive::EM_AES_256')) {
+            xlsx_fail_html('伺服器未支援 ZIP AES 加密，無法匯出');
+        }
+        if (!method_exists(ZipArchive::class, 'setEncryptionName')) {
+            xlsx_fail_html('伺服器 ZipArchive 無法設定加密，無法匯出');
+        }
+
+        $xlsxFilename = str_replace(['"', "\r", "\n", '/', '\\'], '', $xlsxFilename);
+        if ($xlsxFilename === '') {
+            $xlsxFilename = 'export.xlsx';
+        }
+        if (!str_ends_with(strtolower($xlsxFilename), '.xlsx')) {
+            $xlsxFilename .= '.xlsx';
+        }
+
+        if ($zipFilename === null || trim($zipFilename) === '') {
+            $zipFilename = preg_replace('/\.xlsx$/i', '', $xlsxFilename) . '.zip';
+        }
+        $zipFilename = str_replace(['"', "\r", "\n", '/', '\\'], '', (string)$zipFilename);
+        if (!str_ends_with(strtolower($zipFilename), '.zip')) {
+            $zipFilename .= '.zip';
+        }
+
+        $tmpBase = tempnam(sys_get_temp_dir(), 'xlsx_');
+        if ($tmpBase === false) {
+            xlsx_fail_html('無法建立暫存檔，匯出失敗');
+        }
+        @unlink($tmpBase);
+        $tmpXlsx = $tmpBase . '.xlsx';
+        $tmpZip = $tmpBase . '.zip';
+
+        try {
+            xlsx_write_file($rows, $tmpXlsx, $sheetTitle);
+
+            $zip = new ZipArchive();
+            $open = $zip->open($tmpZip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+            if ($open !== true) {
+                throw new RuntimeException('無法建立 ZIP');
+            }
+            if (!$zip->addFile($tmpXlsx, $xlsxFilename)) {
+                $zip->close();
+                throw new RuntimeException('無法將 Excel 加入 ZIP');
+            }
+            if (!$zip->setEncryptionName($xlsxFilename, ZipArchive::EM_AES_256, $password)) {
+                $zip->close();
+                throw new RuntimeException('無法設定 ZIP 加密');
+            }
+            if (!$zip->close()) {
+                throw new RuntimeException('無法完成 ZIP');
+            }
+        } catch (Throwable $e) {
+            @unlink($tmpXlsx);
+            @unlink($tmpZip);
+            xlsx_fail_html('加密 ZIP 匯出失敗');
+        }
+
+        @unlink($tmpXlsx);
+        xlsx_emit_binary_download(
+            $tmpZip,
+            $zipFilename,
+            'application/zip'
+        );
+    }
+}
+
+if (!function_exists('xlsx_emit_binary_download')) {
+    /** 送出二進位附件標頭並結束請求 */
+    function xlsx_emit_binary_download(string $tmpFile, string $filename, string $contentType): void
+    {
+        @ini_set('zlib.output_compression', '0');
+        @ini_set('default_mimetype', '');
+        @ini_set('default_charset', '');
+        if (function_exists('apache_setenv')) {
+            @apache_setenv('no-gzip', '1');
+        }
+
         while (ob_get_level() > 0) {
             ob_end_clean();
         }
         if (function_exists('header_remove')) {
             header_remove('Content-Type');
+            header_remove('Content-Disposition');
         }
 
+        $asciiName = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename) ?: 'download.bin';
         $fileSize = filesize($tmpFile);
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Transfer-Encoding: binary');
-        header('Cache-Control: max-age=0, no-store, no-cache, must-revalidate');
-        header('Pragma: public');
+
+        header('X-Content-Type-Options: nosniff', true);
+        header('X-Frame-Options: SAMEORIGIN', true);
+        header('Content-Type: ' . $contentType, true);
+        header(
+            'Content-Disposition: attachment; filename="' . $asciiName . '"; filename*=UTF-8\'\'' . rawurlencode($filename),
+            true
+        );
+        header('Cache-Control: private, max-age=0, must-revalidate', true);
+        header('Pragma: public', true);
         if ($fileSize !== false) {
-            header('Content-Length: ' . (string)$fileSize);
+            header('Content-Length: ' . (string)$fileSize, true);
         }
         readfile($tmpFile);
         @unlink($tmpFile);
         exit;
+    }
+}
+
+if (!function_exists('xlsx_emit_download')) {
+    /** 送出 Excel 附件標頭並結束請求（勿讓瀏覽器把內容當成 ZIP／.php） */
+    function xlsx_emit_download(string $tmpFile, string $filename): void
+    {
+        $asciiName = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename) ?: 'export.xlsx';
+        if (!str_ends_with(strtolower($asciiName), '.xlsx')) {
+            $asciiName .= '.xlsx';
+        }
+        if (!str_ends_with(strtolower($filename), '.xlsx')) {
+            $filename .= '.xlsx';
+        }
+        xlsx_emit_binary_download(
+            $tmpFile,
+            $filename,
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
     }
 }
 

@@ -101,7 +101,16 @@ if (!function_exists('gemini_editor_parse_request')) {
             $input = is_array($decoded) ? $decoded : [];
         }
 
-        return gemini_sanitize_utf8_array($input);
+        $input = gemini_sanitize_utf8_array($input);
+        if (!function_exists('gemini_token_usage_bind_module')) {
+            require_once __DIR__ . '/gemini_token_usage.php';
+        }
+        $usageModule = gemini_token_usage_resolve_module($input);
+        if ($usageModule !== '' && $usageModule !== 'unknown') {
+            gemini_token_usage_bind_module($usageModule);
+        }
+
+        return $input;
     }
 }
 

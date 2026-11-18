@@ -20,16 +20,16 @@ $__js_ver = static function (string $file): string {
 <?php echo script_src_tag('../js/page-function.js?ver=' . $__js_ver('page-function.js')); ?>
 <?php echo script_src_tag('../js/popup.js?ver=' . $__js_ver('popup.js')); ?>
 <?php echo script_src_tag('../js/tooltip.js?ver=' . $__js_ver('tooltip.js')); ?>
+<?php echo script_src_tag('../js/accordion.js?ver=' . $__js_ver('accordion.js')); ?>
 <?php echo script_src_tag('../js/manage-csp.js?ver=' . $__js_ver('manage-csp.js')); ?>
 <!-- 載入檢查欄位長度 -->
 <?php echo script_src_tag('../js/jquery.maxlength.js?ver=' . $__js_ver('jquery.maxlength.js')); ?>
 <!-- 動態載入下拉選單 -->
 <?php echo script_src_tag('../js/ajax.js?ver=' . $__js_ver('ajax.js')); ?>
-<!-- 載入html 編輯器 -->
+<!-- 載入 html 編輯器（Jodit） -->
 <?php
-$__ck_path = __DIR__ . '/ckeditor/ckeditor.js';
-$__ck_ver  = is_file($__ck_path) ? (string)filemtime($__ck_path) : '1';
-echo script_src_tag('../ckeditor/ckeditor.js?ver=' . $__ck_ver);
+require_once __DIR__ . '/_jodit_assets.php';
+manage_echo_jodit_assets('../jodit/');
 ?>
 <!-- 載入檔案Size檢查（jquery-browser；filesize 見上方 script_src_tag） -->
 <?php echo script_src_tag('../js/jquery-browser.js?ver=' . $__js_ver('jquery-browser.js')); ?>
