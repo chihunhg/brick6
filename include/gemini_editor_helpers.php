@@ -297,9 +297,11 @@ if (!function_exists('gemini_editor_industry_template_priority_block')) {
     function gemini_editor_industry_template_priority_block(string $industry): string {
         $template = gemini_industry_template_instruction($industry);
 
-        return "【最高優先：產業範本（產文必須優先依此執行）】\n"
-            . "以下範本中的【角色任務】、【寫作規範】與【完美範本參考】為最高準則。\n"
-            . "請優先仿效範本的語氣、段落結構、HTML 架構與合規警語；其餘規則僅作補充，不得偏離範本風格。\n\n"
+        return "【產業範本（風格與結構）】\n"
+            . "【角色任務】與【寫作規範】用來決定語氣與合規，但不得推翻【輸出語言】與使用者的寫作任務。\n"
+            . "【完美範本參考】只示範 HTML 結構、段落節奏與警語位置。\n"
+            . "禁止把範本的標題、句子、產品或主題原樣輸出、改寫或翻譯。\n"
+            . "可見文字必須依使用者的寫作任務重新撰寫。\n\n"
             . $template;
     }
 }
@@ -799,8 +801,8 @@ if (!function_exists('gemini_editor_system_instruction')) {
 {$formatRules}
 
 【撰寫規範】
-- 產文時必須優先遵循「輸出語言」與「最高優先：產業範本」，再搭配 HTML 白名單、排版模式與資料來源限制。
-- 輸出結構應接近【完美範本參考】的標題層級、段落節奏與合規警語位置。
+- 產文時必須優先遵循「輸出語言」與使用者的寫作任務，再依產業範本的語氣、合規與 HTML 結構。
+- 輸出結構可接近【完美範本參考】的標題層級、段落節奏與合規警語位置，但標題與句子必須依寫作任務重寫，不得沿用或翻譯範本。
 - 文筆精準，符合企業官網與該產業的合規語氣。
 TEXT;
     }
@@ -829,9 +831,9 @@ if (!function_exists('gemini_build_editor_user_prompt')) {
         $formatHint = '【排版格式】：' . $formatLabel . "\n";
         $industryLabel = gemini_industry_options()[gemini_normalize_industry($industry)] ?? '一般';
         $languageHint = gemini_language_hint_for_user_prompt($langContext);
-        $templateHint = "【產業範本優先】：{$industryLabel}\n"
-            . "請優先依 system instruction 中「最高優先：產業範本」的角色、語氣、HTML 結構與合規要求產文，"
-            . "並仿效【完美範本參考】的段落節奏與標題層級。\n";
+        $templateHint = "【產業範本】：{$industryLabel}\n"
+            . "請依產業範本的語氣、合規與 HTML 結構產文。\n"
+            . "【完美範本參考】不得翻譯或照抄；主題、標題與內文以【寫作任務】為準。\n";
 
         if ($sourceUrl !== '') {
             $sourceBlock = $sourcePageText !== ''

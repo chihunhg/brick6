@@ -102,7 +102,9 @@ if (!function_exists('gemini_output_language_rules')) {
         return "【輸出語言（最高優先）】\n"
             . "- 後台語系：{$adminLabel}\n"
             . "- html_content、title、description、keywords 等所有可見文字，必須「全部」使用「{$display}」撰寫。\n"
-            . "- 產業 Few-Shot 範本若為繁體中文，僅供結構、合規與段落節奏參考，實際輸出文字仍須改寫為「{$display}」。\n"
+            . "- 產業 Few-Shot 範本只可參考結構、合規與段落節奏。\n"
+            . "- 禁止把範本的標題、句子、產品或主題原樣輸出、改寫或翻譯成「{$display}」。\n"
+            . "- 本次主題、標題與內文必須完全依照使用者的寫作任務，用「{$display}」重新撰寫。\n"
             . "- 禁止混用其他語系或未要求的語言。\n";
     }
 }
@@ -152,6 +154,7 @@ if (!function_exists('gemini_language_hint_for_user_prompt')) {
             : '';
 
         return '【輸出語言】：' . $langContext['label'] . $slotHint . "\n"
-            . '請將所有產出內容以「' . $langContext['display'] . '」撰寫。' . "\n\n";
+            . '請將所有產出內容以「' . $langContext['display'] . '」撰寫。' . "\n"
+            . '範本若是另一種語言，只可借用結構；必須依寫作任務用「' . $langContext['display'] . '」重寫，禁止翻譯範本。' . "\n\n";
     }
 }

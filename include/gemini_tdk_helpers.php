@@ -19,9 +19,10 @@ if (!function_exists('gemini_tdk_template_priority_block')) {
     function gemini_tdk_template_priority_block(string $industry): string {
         $template = gemini_tdk_template_instruction($industry);
 
-        return "【最高優先：TDK 產業範本（產出必須優先依此執行）】\n"
-            . "以下範本中的【角色任務】、【寫作規範】與【完美範本參考】為最高準則。\n"
-            . "請優先仿效範本的語氣、JSON 欄位風格與合規要求；通用 SEO 規則僅作補充。\n\n"
+        return "【TDK 產業範本（風格與結構）】\n"
+            . "【角色任務】與【寫作規範】用來決定語氣與合規，但不得推翻【輸出語言】與使用者的寫作任務。\n"
+            . "【完美範本參考】只示範 title、description、keywords 的長度與語氣。\n"
+            . "禁止把範本用詞原樣輸出、改寫或翻譯。\n\n"
             . $template;
     }
 }
@@ -50,8 +51,8 @@ if (!function_exists('gemini_tdk_system_instruction')) {
 - title：60 字以內；description：120–160 字以內；keywords：5 個以內，半形逗號分隔，每個關鍵字 20 字以內。
 
 【撰寫規範】
-- 產出 TDK 時必須優先遵循「輸出語言」與「最高優先：TDK 產業範本」，再搭配基本格式要求。
-- 輸出風格應接近【完美範本參考】的 title 結構、description 語氣與 keywords 選詞。
+- 產出 TDK 時必須優先遵循「輸出語言」與使用者的寫作任務，再依 TDK 產業範本的語氣與合規。
+- 輸出可接近【完美範本參考】的 title 結構、description 語氣與 keywords 選詞，但用詞必須依寫作任務重寫，不得翻譯範本。
 TEXT;
     }
 }
@@ -71,8 +72,9 @@ if (!function_exists('gemini_build_tdk_user_prompt')) {
         }
 
         $industryLabel = gemini_industry_options()[gemini_normalize_industry($industry)] ?? '一般';
-        $templateHint = "【TDK 產業範本優先】：{$industryLabel}\n"
-            . "請優先依 system instruction 中「最高優先：TDK 產業範本」產出 title、description、keywords。\n\n";
+        $templateHint = "【TDK 產業範本】：{$industryLabel}\n"
+            . "請依 TDK 產業範本的語氣與合規產出 title、description、keywords。\n"
+            . "不得翻譯或照抄【完美範本參考】；用詞以使用者的寫作任務為準。\n\n";
 
         return gemini_language_hint_for_user_prompt($langContext) . $templateHint . trim($userPrompt);
     }

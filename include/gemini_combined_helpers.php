@@ -53,8 +53,8 @@ if (!function_exists('gemini_combined_system_instruction')) {
 {$formatRules}
 
 【撰寫規範】
-- 優先遵循「輸出語言」與產業 Few-Shot 範本，一次產出內文 HTML 與 TDK。
-- html_content 結構應接近 IndustryTemplates【完美範本參考】；TDK 應接近 TdkTemplates【完美範本參考】。
+- 優先遵循「輸出語言」與使用者的寫作任務，再依產業範本的語氣與結構，一次產出內文 HTML 與 TDK。
+- html_content 可接近 IndustryTemplates 的標題層級與段落節奏，TDK 可接近 TdkTemplates 的欄位風格；兩者的用詞都必須依寫作任務重寫，不得翻譯範本。
 TEXT;
     }
 }
@@ -83,7 +83,8 @@ if (!function_exists('gemini_build_combined_user_prompt')) {
             . "【同步產出：HTML 內文 + SEO TDK】\n"
             . "產業範本：{$industryLabel}\n"
             . "排版格式：{$formatLabel}\n"
-            . "請在單次回應中同時產出 html_content 以及 title、description、keywords，且彼此主題一致。\n\n";
+            . "請在單次回應中同時產出 html_content 以及 title、description、keywords，且彼此主題一致。\n"
+            . "不得翻譯或照抄產業範本的標題與句子；主題以【寫作任務】為準。\n\n";
 
         if ($sourceUrl !== '') {
             $sourceBlock = $sourcePageText !== ''
