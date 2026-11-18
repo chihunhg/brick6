@@ -445,6 +445,7 @@ function fieldCheck0(theForm) {
                             <i class="bi bi-info-circle notes__icon"></i> 系統備註
                         </div>
                         <ul class="notes__list">
+                            <li>💡 天矽獨家開發專屬 AI 智慧小編：告別寫文章靈感枯竭！包含內文產出與 SEO 優化。首年上線免費使用，次年起續約即可讓 天矽獨家開發專屬AI智慧小編 繼續成為您的最強幫手。</li>
                             <li>網站前台顯示順序，依照「順序」由小至大排序；順序相同，依照「修改日期」由新至舊排序。</li>
                             <li>複製功能僅能複製文字，檔案需重新上傳。</li>
                         </ul>

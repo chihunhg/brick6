@@ -350,6 +350,7 @@ function fieldCheck0(theForm) {
                             <i class="bi bi-info-circle notes__icon"></i> 系統備註
                         </div>
                         <ul class="notes__list">
+                            <li>💡 天矽獨家開發專屬 AI 智慧小編：告別寫文章靈感枯竭！包含內文產出與 SEO 優化。首年上線免費使用，次年起續約即可讓 天矽獨家開發專屬AI智慧小編 繼續成為您的最強幫手。</li>
                             <li>前台顯示順序依「年份」由新至舊；同年份則以修改日期由新至舊。</li>
                         </ul>
                     </section>
