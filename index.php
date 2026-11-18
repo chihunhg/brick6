@@ -156,7 +156,7 @@ require("_inc.php");
 									<span class="txt">0<?php echo $i + 1; ?></span>
 								</div>
 								<figure class="ixProcessList__item__pic">
-									<img src="<?php echo $web_url; ?>images/index/process<?php echo $i + 1; ?>.svg" alt="<?php echo $lang_text["index"][$this_lang]["ixProcess".($i + 1)]; ?>" class="img-fluid">
+									<img src="<?php echo $web_root; ?>images/index/process<?php echo $i + 1; ?>.svg" alt="<?php echo $lang_text["index"][$this_lang]["ixProcess".($i + 1)]; ?>" class="img-fluid">
 								</figure>
 								<div class="ixProcessList__item__content">
 									<div class="ixProcessList__item__title wow fadeInUp"><?php echo $lang_text["index"][$this_lang]["ixProcess".($i + 1)."_1"]; ?></div>
@@ -282,7 +282,7 @@ require("_inc.php");
 	<?php require("_footer.php"); ?>
 	<?php require("_in_code_bottom.php"); ?>
 
-	<?php echo script_src_tag($web_url . 'js/index-page.js?ver=' . filemtime('js/index-page.js')); ?>
+	<?php echo script_src_tag($web_root . 'js/index-page.js?ver=' . filemtime('js/index-page.js')); ?>
 
 </body>
 

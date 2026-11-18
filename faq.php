@@ -121,6 +121,6 @@ $ldjson = frontend_breadcrumb_ldjson();
 
 <?php require('_footer.php'); ?>
 <?php require('_in_code_bottom.php'); ?>
-<?php echo script_src_tag($web_url . 'js/faq-page.js?ver=' . filemtime(__DIR__ . '/js/faq-page.js')); ?>
+<?php echo script_src_tag($web_root . 'js/faq-page.js?ver=' . filemtime(__DIR__ . '/js/faq-page.js')); ?>
 </body>
 </html>

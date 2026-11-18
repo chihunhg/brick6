@@ -284,7 +284,7 @@ $mainImage = $galleryImages[0] ?? null;
 
 <?php require('_footer.php'); ?>
 
-<?php echo script_src_tag($web_url . 'js/product-detail.js?ver=' . filemtime(__DIR__ . '/js/product-detail.js')); ?>
+<?php echo script_src_tag($web_root . 'js/product-detail.js?ver=' . filemtime(__DIR__ . '/js/product-detail.js')); ?>
 
 <?php require('_in_code_bottom.php'); ?>
 

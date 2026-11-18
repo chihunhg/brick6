@@ -252,7 +252,7 @@ $backHref = frontend_class1_list_href($Class1);
 
 <?php if ($galleryItems !== []) {
 
-    echo script_src_tag($web_url . 'js/album-detail.js?ver=' . filemtime(__DIR__ . '/js/album-detail.js'));
+    echo script_src_tag($web_root . 'js/album-detail.js?ver=' . filemtime(__DIR__ . '/js/album-detail.js'));
 
 } ?>
 

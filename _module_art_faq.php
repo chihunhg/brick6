@@ -73,4 +73,4 @@ $moduleArtFaqLead = trim((string)($moduleArtFaqLang['lead'] ?? ''));
         </div>
     </div>
 </section>
-<?php echo script_src_tag($web_url . 'js/faq-page.js?ver=' . filemtime(__DIR__ . '/js/faq-page.js')); ?>
+<?php echo script_src_tag($web_root . 'js/faq-page.js?ver=' . filemtime(__DIR__ . '/js/faq-page.js')); ?>
