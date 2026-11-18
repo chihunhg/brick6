@@ -1508,8 +1508,8 @@ function manage_admin_initial_password_from_env(): ?string
 }
 
 /**
- * 後台最高權限 intType 值（舊設定／權限管理帳號：1）
- * 對應 manage/control 列表 WHERE intType = 1
+ * 權限管理列表用的 webcontrol.intType（不是最高權限判斷）
+ * 最高權限見 manage_named_super_admin_ids()
  */
 function manage_super_admin_int_type(): int
 {
@@ -1517,13 +1517,23 @@ function manage_super_admin_int_type(): int
 }
 
 /**
- * 既有最高權限帳號（intType 曾被誤寫成非 1 時，進入後台時改回 1）
+ * 後台最高權限帳號（比對 webcontrol.strID，不分大小寫）
+ * 要增減最高權限只改這個陣列，不看 intType
  *
  * @return list<string>
  */
 function manage_named_super_admin_ids(): array
 {
-    return ['admin', 'tsguser'];
+    $ids = ['admin', 'tsguser'];
+    $out = [];
+    foreach ($ids as $id) {
+        $id = strtolower(trim((string)$id));
+        if ($id !== '') {
+            $out[$id] = $id;
+        }
+    }
+
+    return array_values($out);
 }
 
 function manage_is_named_super_admin_id(string $loginId): bool
@@ -1531,22 +1541,6 @@ function manage_is_named_super_admin_id(string $loginId): bool
     $id = strtolower(trim($loginId));
 
     return $id !== '' && in_array($id, manage_named_super_admin_ids(), true);
-}
-
-/** webcontrol 列讀整數（欄名不分大小寫；沒有該欄回 -1） */
-function manage_webcontrol_row_int(array $row, string $column): int
-{
-    if (array_key_exists($column, $row)) {
-        return (int)$row[$column];
-    }
-    $want = strtolower($column);
-    foreach ($row as $key => $value) {
-        if (is_string($key) && strtolower($key) === $want) {
-            return (int)$value;
-        }
-    }
-
-    return -1;
 }
 
 /**
@@ -1594,110 +1588,26 @@ function manage_fetch_webcontrol_by_login(string $loginId): ?array
 }
 
 /**
- * 是否為後台最高權限（webcontrol.intType = manage_super_admin_int_type()）
- * session 已符合直接通過；否則回查 DB。
- * admin／tsguser 若 intType 不是 1，改回 1 後視為最高權限（相容先前誤寫）。
+ * 是否為後台最高權限（帳號在 manage_named_super_admin_ids()，且 webcontrol 仍有此帳號）
  */
 function manage_is_super_admin(?string $loginId = null): bool
 {
-    $superType = manage_super_admin_int_type();
-    if (isset($_SESSION['Login_intType']) && (int)$_SESSION['Login_intType'] === $superType) {
-        return true;
-    }
-
     $id = trim((string)($loginId ?? ($_SESSION['Login_ID'] ?? '')));
-    if ($id === '') {
+    if ($id === '' || !manage_is_named_super_admin_id($id)) {
         return false;
     }
 
-    $row = manage_fetch_webcontrol_by_login($id);
-    if ($row === null) {
-        return false;
-    }
-
-    $intType = manage_webcontrol_row_int($row, 'intType');
-    if (manage_is_named_super_admin_id($id)) {
-        if ($intType !== $superType) {
-            $pkey = manage_webcontrol_row_int($row, 'PKey');
-            if ($pkey > 0) {
-                manage_ensure_super_admin_int_type($pkey);
-            }
-        }
-        $intType = $superType;
-    }
-
-    $_SESSION['Login_intType'] = $intType;
-
-    return $intType === $superType;
+    return manage_fetch_webcontrol_by_login($id) !== null;
 }
 
 /**
- * 將指定帳號升級為最高權限（intType=1）；已是最高則略過
- */
-function manage_ensure_super_admin_int_type(int $pkey): bool
-{
-    if ($pkey <= 0) {
-        return false;
-    }
-    $superType = manage_super_admin_int_type();
-    $row = null;
-    if (function_exists('crud_fetch_one')) {
-        $row = crud_fetch_one('SELECT PKey, intType FROM webcontrol WHERE PKey = :pk LIMIT 1', ['pk' => $pkey]);
-    } else {
-        $rs = new recordset('SELECT PKey, intType FROM webcontrol WHERE PKey = :pk LIMIT 1', ['pk' => $pkey]);
-        if (!$rs->eof) {
-            $row = [
-                'PKey'    => (int)$rs->field('PKey'),
-                'intType' => (int)$rs->field('intType'),
-            ];
-        }
-        $rs->close();
-    }
-    if ($row === null) {
-        return false;
-    }
-    if ((int)($row['intType'] ?? -1) === $superType) {
-        return false;
-    }
-
-    $pdo = new dbPDO();
-    $pdo->update('webcontrol', [
-        'intType' => $superType,
-        'dtUDate' => date('Y-m-d H:i:s'),
-    ], 'PKey', $pkey);
-    $pdo->close();
-
-    return true;
-}
-
-/** 將 admin、tsguser 的 intType 改回最高權限；已是最高則略過 */
-function manage_promote_named_super_admins(): bool
-{
-    $changed = false;
-    $superType = manage_super_admin_int_type();
-    foreach (manage_named_super_admin_ids() as $loginId) {
-        $row = manage_fetch_webcontrol_by_login($loginId);
-        if ($row === null) {
-            continue;
-        }
-        $pkey = manage_webcontrol_row_int($row, 'PKey');
-        $intType = manage_webcontrol_row_int($row, 'intType');
-        if ($pkey > 0 && $intType !== $superType) {
-            $changed = manage_ensure_super_admin_int_type($pkey) || $changed;
-        }
-    }
-
-    return $changed;
-}
-
-/**
- * 若尚無最高權限帳號（intType=1），依 .env ADMIN_INITIAL_PASSWORD 建立
- * 並確保 admin、tsguser 為 intType=1（相容先前誤設為其他值的資料）
+ * 若尚無 intType=1 帳號，依 .env ADMIN_INITIAL_PASSWORD 建立 tsguser
  * （未設定 env 時略過新建，避免寫死可預測密碼）
+ * 最高權限不由 intType 決定，見 manage_named_super_admin_ids()
  */
 function manage_bootstrap_admin_account(): bool
 {
-    $changed = manage_promote_named_super_admins();
+    $changed = false;
     $superType = manage_super_admin_int_type();
 
     $rs = new recordset(
@@ -1719,7 +1629,7 @@ function manage_bootstrap_admin_account(): bool
 
     $initialSecret = manage_admin_initial_password_from_env();
     if ($initialSecret === null) {
-        error_log('尚無 intType=1 最高權限帳號且 ADMIN_INITIAL_PASSWORD 未於 .env 設定，略過自動建立。');
+        error_log('尚無 intType=1 帳號且 ADMIN_INITIAL_PASSWORD 未於 .env 設定，略過自動建立。');
 
         return $changed;
     }

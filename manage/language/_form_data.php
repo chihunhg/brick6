@@ -5,7 +5,7 @@ declare(strict_types=1);
  */
 
 if (!function_exists('language_require_admin')) {
-    /** 僅最高權限（webcontrol.intType=1）可進入語系設定 */
+    /** 僅最高權限帳號（manage_named_super_admin_ids）可進入語系設定 */
     function language_require_admin(): void {
         global $s3;
         if (!manage_is_super_admin()) {

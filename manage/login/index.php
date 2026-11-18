@@ -37,7 +37,7 @@ if (isset($_SESSION['Manage'], $_SESSION['Login_ID'])
     exit;
 }
 
-// ---- 若尚無 intType=1 最高權限帳號，依 .env ADMIN_INITIAL_PASSWORD 建立／校正 ----
+// ---- 若尚無 intType=1 帳號，依 .env ADMIN_INITIAL_PASSWORD 建立 tsguser（最高權限另見帳號陣列）----
 manage_bootstrap_admin_account();
 // reCAPTCHA（從 .env 讀）
 $site_key = $_ENV['RECAPTCHA_SITE_KEY'] ?? '';
