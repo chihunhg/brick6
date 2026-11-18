@@ -101,7 +101,7 @@ $chartJsVer = is_file($chartJsPath) ? (string)filemtime($chartJsPath) : '1';
 
 $backManNo = (int)($manNo ?? 0);
 $backSubNo = (int)($subNo ?? 0);
-$clearUrl = 'token_usage.php?manNo=' . $backManNo . '&subNo=' . $backSubNo;
+$clearUrl = 'list.php?manNo=' . $backManNo . '&subNo=' . $backSubNo;
 $layout_page_title = 'Token 用量';
 $breadcrumbs = [
     ['label' => '網站 LLM 設定', 'href' => 'llm.php?manNo=' . $backManNo . '&subNo=' . $backSubNo],
@@ -114,7 +114,7 @@ $breadcrumbs = [
 <?php require_once '../_layout_body_open.php'; ?>
                     <?php require_once '../_breadcrumbs.php'; ?>
 
-                    <form action="token_usage.php" method="get" name="form1" id="form1">
+                    <form action="list.php" method="get" name="form1" id="form1">
                     <div id="view-list">
                         <div class="card filterWrap">
                             <div class="filterWrap__content">

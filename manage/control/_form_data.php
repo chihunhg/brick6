@@ -175,8 +175,8 @@ if (!function_exists('control_validate_form')) {
         if (strlen($strID) > 20) {
             $msg .= "【帳號】長度不可超過 20 碼\n";
         }
-        if (!preg_match('/^[a-z0-9]{2,20}$/', $strID)) {
-            $msg .= "【帳號】空白或格式錯誤（限 2~20 碼英文或數字）\n";
+        if (!preg_match('/^[a-z0-9_]{2,20}$/', $strID)) {
+            $msg .= "【帳號】空白或格式錯誤（限 2~20 碼英文、數字或底線）\n";
         } elseif (control_strid_exists($strID, $formPKey)) {
             $msg .= "【帳號】已被申請過\n";
         }

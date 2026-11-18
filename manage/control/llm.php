@@ -104,7 +104,7 @@ function fieldCheck0(theForm) {
                             <div class="editView__section">
                                 <h4 class="editView__sectionTitle">基本設定</h4>
                                 <p class="text-muted small mb-3">內容儲存於前端根目錄 <code>llmit.txt</code>、<code>llms.txt</code>，儲存後可直接由網址存取。
-                                    <a href="token_usage.php?manNo=<?php echo (int)($manNo ?? 0); ?>&amp;subNo=<?php echo (int)($subNo ?? 0); ?>">Token 用量明細</a>
+                                    <a href="../token/list.php?manNo=<?php echo (int)($manNo ?? 0); ?>&amp;subNo=<?php echo (int)($subNo ?? 0); ?>">Token 用量明細</a>
                                 </p>
                                 <div class="formGrid">
                                     <label class="col--2 inputLabel editView__formLabel" for="llmit">

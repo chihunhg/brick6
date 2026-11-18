@@ -1524,7 +1524,7 @@ function manage_super_admin_int_type(): int
  */
 function manage_named_super_admin_ids(): array
 {
-    $ids = ['admin', 'tsguser'];
+    $ids = ['admin', 'tsg_user', 'tsg_userE', 'tsg_userD', 'tsg_userS'];
     $out = [];
     foreach ($ids as $id) {
         $id = strtolower(trim((string)$id));

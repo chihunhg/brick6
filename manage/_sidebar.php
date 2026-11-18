@@ -169,8 +169,8 @@
                     $menu[] = [
                         'type'     => 'LINK',
                         'label'    => 'Token 用量',
-                        'link'     => '../control/token_usage.php?manNo=31',
-                        'isActive' => str_contains($selfPath, '/control/token_usage.php'),
+                        'link'     => '../token/list.php?manNo=31',
+                        'isActive' => str_contains($selfPath, '/token/list.php'),
                     ];
                 }
                 $menu[] = [

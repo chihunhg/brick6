@@ -36,9 +36,9 @@ function fieldCheck0(theForm) {
     fields.push('strName');
   }
 
-  const regID = /^[a-zA-Z0-9]{2,20}$/;
+  const regID = /^[a-zA-Z0-9_]{2,20}$/;
   if (!regID.test(strID)) {
-    errors.push('帳號格式錯誤（限2~20碼英文或數字）');
+    errors.push('帳號格式錯誤（限2~20碼英文、數字或底線）');
     fields.push('strID');
   }
 
