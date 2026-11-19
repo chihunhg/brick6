@@ -13,7 +13,36 @@ $FKName      = 'PKey';
 
 $uploadBase = crud_upload_base();
 $crud_cfg   = crud_cfg($table_name, $FKName, ['upload_base' => $uploadBase]);
-crud_process_list_actions($crud_cfg);
+
+// 天矽維護帳號不可刪除（比對時不分大小寫）
+$protectedLoginIds = ['cathy', 'tsg_user', 'tsg_userD', 'tsg_userE', 'tsg_userS'];
+$protectedLoginLookup = [];
+foreach ($protectedLoginIds as $protectedLoginId) {
+    $protectedLoginLookup[strtolower($protectedLoginId)] = true;
+}
+
+crud_process_list_actions($crud_cfg, static function (array $ids) use ($table_name, $PKName, $protectedLoginLookup): void {
+    if ($ids === []) {
+        return;
+    }
+    $placeholders = [];
+    $params = [];
+    foreach ($ids as $i => $id) {
+        $key = 'id' . $i;
+        $placeholders[] = ':' . $key;
+        $params[$key] = $id;
+    }
+    $rows = crud_fetch_all(
+        'SELECT strID FROM ' . $table_name . ' WHERE ' . $PKName . ' IN (' . implode(',', $placeholders) . ')',
+        $params
+    );
+    foreach ($rows as $row) {
+        $loginId = strtolower(trim((string)($row['strID'] ?? '')));
+        if ($loginId !== '' && isset($protectedLoginLookup[$loginId])) {
+            manage_alert_script('此帳號無法刪除，若需刪除請與「天矽」聯絡，謝謝。', null, true);
+        }
+    }
+});
 
 crud_csrf_guard_list($listCsrfKey);
 $csrf_token = crud_csrf_ensure($listCsrfKey);
@@ -121,12 +150,14 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                                 foreach ($listRows as $row) {
                                     $i++;
                                     $rowPKey = (int)($row['PKey'] ?? 0);
+                                    $rowLoginId = strtolower(trim((string)($row['strID'] ?? '')));
+                                    $isProtectedLogin = isset($protectedLoginLookup[$rowLoginId]);
                                 ?>
                                 <div class="tableRow__item" data-id="<?php echo $rowPKey; ?>">
                                     <div class="tableRow__data <?php echo e($listGridClass); ?>">
                                         <div class="flex flex--jtCenter">
                                             <label class="checkboxWrapper">
-                                                <input type="checkbox" name="nid[]" value="<?php echo $rowPKey; ?>" class="customCheckbox">
+                                                <input type="checkbox" name="nid[]" value="<?php echo $rowPKey; ?>" class="customCheckbox"<?php if ($isProtectedLogin) { ?> disabled="disabled" title="此帳號無法刪除"<?php } ?>>
                                             </label>
                                         </div>
                                         <div class="textCenter"><?php echo $i; ?></div>
@@ -170,6 +201,7 @@ $layout_page_title = manage_breadcrumbs_page_title($breadcrumbs);
                         </div>
                         <ul class="notes__list">
                             <li>可新增多組管理者帳號，並設定各帳號可管理的後台單元權限。</li>
+							<li class="orange">專案上線後，將由「天矽」協助後續維護與異常排查作業，以上「天矽」相關帳號無法刪除，若貴司要刪除請與「天矽」聯絡，謝謝。</li>
                         </ul>
                     </div>
                     <div class="notes__spacer"></div>
